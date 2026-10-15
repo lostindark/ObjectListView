@@ -41,6 +41,18 @@ or later with the .NET Framework 4.8 targeting pack installed. The solution
 contains the library, demos, printing components, and tests; older
 version-specific solution and project files are no longer maintained.
 
+The tests use NUnit 2.6.4, declared in *Tests\\packages.config*. NuGet restores
+it into the local *packages* directory, which is not checked into Git.
+Restore and build from a Visual Studio Developer Command Prompt with:
+
+.. code-block:: text
+
+    msbuild ObjectListView.sln /restore /p:RestorePackagesConfig=true /p:Configuration=Debug /p:Platform="Any CPU"
+
+Alternatively, run ``nuget restore ObjectListView.sln`` before building.
+Legacy MSBuild-based NuGet restore scripts and ReSharper/NCrunch settings
+are not required and are no longer included.
+
 1. **Use the ObjectListView project**
 
 * Download the `ObjectListView project <https://sourceforge.net/projects/objectlistview/files/>`_

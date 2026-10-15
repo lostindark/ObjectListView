@@ -3,15 +3,9 @@
 ################################################################################
 
 /.vs
-/Demo/bin/Debug
-/Demo/obj/Debug
-/ListViewPrinter/bin/Debug
-/ListViewPrinter/obj/Debug
-/ListViewPrinterDemo/obj/Debug
-/ObjectListView/bin/Debug
-/ObjectListView/obj/Debug
-/SparkleLibrary/bin/Debug
-/SparkleLibrary/obj/Debug
-/Tests/obj/Debug
-/ListViewPrinterDemo/bin/Debug
-/Tests/bin/Debug
+/packages/
+**/bin/
+**/obj/
+*.user
+*.suo
+Thumbs.db

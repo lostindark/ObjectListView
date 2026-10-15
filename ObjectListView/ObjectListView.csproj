@@ -162,7 +162,7 @@
   <ItemGroup>
     <None Include="CustomDictionary.xml" />
     <None Include="FullClassDiagram.cd" />
-    <None Include="ObjectListView2012.nuspec">
+    <None Include="ObjectListView.nuspec">
       <SubType>Designer</SubType>
     </None>
     <None Include="Resources\sort-descending.png" />

@@ -141,9 +141,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ObjectListView\ObjectListView2012.csproj">
+    <ProjectReference Include="..\ObjectListView\ObjectListView.csproj">
       <Project>{18FEDA0C-D147-4286-B39A-01204808106A}</Project>
-      <Name>ObjectListView2012</Name>
+      <Name>ObjectListView</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

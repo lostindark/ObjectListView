@@ -22,15 +22,22 @@ The `ObjectListView` was designed to take away all these repetitive tasks and so
 
 There are two ways to use an `ObjectListView` in your project:
 
-To build this source tree, open *ObjectListView.sln* in Visual Studio 2022 or later with the .NET Framework 4.6.2 targeting pack installed. The solution contains the library, demos, printing components, and tests; older version-specific solution and project files are no longer maintained.
+To build this source tree, open *ObjectListView.sln* in Visual Studio with the .NET Framework 4.6.2 targeting pack and a compatible .NET SDK installed. All six projects use SDK-style project files and target .NET Framework 4.6.2. The solution contains the library, demos, printing components, and tests; older version-specific solution and project files are no longer maintained.
 
-The tests use NUnit 2.6.4, declared in *Tests\packages.config*. NuGet restores it into the local *packages* directory, which is not checked into Git. Restore and build from a Visual Studio Developer Command Prompt with:
+The tests use MSTest.TestFramework 4.5.1, MSTest.TestAdapter, and Microsoft.NET.Test.Sdk, declared as package references in *Tests\Tests.csproj*. NuGet restores dependencies into its global cache, not a repository-local *packages* directory. The .NET 10 SDK requires MSBuild 18 or later (Visual Studio 2026). Restore and build from a Visual Studio Developer Command Prompt with:
 
 ```text
-msbuild ObjectListView.sln /restore /p:RestorePackagesConfig=true /p:Configuration=Debug /p:Platform="Any CPU"
+msbuild ObjectListView.sln /restore /p:Configuration=Debug /p:Platform="Any CPU"
 ```
 
-Alternatively, run `nuget restore ObjectListView.sln` before building. Legacy MSBuild-based NuGet restore scripts and ReSharper/NCrunch settings are not required and are no longer included.
+Build and run the tests on Windows with:
+
+```powershell
+msbuild Tests\Tests.csproj /restore /p:Configuration=Release
+dotnet test Tests\Tests.csproj --configuration Release --no-build --no-restore
+```
+
+Full-framework MSBuild restores dependencies and builds the test project and library, including the existing non-string WinForms resources. This preserves the production assemblies' existing runtime dependencies; the `dotnet` build host cannot compile these resources directly without an additional resource-reader package. The second command runs the compiled suite without rebuilding it. Tests also appear in Visual Studio Test Explorer. WinForms tests run serially on an STA thread with a fresh, visually invisible form that does not activate or appear in the taskbar and is disposed after each test. They still require a Windows UI-capable environment. Build outputs are under each project's *bin\\Configuration\\net462* directory. Legacy MSBuild-based NuGet restore scripts and ReSharper/NCrunch settings are not required.
 
 1.  **Use the ObjectListView project**
 

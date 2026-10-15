@@ -11,32 +11,33 @@
 using System;
 using System.Collections;
 using System.Windows.Forms;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests
 {
-    [TestFixture]
-    public class TestSorting
+    [STATestClass]
+    public class TestSorting : WinFormsTestFixture
     {
-        [SetUp]
+        [TestInitialize]
         public void InitEachTest()
         {
+            this.olv = GetObjectListView();
             this.olv.LastSortColumn = null;
             this.olv.LastSortOrder = SortOrder.None;
             this.olv.SetObjects(PersonDb.All);
         }
 
-        [TearDown]
+        [TestCleanup]
         public void TearDownEachTest()
         {
         }
 
-        [Test]
+        [TestMethod]
         public void TestInitialConditions()
         {
         }
 
-        [Test]
+        [TestMethod]
         public void TestSecondarySorting()
         {
             this.olv.SecondarySortColumn = this.olv.GetColumn(0);
@@ -50,7 +51,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(PersonDb.FirstAlphabeticalName, ((Person)this.olv.GetModelObject(0)).Name);
         }
 
-        [Test]
+        [TestMethod]
         public void TestSortingByStringColumn()
         {
             this.olv.Sort(this.olv.GetColumn(0), SortOrder.Ascending);
@@ -59,7 +60,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(PersonDb.LastAlphabeticalName, ((Person)this.olv.GetModelObject(0)).Name);
         }
 
-        [Test]
+        [TestMethod]
         public void TestSortingByIntColumn()
         {
             OLVColumn columnToSort = this.olv.GetColumn(2);
@@ -69,20 +70,20 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(PersonDb.All[0].Name, ((Person)this.olv.GetModelObject(0)).Name);
         }
 
-        [Test]
+        [TestMethod]
         public void TestNoSorting()
         {
             ArrayList beforeContents = GetContents();
 
             this.olv.Sort();
 
-            Assert.AreEqual(beforeContents, GetContents());
+            CollectionAssert.AreEqual(beforeContents, GetContents());
 
             this.olv.LastSortColumn = this.olv.GetColumn(0);
             this.olv.LastSortOrder = SortOrder.Descending;
             this.olv.Sort();
 
-            Assert.AreNotEqual(beforeContents, GetContents());
+            CollectionAssert.AreNotEqual(beforeContents, GetContents());
         }
 
         private ArrayList GetContents()
@@ -93,7 +94,7 @@ namespace BrightIdeasSoftware.Tests
             return contents;
         }
 
-        [Test]
+        [TestMethod]
         virtual public void TestCustomSorting()
         {
             this.olv.Sort(this.olv.GetColumn(0), SortOrder.Ascending);
@@ -111,7 +112,7 @@ namespace BrightIdeasSoftware.Tests
             }
         }
 
-        [Test]
+        [TestMethod]
         public void TestAfterSortingEvent()
         {
             try {
@@ -133,7 +134,7 @@ namespace BrightIdeasSoftware.Tests
             this.afterSortingCount++;
         }
 
-        [Test]
+        [TestMethod]
         public void TestBeforeSortingEvent()
         {
             try {
@@ -157,7 +158,7 @@ namespace BrightIdeasSoftware.Tests
             e.SortOrder = SortOrder.Descending;
         }
 
-        [Test]
+        [TestMethod]
         public void TestCancelSorting()
         {
             this.olv.Sort(this.olv.GetColumn(0), SortOrder.Descending);
@@ -183,7 +184,7 @@ namespace BrightIdeasSoftware.Tests
             e.Canceled = true;
         }
 
-        [Test]
+        [TestMethod]
         public void TestPreserveSelection()
         {
             this.olv.SelectedObject = PersonDb.All[0];
@@ -191,7 +192,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(PersonDb.All[0], this.olv.SelectedObject);
         }
 
-        [Test]
+        [TestMethod]
         public void TestPreserveSelectionMultiple()
         {
             this.olv.SelectedObjects = PersonDb.All;
@@ -201,7 +202,7 @@ namespace BrightIdeasSoftware.Tests
                 Assert.Contains(x, PersonDb.All);
         }
 
-        [Test]
+        [TestMethod]
         virtual public void TestUnsort() {
             this.olv.Sort(this.olv.GetColumn(0), SortOrder.Ascending);
             Assert.AreEqual(PersonDb.FirstAlphabeticalName, ((Person)this.olv.GetModelObject(0)).Name);
@@ -211,31 +212,29 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(PersonDb.All[0].Name, ((Person)this.olv.GetModelObject(0)).Name);
         }
 
-        [TestFixtureSetUp]
-        public void Init()
+        protected virtual ObjectListView GetObjectListView()
         {
-            this.olv = MyGlobals.mainForm.objectListView1;
+            return mainForm.objectListView1;
         }
         protected ObjectListView olv;
     }
 
-    [TestFixture]
+    [STATestClass]
     public class TestFastOlvSorting : TestSorting
     {
-        [Test]
+        [TestMethod]
         override public void TestCustomSorting()
         {
         }
         
-        [Test]
+        [TestMethod]
         override public void TestUnsort() {
             // FastObjectListViews don't really support Unsort()
         }
 
-        [TestFixtureSetUp]
-        new public void Init()
+        protected override ObjectListView GetObjectListView()
         {
-            this.olv = MyGlobals.mainForm.fastObjectListView1;
+            return mainForm.fastObjectListView1;
         }
     }
 }

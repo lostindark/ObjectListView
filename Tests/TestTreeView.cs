@@ -14,18 +14,13 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests {
-    [TestFixture]
-    public class TestTreeView {
-        [SetUp]
+    [STATestClass]
+    public class TestTreeView : WinFormsTestFixture {
+        [TestInitialize]
         public void InitEachTest() {
-            PersonDb.Reset();
-
-            mainForm = new MainForm();
-            mainForm.Size = new Size();
-            mainForm.Show();
             this.olv = mainForm.treeListView1;
 
             this.SetupDelegates();
@@ -46,14 +41,8 @@ namespace BrightIdeasSoftware.Tests {
 
         private const int NumberOfRoots = 2;
         protected TreeListView olv;
-        private MainForm mainForm;
 
-        [TearDown]
-        public void TearDownEachTest() {
-            mainForm.Close();
-        }
-
-        [Test]
+        [TestMethod]
         public void TestInitialConditions() {
             Assert.AreEqual(NumberOfRoots, this.olv.GetItemCount());
             int i = 0;
@@ -64,20 +53,20 @@ namespace BrightIdeasSoftware.Tests {
             }
         }
 
-        [Test]
+        [TestMethod]
         public void TestCollapseAll() {
             this.olv.ExpandAll();
             this.olv.CollapseAll();
             Assert.AreEqual(NumberOfRoots, this.olv.GetItemCount());
         }
 
-        [Test]
+        [TestMethod]
         public void TestExpandAll() {
             this.olv.ExpandAll();
             Assert.AreEqual(PersonDb.All.Count, this.olv.GetItemCount());
         }
 
-        [Test]
+        [TestMethod]
         public void TestExpand() {
             this.olv.ExpandAll();
             this.olv.CollapseAll();
@@ -92,13 +81,13 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(expectedCount2, this.olv.GetItemCount());
         }
 
-        [Test]
+        [TestMethod]
         public void TestClearAll() {
             this.olv.ClearObjects();
             Assert.AreEqual(0, this.olv.GetItemCount());
         }
 
-        [Test]
+        [TestMethod]
         public void TestCollapse() {
             int originalCount = this.olv.GetItemCount();
             this.olv.Expand(PersonDb.All[0]);
@@ -109,7 +98,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(originalCount, this.olv.GetItemCount());
         }
 
-        [Test]
+        [TestMethod]
         public void TestRefreshOfHiddenItem() {
             this.olv.ExpandAll();
             this.olv.Collapse(PersonDb.All[1]);
@@ -121,45 +110,45 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(count, this.olv.GetItemCount());
         }
 
-        [Test]
+        [TestMethod]
         public void TestNullReferences() {
             this.olv.Expand(null);
             this.olv.Collapse(null);
             this.olv.RefreshObject(null);
         }
 
-        [Test]
+        [TestMethod]
         public void TestNonExistentObjects() {
             this.olv.Expand(new Person("name1"));
             this.olv.Collapse(new Person("name2"));
             this.olv.RefreshObject(1);
         }
 
-        [Test]
+        [TestMethod]
         public void TestGetParentRoot() {
             Assert.IsNull(this.olv.GetParent(PersonDb.All[0]));
         }
 
-        [Test]
+        [TestMethod]
         public void TestGetParentBeforeExpand() {
             Person p = PersonDb.All[0];
             Assert.IsNull(this.olv.GetParent(p.Children[0]));
         }
 
-        [Test]
+        [TestMethod]
         public void TestGetParent() {
             Person p = PersonDb.All[0];
             this.olv.Expand(p);
             Assert.AreEqual(p, this.olv.GetParent(p.Children[0]));
         }
 
-        [Test]
+        [TestMethod]
         public void TestGetChildrenLeaf() {
             Person p = PersonDb.All[0];
             Assert.IsEmpty((IList)this.olv.GetChildren(p.Children[0]));
         }
 
-        [Test]
+        [TestMethod]
         public void TestGetChildren() {
             Person p = PersonDb.All[0];
             IEnumerable kids = this.olv.GetChildren(p);
@@ -172,7 +161,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(i, p.Children.Count);
         }
 
-        [Test]
+        [TestMethod]
         public void TestPreserveSelection() {
             this.olv.SelectedObject = PersonDb.All[1];
             this.olv.Expand(PersonDb.All[0]);
@@ -181,7 +170,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(PersonDb.All[1], this.olv.SelectedObject);
         }
 
-        [Test]
+        [TestMethod]
         public void TestExpandedObjects() {
             this.olv.ExpandedObjects = new Person[] {PersonDb.All[1]};
             Assert.Contains(PersonDb.All[1], this.olv.ExpandedObjects as ICollection);
@@ -189,7 +178,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.IsEmpty(this.olv.ExpandedObjects as ICollection);
         }
 
-        [Test]
+        [TestMethod]
         public void TestPreserveExpansion() {
             this.olv.Expand(PersonDb.All[1]);
             Assert.Contains(PersonDb.All[1], this.olv.ExpandedObjects as ICollection);
@@ -197,7 +186,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.IsEmpty(this.olv.ExpandedObjects as ICollection);
         }
 
-        [Test]
+        [TestMethod]
         public void TestRebuildAllWithPreserve() {
             this.olv.CheckBoxes = true;
             this.olv.SelectedObject = PersonDb.All[0];
@@ -210,7 +199,7 @@ namespace BrightIdeasSoftware.Tests {
             this.olv.CheckBoxes = false;
         }
 
-        [Test]
+        [TestMethod]
         public void TestModelFilterNestedMatchParentsIncluded() {
             this.olv.ExpandAll();
 
@@ -221,7 +210,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(4, this.olv.GetItemCount());
         }
 
-        [Test]
+        [TestMethod]
         public void Test_ModelFilter_HandlesColumnChanges() {
             this.olv.ExpandAll();
 
@@ -245,7 +234,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(PersonDb.LastComment, ((Person)this.olv.GetItem(3).RowObject).Comments);
         }
 
-        [Test]
+        [TestMethod]
         public void TestRefreshWhenModelChanges() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -262,7 +251,7 @@ namespace BrightIdeasSoftware.Tests {
             firstRoot.Children = originalChildren;
         }
 
-        [Test]
+        [TestMethod]
         public void Test_RefreshObject_ExpansionUnchanged() {
             this.olv.CollapseAll();
             this.olv.ExpandAll();
@@ -275,7 +264,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(count, this.olv.GetItemCount());
         }
 
-        [Test]
+        [TestMethod]
         public void Test_CheckedObjects_CheckingVisibleObjects() {
             this.olv.CheckBoxes = true;
             Person firstRoot = PersonDb.All[0];
@@ -289,7 +278,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(firstRoot.Children.Count, checkedObjects.Count);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_CheckedObjects_CheckingHiddenObjects() {
             this.olv.CheckBoxes = true;
             Person firstRoot = PersonDb.All[0];
@@ -303,7 +292,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(firstRoot.Children.Count, checkedObjects.Count);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_Unrolled_CheckingParent_ChecksChildren() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -323,7 +312,7 @@ namespace BrightIdeasSoftware.Tests {
                 Assert.IsFalse(this.olv.IsChecked(child));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_Rolled_CheckingParent_ChecksChildren() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -341,7 +330,7 @@ namespace BrightIdeasSoftware.Tests {
                 Assert.IsFalse(this.olv.IsChecked(child));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_CheckAllChildren_ParentIsChecked() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -357,7 +346,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.IsTrue(this.olv.IsChecked(firstRoot));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_CheckSomeChildren_ParentIsIndeterminate() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -374,7 +363,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.IsTrue(this.olv.IsCheckedIndeterminate(firstRoot));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_UncheckAllChildren_ParentIsUnchecked() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -390,7 +379,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.IsFalse(this.olv.IsChecked(firstRoot));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_ChildrenInheritCheckedness() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -407,7 +396,7 @@ namespace BrightIdeasSoftware.Tests {
                 Assert.IsTrue(this.olv.IsChecked(child));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -426,7 +415,7 @@ namespace BrightIdeasSoftware.Tests {
                 Assert.IsFalse(this.olv.IsChecked(child));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_CheckedObjects_Get() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -441,7 +430,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.IsTrue(checkedObjects.Contains(firstRoot));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_CheckedObjects_Get_IncludesExpandedChildren() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -459,7 +448,7 @@ namespace BrightIdeasSoftware.Tests {
                 Assert.IsTrue(checkedObjects.Contains(child));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_CheckedObjects_Get_IncludesCheckedObjectsNotInControl() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -477,7 +466,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(((Person)checkedObjects[0]).Name, newGuy.Name);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_CheckedObjects_Set_RecalculatesParent() {
             Person firstRoot = PersonDb.All[0];
             this.olv.CollapseAll();
@@ -495,7 +484,7 @@ namespace BrightIdeasSoftware.Tests {
                 Assert.IsTrue(checkedObjects.Contains(child));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_CheckedObjects_Set_DeeplyNestedObject() {
             this.olv.HierarchicalCheckboxes = true;
             Assert.IsEmpty(this.olv.CheckedObjects);
@@ -536,7 +525,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.IsTrue(this.olv.IsChecked(GGP1));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_HierarchicalCheckBoxes_CheckedObjects_Set_ClearsPreviousChecks() {
             Person firstRoot = PersonDb.All[0];
             Person secondRoot = PersonDb.All[1];
@@ -549,7 +538,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.IsFalse(this.olv.IsChecked(secondRoot));
         }
 
-        [Test]
+        [TestMethod]
         public void Test_RefreshObject_NonRoot_AfterRemoveChild() {
             this.olv.ClearObjects();
             Assert.AreEqual(0, this.olv.GetItemCount());
@@ -576,7 +565,7 @@ namespace BrightIdeasSoftware.Tests {
         }
     }
 
-    [TestFixture]
+    [STATestClass]
     public class TestTreeViewViaInterface : TestTreeView {
         protected override void SetupDelegates() {
             // Don't setup delegates. This forces TreeListView to use the ITreeModel interface

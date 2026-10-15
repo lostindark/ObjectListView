@@ -3,17 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33627.172
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectListView", "ObjectListView\ObjectListView.csproj", "{18FEDA0C-D147-4286-B39A-01204808106A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectListView", "ObjectListView\ObjectListView.csproj", "{18FEDA0C-D147-4286-B39A-01204808106A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectListViewDemo", "Demo\ObjectListViewDemo.csproj", "{C5332EAB-17B3-48B9-948E-33934B341AB0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectListViewDemo", "Demo\ObjectListViewDemo.csproj", "{C5332EAB-17B3-48B9-948E-33934B341AB0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ListViewPrinter", "ListViewPrinter\ListViewPrinter.csproj", "{E73A10BD-2B5A-4BAC-897F-3A58CFC07631}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ListViewPrinter", "ListViewPrinter\ListViewPrinter.csproj", "{E73A10BD-2B5A-4BAC-897F-3A58CFC07631}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ListViewPrinterDemo", "ListViewPrinterDemo\ListViewPrinterDemo.csproj", "{40719365-FC03-46B8-8B6E-5FD1454712B6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ListViewPrinterDemo", "ListViewPrinterDemo\ListViewPrinterDemo.csproj", "{40719365-FC03-46B8-8B6E-5FD1454712B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SparkleLibrary", "SparkleLibrary\SparkleLibrary.csproj", "{D63F9786-B608-4085-AF08-D909448B0426}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SparkleLibrary", "SparkleLibrary\SparkleLibrary.csproj", "{D63F9786-B608-4085-AF08-D909448B0426}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{8BB7445D-3428-40CC-AE38-14F6BC6C1BF9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{8BB7445D-3428-40CC-AE38-14F6BC6C1BF9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

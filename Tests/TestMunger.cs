@@ -1,14 +1,14 @@
-﻿
-using NUnit.Framework;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.Reflection;
 
 namespace BrightIdeasSoftware.Tests
 {
-    [TestFixture]
-    public class TestMunger
+    [STATestClass]
+    public class TestMunger : AspectTestFixture
     {
-        [Test]
+        [TestMethod]
         public void Test_GetValue_DottedAspect_Success() {
             // Arrange
             TestBaseClass instance = new TestBaseClass();
@@ -23,7 +23,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(testValue.Length, value);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_GetValue_DottedAspect_UnknownAspect() {
             // Arrange
             TestBaseClass instance = new TestBaseClass();
@@ -39,7 +39,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(errorMsg, value);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_GetValue_DottedAspect_NullMidResult() {
             // Arrange
             TestBaseClass instance = new TestBaseClass();
@@ -52,7 +52,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.IsNull(value);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_GetValue_VirtualPropertyOnBaseClass() {
             // Arrange
             TestBaseClass instance = new TestBaseClass();
@@ -67,7 +67,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(testValue, value);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_GetValue_VirtualProperty_CalledOnBaseClass() {
             // Arrange
             TestBaseClass instance = new TestSubClass();
@@ -82,7 +82,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(testValue, value);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_GetValue_NonVirtualProperty_CalledOnSubClass() {
             // Arrange
             TestSubClass instance = new TestSubClass();
@@ -97,7 +97,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(testValue, value);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_PutValue_DottedAspect_Success() {
             // Arrange
             TestSubClass instance = new TestSubClass();
@@ -111,7 +111,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(testValue, instance.VirtualTestProperty);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_PutValue_DottedAspect_UnknownAspect() {
             // Arrange
             TestBaseClass instance = new TestBaseClass();
@@ -126,7 +126,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(testValue, instance.VirtualTestProperty);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_PutValue_DottedAspect_CantModifyReadOnlyProperty() {
             // Arrange
             TestSubClass instance = new TestSubClass();
@@ -143,7 +143,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(testValue, instance.ReadOnlyProperty);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_PutValue_NonVirtualProperty_CalledOnSubClass() {
             // Arrange
             TestSubClass instance = new TestSubClass();
@@ -158,7 +158,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.IsTrue(instance.subClassPropertyModified);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_PutValue_NonVirtualProperty_CalledOnBaseClass() {
             // Arrange
             TestBaseClass instance = new TestSubClass();
@@ -179,7 +179,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.IsTrue((instance as TestSubClass).subClassPropertyModified);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_GetValue_NonVirtualProperty_CalledOnBaseClass() {
             // Arrange
             TestBaseClass instance = new TestSubClass();
@@ -194,7 +194,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.IsNull(value);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_PutProperty_PropertyOnClass_Success() {
             // Arrange
             TestBaseClass instance = new TestBaseClass();
@@ -204,7 +204,7 @@ namespace BrightIdeasSoftware.Tests
             bool result = Munger.PutProperty(instance, "NonVirtualTestProperty", newValue);
 
             // Assert
-            Assert.True(result);
+            Assert.IsTrue(result);
             Assert.AreEqual(newValue, instance.NonVirtualTestProperty);
         }
 

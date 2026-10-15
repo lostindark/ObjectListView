@@ -6,6 +6,7 @@
 /packages/
 **/bin/
 **/obj/
+**/TestResults/
 *.user
 *.suo
 Thumbs.db

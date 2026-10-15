@@ -11,14 +11,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests
 {
-    [TestFixture]
+    [STATestClass]
     public class TestColumn
     {
-        [Test]
+        [TestMethod]
         public void TestAspectToStringFormat() {
             OLVColumn column = new OLVColumn();
             column.AspectName = "BirthDate";
@@ -26,7 +26,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(String.Format("{0:dd-mm-yy}", this.person1.BirthDate), column.GetStringValue(this.person1));
         }
 
-        [Test]
+        [TestMethod]
         public void TestAspectToStringConverter() {
             OLVColumn column = new OLVColumn();
             column.AspectName = "BirthDate";
@@ -34,7 +34,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual("AspectToStringConverter called", column.GetStringValue(this.person1));
         }
 
-        [TestFixtureSetUp]
+        [TestInitialize]
         public void Init() {
             this.person1 = new Person("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
             this.person2 = new Person2("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
@@ -44,8 +44,8 @@ namespace BrightIdeasSoftware.Tests
         protected Person2 person2;
     }
 
-    [TestFixture]
-    public class TestAspectGetting
+    [STATestClass]
+    public class TestAspectGetting : AspectTestFixture
     {
         public void ExecuteAspect(string aspectName, object expectedResult, Person person) {
             OLVColumn column = new OLVColumn();
@@ -61,68 +61,68 @@ namespace BrightIdeasSoftware.Tests
             this.ExecuteAspect(aspectName, expectedResult, this.person2);
         }
 
-        [Test]
+        [TestMethod]
         public void TestSimpleField() {
             this.ExecuteAspect("Comments", "comments");
         }
 
-        [Test]
+        [TestMethod]
         public void TestSimpleProperty() {
             this.ExecuteAspect("Occupation", "occupation");
         }
 
-        [Test]
+        [TestMethod]
         public void TestSimpleMethod() {
             this.ExecuteAspect("GetRate", 1.0);
         }
 
-        [Test]
+        [TestMethod]
         public void TestChainedField() {
             this.ExecuteAspect("Comments.ToUpper", "COMMENTS");
         }
 
-        [Test]
+        [TestMethod]
         public void TestReturningValueType() {
             this.ExecuteAspect("CulinaryRating.ToString.Length", 3);
         }
 
-        [Test]
+        [TestMethod]
         public void TestReturningValueType2() {
             this.ExecuteAspect("BirthDate.Year", DateTime.Now.Year);
         }
 
-        [Test]
+        [TestMethod]
         public void TestChainingValueTypes() {
             this.ExecuteAspect("BirthDate.Year.ToString.Length", 4);
         }
 
-        [Test]
+        [TestMethod]
         public void TestChainedMethod() {
             this.ExecuteAspect("Photo.ToString.Trim", "photo");
         }
 
-        [Test]
+        [TestMethod]
         public void TestVirtualMethod() {
             this.ExecuteAspect2("GetRate", 2.0);
         }
 
-        [Test]
+        [TestMethod]
         public void TestOverriddenProperty() {
             this.ExecuteAspect("CulinaryRating", 100);
             this.ExecuteAspect2("CulinaryRating", 200);
         }
 
-        [Test]
+        [TestMethod]
         public virtual void TestWrongName() {
             this.ExecuteAspect("Unknown", "'Unknown' is not a parameter-less method, property or field of type 'BrightIdeasSoftware.Tests.Person'");
         }
 
-        [Test]
+        [TestMethod]
         public void TestChainedWrongName() {
             this.ExecuteAspect("Photo.Unknown", "'Unknown' is not a parameter-less method, property or field of type 'System.String'");
         }
 
-        [Test]
+        [TestMethod]
         public virtual void TestWrongNameIgnoreMissingAspects() {
             try {
                 ObjectListView.IgnoreMissingAspects = true;
@@ -133,7 +133,7 @@ namespace BrightIdeasSoftware.Tests
             }
         }
 
-        [TestFixtureSetUp]
+        [TestInitialize]
         public void Init() {
             this.person1 = new Person("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
             this.person2 = new Person2("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
@@ -143,7 +143,7 @@ namespace BrightIdeasSoftware.Tests
         protected Person2 person2;
     }
 
-    [TestFixture]
+    [STATestClass]
     public class TestIndexedAspects : TestAspectGetting
     {
         public void ExecuteAspect(string aspectName, object expectedResult, object source) {
@@ -160,7 +160,7 @@ namespace BrightIdeasSoftware.Tests
             this.ExecuteAspect(aspectName, expectedResult, this.dict2);
         }
 
-        [Test]
+        [TestMethod]
         public override void TestWrongName() {
             // Hashtables return null when a key is not found
             this.ExecuteAspect("Unknown", null);
@@ -169,7 +169,7 @@ namespace BrightIdeasSoftware.Tests
             this.ExecuteAspect2("Unknown", "'Unknown' is not a parameter-less method, property or field of type 'System.Collections.Generic.Dictionary`2[System.String,System.Object]'");
         }
 
-        [TestFixtureSetUp]
+        [TestInitialize]
         public new void Init() {
             this.dict1 = new Hashtable();
             this.dict2 = new Dictionary<string, object>();
@@ -194,7 +194,7 @@ namespace BrightIdeasSoftware.Tests
         protected Dictionary<string, Object> dict2;
     }
 
-    [TestFixture]
+    [STATestClass]
     public class TestAspectGeneration : TestAspectGetting
     {
         public void Execute<T>(string aspectName, object expectedResult, T person) where T : class {
@@ -216,7 +216,7 @@ namespace BrightIdeasSoftware.Tests
             this.Execute(aspectName, expectedResult, this.person2);
         }
 
-        [Test]
+        [TestMethod]
         public void TestPropertyReplacedByNew() {
             OLVColumn column = new OLVColumn();
             column.AspectName = "CulinaryRating";
@@ -229,7 +229,7 @@ namespace BrightIdeasSoftware.Tests
         }
     }
 
-    [TestFixture]
+    [STATestClass]
     public class TestAspectSetting
     {
         public void ExecuteAspect(string aspectName, object newValue, Person person) {
@@ -247,17 +247,17 @@ namespace BrightIdeasSoftware.Tests
             this.ExecuteAspect(aspectName, newValue, this.person2);
         }
 
-        [Test]
+        [TestMethod]
         public void TestSimpleField() {
             this.ExecuteAspect("Comments", "NEW comments");
         }
 
-        [Test]
+        [TestMethod]
         public void TestSimpleProperty() {
             this.ExecuteAspect2("Occupation", "NEW occupation");
         }
 
-        [Test]
+        [TestMethod]
         public void TestSimpleMethod() {
             this.person1.SetRate(0.0);
             OLVColumn column = new OLVColumn();
@@ -266,14 +266,14 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(10.0, this.person1.GetRate());
         }
 
-        [Test]
+        [TestMethod]
         public void TestChaining() {
             DateTime dt = new DateTime(1965, 8, 28);
             this.ExecuteAspect("Parent.BirthDate", dt);
             Assert.AreEqual(dt, this.person1.Parent.BirthDate);
         }
 
-        [Test]
+        [TestMethod]
         public void TestChaining2() {
             this.person2.SetRate(0.0);
             OLVColumn column = new OLVColumn();
@@ -283,7 +283,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(20.0, this.person2.GetRate());
         }
 
-        [TestFixtureSetUp]
+        [TestInitialize]
         public void Init() {
             this.person1 = new Person("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
             this.person2 = new Person2("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
@@ -295,7 +295,7 @@ namespace BrightIdeasSoftware.Tests
         protected Person2 person2;
     }
 
-    [TestFixture]
+    [STATestClass]
     public class TestIndexedAspectSetting
     {
         public void ExecuteAspect(string aspectName, object newValue, object dict) {
@@ -313,19 +313,19 @@ namespace BrightIdeasSoftware.Tests
             this.ExecuteAspect(aspectName, newValue, this.dict2);
         }
 
-        [Test]
+        [TestMethod]
         public void TestSimpleField() {
             this.ExecuteAspect("Comments", "NEW comments");
             this.ExecuteAspect2("Comments", "NEW comments2");
         }
 
-        [Test]
+        [TestMethod]
         public void TestSimpleProperty() {
             this.ExecuteAspect("Occupation", "NEW occupation");
             this.ExecuteAspect2("Occupation", "NEW occupation2");
         }
 
-        [TestFixtureSetUp]
+        [TestInitialize]
         public void Init() {
             this.dict1 = new Hashtable();
             this.dict2 = new Dictionary<string, object>();

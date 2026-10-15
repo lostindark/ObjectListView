@@ -1,16 +1,16 @@
 using System.Collections.Generic;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests {
-    [TestFixture]
-    public class TestTypedListView {
-        [Test]
+    [STATestClass]
+    public class TestTypedListView : WinFormsTestFixture {
+        [TestMethod]
         public void Test_Objects_All() {
             this.tolv.Objects = PersonDb.All;
             Assert.AreEqual(PersonDb.All.Count, this.tolv.Objects.Count);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_GenerateAspectGetters_ExtractsData() {
             this.tolv.GenerateAspectGetters();
             this.tolv.Objects = PersonDb.All;
@@ -18,7 +18,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(p.Name, this.tolv.ListView.Items[0].SubItems[0].Text);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_GenerateAspectGetters_NullDataObject() {
             this.tolv.GenerateAspectGetters();
             List<Person> list = new List<Person>();
@@ -27,7 +27,7 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(list.Count, this.tolv.Objects.Count);
         }
 
-        [Test]
+        [TestMethod]
         public void Test_GenerateAspectGetters_ClearObjects() {
             this.tolv.GenerateAspectGetters();
             this.tolv.Objects = PersonDb.All;
@@ -37,16 +37,16 @@ namespace BrightIdeasSoftware.Tests {
             Assert.AreEqual(PersonDb.All.Count, this.tolv.Objects.Count);
         }
 
-        [TearDown]
+        [TestCleanup]
         public void TestTearDown() {
             // Clear any aspect getters that were generated
             for (int i = 0; i < this.tolv.ListView.Columns.Count; i++)
                 this.tolv.ListView.GetColumn(i).AspectGetter = null;
         }
 
-        [TestFixtureSetUp]
+        [TestInitialize]
         public void Init() {
-            this.tolv = new TypedObjectListView<Person>(MyGlobals.mainForm.objectListView1);
+            this.tolv = new TypedObjectListView<Person>(mainForm.objectListView1);
         }
 
         protected TypedObjectListView<Person> tolv;

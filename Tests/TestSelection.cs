@@ -10,21 +10,22 @@
 
 using System;
 using System.Windows.Forms;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests
 {
-    [TestFixture]
-    public class TestOlvSelection
+    [STATestClass]
+    public class TestOlvSelection : WinFormsTestFixture
     {
-        [SetUp]
+        [TestInitialize]
         public void InitEachTest()
         {
+            this.olv = GetObjectListView();
             this.olv.SetObjects(PersonDb.All);
             this.olv.SelectedObjects = null;
         }
 
-        [Test]
+        [TestMethod]
         public void TestSelectedObject()
         {
             Assert.IsNull(this.olv.SelectedObject);
@@ -32,24 +33,24 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(PersonDb.All[1], this.olv.SelectedObject);
         }
 
-        [Test]
+        [TestMethod]
         public void TestSelectedObjects()
         {
             Assert.IsEmpty(this.olv.SelectedObjects);
             this.olv.SelectedObjects = PersonDb.All;
-            Assert.AreEqual(PersonDb.All, this.olv.SelectedObjects);
+            CollectionAssert.AreEqual(PersonDb.All, this.olv.SelectedObjects);
             this.olv.SelectedObjects = null;
             Assert.IsEmpty(this.olv.SelectedObjects);
         }
 
-        [Test]
+        [TestMethod]
         public void TestSelectAll()
         {
             this.olv.SelectAll();
-            Assert.AreEqual(PersonDb.All, this.olv.SelectedObjects);
+            CollectionAssert.AreEqual(PersonDb.All, this.olv.SelectedObjects);
         }
 
-        [Test]
+        [TestMethod]
         public void TestDeselectAll()
         {
             this.olv.SelectedObject = PersonDb.All[1];
@@ -63,7 +64,7 @@ namespace BrightIdeasSoftware.Tests
             Assert.IsEmpty(this.olv.SelectedObjects);
         }
 
-        [Test]
+        [TestMethod]
         public void TestSortingShouldNotRaiseSelectionChangedEvents() {
             this.olv.SelectionChanged += new EventHandler(olv_SelectionChanged);
             this.olv.SelectedObjects = PersonDb.All;
@@ -81,7 +82,7 @@ namespace BrightIdeasSoftware.Tests
             this.olv.SelectionChanged -= new EventHandler(olv_SelectionChanged);
         }
 
-        [Test]
+        [TestMethod]
         public void TestAddingAColumnShouldNotRaiseSelectionChangedEvents() {
             this.olv.SelectionChanged += new EventHandler(olv_SelectionChanged);
             this.olv.SelectedObjects = PersonDb.All;
@@ -99,7 +100,7 @@ namespace BrightIdeasSoftware.Tests
             this.olv.SelectionChanged -= new EventHandler(olv_SelectionChanged);
         }
 
-        [Test]
+        [TestMethod]
         public void TestSelectionEvents() {
             countSelectedIndexChanged = 0;
             countSelectionChanged = 0;
@@ -137,41 +138,39 @@ namespace BrightIdeasSoftware.Tests
         }
         protected int countSelectionChanged;
 
-        [TestFixtureSetUp]
-        public void Init()
+        protected virtual ObjectListView GetObjectListView()
         {
-            this.olv = MyGlobals.mainForm.objectListView1;
+            return mainForm.objectListView1;
         }
         protected ObjectListView olv;
     }
 
-    [TestFixture]
+    [STATestClass]
     public class TestFastOlvSelection : TestOlvSelection
     {
-        [TestFixtureSetUp]
-        new public void Init()
+        protected override ObjectListView GetObjectListView()
         {
-            this.olv = MyGlobals.mainForm.fastObjectListView1;
+            return mainForm.fastObjectListView1;
         }
     }
 
-    [TestFixture]
+    [STATestClass]
     public class TestTreeListViewSelection : TestOlvSelection
     {
-        [TestFixtureSetUp]
-        new public void Init()
+        protected override ObjectListView GetObjectListView()
         {
-            this.olv = this.treeListView = MyGlobals.mainForm.treeListView1;
+            this.treeListView = mainForm.treeListView1;
             this.treeListView.CanExpandGetter = delegate(Object x) {
                 return ((Person)x).Children.Count > 0;
             };
             this.treeListView.ChildrenGetter = delegate(Object x) {
                 return ((Person)x).Children;
             };
+            return this.treeListView;
         }
         private TreeListView treeListView;
 
-        [Test]
+        [TestMethod]
         public void TestCollapseExpandShouldNotRaiseSelectionChangedEvents() {
             this.olv.SelectedObjects = PersonDb.All;
             Application.RaiseIdle(new EventArgs());

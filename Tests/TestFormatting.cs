@@ -10,15 +10,16 @@
 
 using System;
 using System.Drawing;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests
 {
-    [TestFixture]
-    public class TestOlvFormatting
+    [STATestClass]
+    public class TestOlvFormatting : WinFormsTestFixture
     {
-        [SetUp]
+        [TestInitialize]
         public void InitEachTest() {
+            this.olv = GetObjectListView();
             this.olv.UseAlternatingBackColors = false;
             this.olv.UseHyperlinks = false;
             this.olv.RowFormatter = null;
@@ -27,7 +28,7 @@ namespace BrightIdeasSoftware.Tests
                 column.Hyperlink = false;
         }
 
-        [Test]
+        [TestMethod]
         public void TestNoFormatting() {
             this.olv.HyperlinkStyle = null;
             this.olv.SetObjects(PersonDb.All);
@@ -37,7 +38,7 @@ namespace BrightIdeasSoftware.Tests
             }
         }
 
-        [Test]
+        [TestMethod]
         public void TestAlternateBackColors() {
             this.olv.UseAlternatingBackColors = true;
             this.olv.AlternateRowBackColor = Color.Pink;
@@ -51,7 +52,7 @@ namespace BrightIdeasSoftware.Tests
             }
         }
 
-        [Test]
+        [TestMethod]
         public void TestRowFormatter() {
             Color testForeColor = Color.Yellow;
             Color testBackColor = Color.Violet;
@@ -67,7 +68,7 @@ namespace BrightIdeasSoftware.Tests
             }
         }
 
-        [Test]
+        [TestMethod]
         public void TestFormatRowEvent() {
             this.olv.FormatRow += new EventHandler<FormatRowEventArgs>(olv_FormatRow1);
             this.olv.SetObjects(PersonDb.All);
@@ -85,7 +86,7 @@ namespace BrightIdeasSoftware.Tests
             e.Item.BackColor = this.testBackColor;
         }
 
-        [Test]
+        [TestMethod]
         public void TestFormatCellEvent() {
             this.olv.FormatRow += new EventHandler<FormatRowEventArgs>(olv_FormatRow2);
             this.olv.FormatCell += new EventHandler<FormatCellEventArgs>(olv_FormatCell);
@@ -118,7 +119,7 @@ namespace BrightIdeasSoftware.Tests
             e.UseCellFormatEvents = (e.RowIndex % 2 == 0);
         }
 
-        [Test]
+        [TestMethod]
         public void TestFormatRowAndCell_CellTakesPriority() {
             Color formatCellForeground = Color.PaleGoldenrod;
             Color formatRowForeground = Color.Pink;
@@ -149,7 +150,7 @@ namespace BrightIdeasSoftware.Tests
         }
 
 
-        [Test]
+        [TestMethod]
         public void TestHyperlinks()
         {
             this.olv.UseHyperlinks = true;
@@ -186,7 +187,7 @@ namespace BrightIdeasSoftware.Tests
             }
         }
 
-        [Test]
+        [TestMethod]
         public void TestHyperlinksAndFormatCell_HyperlinkHasPriority() {
             Color hyperlinkForeground = Color.Thistle;
             Color formatCellForeground = Color.PaleGoldenrod;
@@ -227,28 +228,25 @@ namespace BrightIdeasSoftware.Tests
             }
         }
 
-        [TestFixtureSetUp]
-        public void Init() {
-            this.olv = MyGlobals.mainForm.objectListView1;
+        protected virtual ObjectListView GetObjectListView() {
+            return mainForm.objectListView1;
         }
         protected ObjectListView olv;
     }
 
-    [TestFixture]
+    [STATestClass]
     public class TestFastOlvFormatting : TestOlvFormatting
     {
-        [TestFixtureSetUp]
-        new public void Init() {
-            this.olv = MyGlobals.mainForm.fastObjectListView1;
+        protected override ObjectListView GetObjectListView() {
+            return mainForm.fastObjectListView1;
         }
     }
 
-    [TestFixture]
+    [STATestClass]
     public class TestTreeListViewFormatting : TestOlvFormatting
     {
-        [TestFixtureSetUp]
-        new public void Init() {
-            this.olv = MyGlobals.mainForm.treeListView1;
+        protected override ObjectListView GetObjectListView() {
+            return mainForm.treeListView1;
         }
     }
 }

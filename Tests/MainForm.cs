@@ -18,6 +18,11 @@ namespace BrightIdeasSoftware.Tests
 	/// </summary>
 	public partial class MainForm : Form
 	{
+		protected override bool ShowWithoutActivation
+		{
+			get { return true; }
+		}
+
 		public MainForm()
 		{
 			//

@@ -37,7 +37,7 @@ First Steps
 There are two ways to use an `ObjectListView` in your project:
 
 To build this source tree, open *ObjectListView.sln* in Visual Studio 2022
-or later with the .NET Framework 4.8 targeting pack installed. The solution
+or later with the .NET Framework 4.6.2 targeting pack installed. The solution
 contains the library, demos, printing components, and tests; older
 version-specific solution and project files are no longer maintained.
 

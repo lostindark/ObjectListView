@@ -19,7 +19,7 @@
     <HtmlHelpName>Documentation</HtmlHelpName>
     <Language>en-US</Language>
     <DocumentationSources>
-      <DocumentationSource sourceFile="..\ObjectListView\ObjectListView2010.csproj" />
+      <DocumentationSource sourceFile="..\ObjectListView\ObjectListView.csproj" />
     </DocumentationSources>
     <HelpFileFormat>HtmlHelp1</HelpFileFormat>
     <PresentationStyle>vs2005</PresentationStyle>

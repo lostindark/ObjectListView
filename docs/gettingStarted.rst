@@ -36,13 +36,18 @@ First Steps
 
 There are two ways to use an `ObjectListView` in your project:
 
+To build this source tree, open *ObjectListView.sln* in Visual Studio 2022
+or later with the .NET Framework 4.8 targeting pack installed. The solution
+contains the library, demos, printing components, and tests; older
+version-specific solution and project files are no longer maintained.
+
 1. **Use the ObjectListView project**
 
 * Download the `ObjectListView project <https://sourceforge.net/projects/objectlistview/files/>`_
 
 * Add the ObjectListView project to your project (right click on your
   solution; choose "Add...", "Existing Project", then choose the
-  *ObjectListView.csproj*)
+  *ObjectListView\\ObjectListView.csproj*)
 
 * In your project, add a reference to the ObjectListView project (right click
   on your project; choose "Add Reference...", choose "Projects" tab; then double

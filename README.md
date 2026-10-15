@@ -12,6 +12,7 @@ The [documentation index](docs/README.md) includes the converted upstream guides
 - [Examples](docs/samples.md)
 - [FAQ](docs/faq.md)
 - [Class reference](docs/major-classes.md)
+- [v3 implementation plan](docs/v3-plan.md)
 
 ## Build
 

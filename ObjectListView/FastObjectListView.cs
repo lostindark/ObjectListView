@@ -248,8 +248,9 @@ namespace BrightIdeasSoftware
         /// 
         /// </summary>
         /// <param name="modelObjects"></param>
-        public override void AddObjects(ICollection modelObjects) {
-            foreach (object modelObject in modelObjects) {
+        public override void AddObjects(IEnumerable modelObjects) {
+            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            foreach (object modelObject in snapshot) {
                 if (modelObject != null)
                     this.fullObjectList.Add(modelObject);
             }
@@ -262,8 +263,9 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="index"></param>
         /// <param name="modelObjects"></param>
-        public override void InsertObjects(int index, ICollection modelObjects) {
-            this.fullObjectList.InsertRange(index, modelObjects);
+        public override void InsertObjects(int index, IEnumerable modelObjects) {
+            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            this.fullObjectList.InsertRange(index, snapshot);
             this.FilterObjects();
             this.RebuildIndexMap();
         }
@@ -272,11 +274,12 @@ namespace BrightIdeasSoftware
         /// Remove the given collection of models from this source.
         /// </summary>
         /// <param name="modelObjects"></param>
-        public override void RemoveObjects(ICollection modelObjects) {
+        public override void RemoveObjects(IEnumerable modelObjects) {
+            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
 
             // We have to unselect any object that is about to be deleted
             List<int> indicesToRemove = new List<int>();
-            foreach (object modelObject in modelObjects) {
+            foreach (object modelObject in snapshot) {
                 int i = this.GetObjectIndex(modelObject);
                 if (i >= 0)
                     indicesToRemove.Add(i);
@@ -292,7 +295,7 @@ namespace BrightIdeasSoftware
                 this.listView.SelectedIndices.Remove(i);
 
             // Remove the objects from the unfiltered list
-            foreach (object modelObject in modelObjects)
+            foreach (object modelObject in snapshot)
                 this.fullObjectList.Remove(modelObject);
 
             this.FilterObjects();

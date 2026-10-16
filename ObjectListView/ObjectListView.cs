@@ -1272,6 +1272,8 @@ namespace BrightIdeasSoftware
         /// .NET's CheckedItems property is not helpful. It is just a short-hand for
         /// iterating through the list looking for items that are checked.
         /// </para>
+        /// <para>The getter returns a materialized snapshot. Use
+        /// <see cref="SetCheckedObjects"/> to assign an enumerable sequence.</para>
         /// <para>
         /// The performance of the get method is O(n), where n is the number of items
         /// in the control. The performance of the set method is
@@ -1292,27 +1294,33 @@ namespace BrightIdeasSoftware
                 }
                 return list;
             }
-            set {
-                if (!this.CheckBoxes)
-                    return;
+            set { this.SetCheckedObjects(value); }
+        }
 
-                Stopwatch sw = Stopwatch.StartNew();
+        /// <summary>
+        /// Check the given model objects and uncheck all other objects.
+        /// </summary>
+        /// <remarks>The input is consumed before changing check states. Null unchecks all.
+        /// Like CheckedObjects, this method must be called on the control thread and
+        /// does nothing when checkboxes are disabled.</remarks>
+        public virtual void SetCheckedObjects(IEnumerable modelObjects) {
+            if (!this.CheckBoxes)
+                return;
 
-                // Set up an efficient way of testing for the presence of a particular model
-                Hashtable table = new Hashtable(this.GetItemCount());
-                if (value != null) {
-                    foreach (object x in value)
-                        table[x] = true;
-                }
+            Hashtable table = new Hashtable(this.GetItemCount());
+            if (modelObjects != null) {
+                foreach (object x in modelObjects)
+                    table[x] = true;
+            }
 
-                this.BeginUpdate();
+            this.BeginUpdate();
+            try {
                 foreach (Object x in this.Objects) {
                     this.SetObjectCheckedness(x, table.ContainsKey(x) ? CheckState.Checked : CheckState.Unchecked);
                 }
+            }
+            finally {
                 this.EndUpdate();
-
-                // Debug.WriteLine(String.Format("PERF - Setting CheckedObjects on {2} objects took {0}ms / {1} ticks", sw.ElapsedMilliseconds, sw.ElapsedTicks, this.GetItemCount()));
-
             }
         }
 
@@ -2994,6 +3002,9 @@ namespace BrightIdeasSoftware
         /// Get the model objects from the currently selected rows. If no row is selected, the returned List will be empty.
         /// When setting this value, select the rows that is displaying the given model objects. All other rows are deselected.
         /// </summary>
+        /// <remarks>The getter returns a materialized snapshot. The setter consumes its input
+        /// before clearing the current selection. Null clears the selection. Use
+        /// <see cref="SetSelectedObjects"/> to assign an enumerable sequence.</remarks>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual IList SelectedObjects {
@@ -3004,8 +3015,7 @@ namespace BrightIdeasSoftware
                 return list;
             }
             set {
-                this.SelectedIndices.Clear();
-                this.SelectObjects(value); 
+                this.SetSelectedObjects(value);
             }
         }
 
@@ -4009,7 +4019,7 @@ namespace BrightIdeasSoftware
         /// <para>No check is performed to see if any of the objects are already in the ListView.</para>
         /// <para>Null objects are silently ignored.</para>
         /// </remarks>
-        public virtual void AddObjects(ICollection modelObjects) {
+        public virtual void AddObjects(IEnumerable modelObjects) {
             if (this.InvokeRequired) {
                 this.Invoke((MethodInvoker)delegate() { this.AddObjects(modelObjects); });
                 return;
@@ -4475,13 +4485,20 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Copy a text and html representation of the given objects onto the clipboard.
         /// </summary>
-        public virtual void CopyObjectsToClipboard(IList objectsToCopy) {
-            if (objectsToCopy.Count == 0)
+        /// <remarks>The input is materialized before exporting. An empty sequence leaves
+        /// the clipboard unchanged. Call this method on an STA thread.</remarks>
+        /// <exception cref="ArgumentNullException">The input sequence is null.</exception>
+        public virtual void CopyObjectsToClipboard(IEnumerable objectsToCopy) {
+            if (objectsToCopy == null)
+                throw new ArgumentNullException("objectsToCopy");
+
+            ArrayList snapshot = ObjectListView.EnumerableToArray(objectsToCopy, true);
+            if (snapshot.Count == 0)
                 return;
 
             // We don't know where these objects came from, so we can't use the DragSource to create
             // the data object, like we do with CopySelectionToClipboard() above.
-            OLVDataObject dataObject = new OLVDataObject(this, objectsToCopy);
+            OLVDataObject dataObject = new OLVDataObject(this, snapshot);
             dataObject.CreateTextFormats();
             Clipboard.SetDataObject(dataObject);
         }
@@ -4637,8 +4654,10 @@ namespace BrightIdeasSoftware
         /// the list.
         /// </para>
         /// <para>This method only works on ObjectListViews and FastObjectListViews.</para>
+        /// <para>The input is copied before events or collection changes. Event handlers
+        /// can modify or replace the materialized collection. Null makes no change.</para>
         ///</remarks>
-        public virtual void InsertObjects(int index, ICollection modelObjects) {
+        public virtual void InsertObjects(int index, IEnumerable modelObjects) {
             if (this.InvokeRequired) {
                 this.Invoke((MethodInvoker)delegate() {
                     this.InsertObjects(index, modelObjects);
@@ -4648,14 +4667,15 @@ namespace BrightIdeasSoftware
             if (modelObjects == null)
                 return;
 
+            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
             this.BeginUpdate();
             try {
                 // Give the world a chance to cancel or change the added objects
-                ItemsAddingEventArgs args = new ItemsAddingEventArgs(modelObjects);
+                ItemsAddingEventArgs args = new ItemsAddingEventArgs(snapshot);
                 this.OnItemsAdding(args);
                 if (args.Canceled)
                     return;
-                modelObjects = args.ObjectsToAdd;
+                snapshot = ObjectListView.EnumerableToArray(args.ObjectsToAdd, true);
 
                 this.TakeOwnershipOfObjects();
                 ArrayList ourObjects = ObjectListView.EnumerableToArray(this.Objects, false);
@@ -4667,13 +4687,13 @@ namespace BrightIdeasSoftware
                 // their actual insertion index.
                 if (this.IsFiltering || this.View != View.Details) {
                     index = Math.Max(0, Math.Min(index, ourObjects.Count));
-                    ourObjects.InsertRange(index, modelObjects);
+                    ourObjects.InsertRange(index, snapshot);
                     this.BuildList(true);
                 } else {
                     this.ListViewItemSorter = null;
                     index = Math.Max(0, Math.Min(index, this.GetItemCount()));
                     int i = index;
-                    foreach (object modelObject in modelObjects) {
+                    foreach (object modelObject in snapshot) {
                         if (modelObject != null) {
                             ourObjects.Insert(i, modelObject);
                             OLVListItem lvi = new OLVListItem(modelObject);
@@ -4692,7 +4712,7 @@ namespace BrightIdeasSoftware
                 }
 
                 // Tell the world that the list has changed
-                this.SubscribeNotifications(modelObjects);
+                this.SubscribeNotifications(snapshot);
                 this.OnItemsChanged(new ItemsChangedEventArgs());
             } finally {
                 this.EndUpdate();
@@ -5068,7 +5088,7 @@ namespace BrightIdeasSoftware
         /// <para>Nulls and model objects that are not in the ListView are silently ignored.</para>
         /// <para>This method is thread-safe.</para>
         /// </remarks>
-        public virtual void RemoveObjects(ICollection modelObjects) {
+        public virtual void RemoveObjects(IEnumerable modelObjects) {
             if (this.InvokeRequired) {
                 this.Invoke((MethodInvoker)delegate() { this.RemoveObjects(modelObjects); });
                 return;
@@ -5076,18 +5096,19 @@ namespace BrightIdeasSoftware
             if (modelObjects == null)
                 return;
 
+            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
             this.BeginUpdate();
             try {
                 // Give the world a chance to cancel or change the added objects
-                ItemsRemovingEventArgs args = new ItemsRemovingEventArgs(modelObjects);
+                ItemsRemovingEventArgs args = new ItemsRemovingEventArgs(snapshot);
                 this.OnItemsRemoving(args);
                 if (args.Canceled)
                     return;
-                modelObjects = args.ObjectsToRemove;
+                snapshot = ObjectListView.EnumerableToArray(args.ObjectsToRemove, true);
 
                 this.TakeOwnershipOfObjects();
                 ArrayList ourObjects = ObjectListView.EnumerableToArray(this.Objects, false);
-                foreach (object modelObject in modelObjects) {
+                foreach (object modelObject in snapshot) {
                     if (modelObject != null) {
 // ReSharper disable PossibleMultipleEnumeration
                         int i = ourObjects.IndexOf(modelObject);
@@ -5102,7 +5123,7 @@ namespace BrightIdeasSoftware
                 this.PostProcessRows();
 
                 // Tell the world that the list has changed
-                this.UnsubscribeNotifications(modelObjects);
+                this.UnsubscribeNotifications(snapshot);
                 this.OnItemsChanged(new ItemsChangedEventArgs());
             } finally {
                 this.EndUpdate();
@@ -5223,7 +5244,7 @@ namespace BrightIdeasSoftware
         /// <param name="modelObject">The model to be updated</param>
         /// <remarks>
         /// <para>
-        /// See <see cref="RemoveObjects(ICollection)"/> for more details
+        /// See <see cref="RemoveObjects(IEnumerable)"/> for more details
         /// </para>
         /// <para>This method is thread-safe.</para>
         /// <para>This method will cause the list to be resorted.</para>
@@ -8074,13 +8095,19 @@ namespace BrightIdeasSoftware
         /// <remarks>
         /// <para>This method does not resort or regroup the view.</para>
         /// <para>This method can safely be called from background threads.</para>
+        /// <para>The input is materialized on the control thread before any rows are refreshed.</para>
         /// </remarks>
-        public virtual void RefreshObjects(IList modelObjects) {
+        /// <exception cref="ArgumentNullException">The input sequence is null.</exception>
+        public virtual void RefreshObjects(IEnumerable modelObjects) {
             if (this.InvokeRequired) {
                 this.Invoke((MethodInvoker)delegate { this.RefreshObjects(modelObjects); });
                 return;
             }
-            foreach (object modelObject in modelObjects) {
+            if (modelObjects == null)
+                throw new ArgumentNullException("modelObjects");
+
+            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            foreach (object modelObject in snapshot) {
                 OLVListItem olvi = this.ModelToItem(modelObject);
                 if (olvi != null) {
                     this.ReplaceModel(olvi, modelObject);
@@ -8136,16 +8163,24 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
+        /// Select the given model objects and deselect all other objects.
+        /// </summary>
+        /// <param name="modelObjects">The model objects to select, or null to clear selection.</param>
+        /// <remarks>Delegates to SelectObjects so existing overrides are honored.
+        /// The input is consumed before clearing selection. Call this method on the control thread.</remarks>
+        public virtual void SetSelectedObjects(IEnumerable modelObjects) {
+            this.SelectObjects(modelObjects);
+        }
+
+        /// <summary>
         /// Select the rows that is displaying any of the given model object. All other rows are deselected.
         /// </summary>
         /// <param name="modelObjects">A collection of model objects</param>
-        public virtual void SelectObjects(IList modelObjects) {
+        public virtual void SelectObjects(IEnumerable modelObjects) {
+            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
             this.SelectedIndices.Clear();
 
-            if (modelObjects == null)
-                return;
-
-            foreach (object modelObject in modelObjects) {
+            foreach (object modelObject in snapshot) {
                 OLVListItem olvi = this.ModelToItem(modelObject);
                 if (olvi != null && olvi.Enabled)
                     olvi.Selected = true;

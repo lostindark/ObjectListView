@@ -9,6 +9,8 @@
  */
 
 using System;
+using System.Collections;
+using System.Linq;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -41,6 +43,33 @@ namespace BrightIdeasSoftware.Tests
             CollectionAssert.AreEqual(PersonDb.All, this.olv.SelectedObjects);
             this.olv.SelectedObjects = null;
             Assert.IsEmpty(this.olv.SelectedObjects);
+        }
+
+        [TestMethod]
+        public void TestSelectedObjects_SingleUseSelfReferentialQuery() {
+            this.olv.SelectAll();
+            IList snapshot = this.olv.SelectedObjects;
+            this.olv.SetSelectedObjects(new SingleUseEnumerable<Person>(
+                this.olv.SelectedIndices.Cast<int>().Select(i => (Person)this.olv.GetModelObject(i)).Take(2)));
+            CollectionAssert.AreEqual(PersonDb.All.Take(2).ToArray(),
+                ObjectListView.EnumerableToArray(this.olv.SelectedObjects, true));
+            CollectionAssert.AreEqual(PersonDb.All, ObjectListView.EnumerableToArray(snapshot, true));
+            this.olv.SetSelectedObjects(Enumerable.Empty<Person>());
+            Assert.IsEmpty(this.olv.SelectedObjects);
+            this.olv.SelectedObject = PersonDb.All[0];
+            this.olv.SetSelectedObjects(null);
+            Assert.IsEmpty(this.olv.SelectedObjects);
+        }
+
+        [TestMethod]
+        public void TestSelectObjects_EnumerationFailurePreservesSelection() {
+            this.olv.SelectedObject = PersonDb.All[1];
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                this.olv.SelectObjects(EnumerableTestData.FailAfter(PersonDb.All[0])));
+            Assert.AreEqual(PersonDb.All[1], this.olv.SelectedObject);
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                this.olv.SetSelectedObjects(EnumerableTestData.FailAfter(PersonDb.All[0])));
+            Assert.AreEqual(PersonDb.All[1], this.olv.SelectedObject);
         }
 
         [TestMethod]

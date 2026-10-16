@@ -98,14 +98,16 @@ namespace BrightIdeasSoftware
         /// </summary>
         public virtual IList<T> CheckedObjects {
             get {
-                IList checkedObjects = this.olv.CheckedObjects;
-                List<T> objects = new List<T>(checkedObjects.Count);
-                foreach (object x in checkedObjects)
+                List<T> objects = new List<T>();
+                foreach (object x in this.olv.CheckedObjects)
                     objects.Add((T)x);
 
                 return objects;
             }
-            set { this.olv.CheckedObjects = (IList)value; }
+            set {
+                this.olv.CheckedObjects = value == null ? null :
+                    value as IList ?? ObjectListView.EnumerableToArray(value, true);
+            }
         }
 
         /// <summary>
@@ -120,7 +122,9 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Get or set the list of all model objects
         /// </summary>
-        public virtual IList<T> Objects {
+        /// <remarks>Both accessors use materialized snapshots. An assigned sequence is
+        /// consumed once before it is passed to the control.</remarks>
+        public virtual IEnumerable<T> Objects {
             get {
                 List<T> objects = new List<T>(this.olv.GetItemCount());
                 for (int i = 0; i < this.olv.GetItemCount(); i++)
@@ -128,7 +132,7 @@ namespace BrightIdeasSoftware
 
                 return objects;
             }
-            set { this.olv.SetObjects(value); }
+            set { this.olv.SetObjects(value == null ? null : ObjectListView.EnumerableToArray(value, true)); }
         }
 
         /// <summary>
@@ -151,7 +155,10 @@ namespace BrightIdeasSoftware
 
                 return objects;
             }
-            set { this.olv.SelectedObjects = (IList)value; }
+            set {
+                this.olv.SelectedObjects = value == null ? null :
+                    value as IList ?? ObjectListView.EnumerableToArray(value, true);
+            }
         }
 
         //--------------------------------------------------------------------------------------
@@ -311,6 +318,62 @@ namespace BrightIdeasSoftware
 
         //--------------------------------------------------------------------------------------
         // Commands
+
+        /// <summary>
+        /// Select the given model objects and deselect all other objects.
+        /// </summary>
+        public virtual void SetSelectedObjects(IEnumerable<T> modelObjects) {
+            this.SelectObjects(modelObjects);
+        }
+
+        /// <summary>
+        /// Select the given model objects and deselect all other objects.
+        /// </summary>
+        public virtual void SelectObjects(IEnumerable<T> modelObjects) {
+            this.olv.SetSelectedObjects(modelObjects);
+        }
+
+        /// <summary>
+        /// Check the given model objects and uncheck all other objects.
+        /// </summary>
+        public virtual void SetCheckedObjects(IEnumerable<T> modelObjects) {
+            this.olv.SetCheckedObjects(modelObjects);
+        }
+
+        /// <summary>
+        /// Add the given model objects.
+        /// </summary>
+        public virtual void AddObjects(IEnumerable<T> modelObjects) {
+            this.olv.AddObjects(modelObjects);
+        }
+
+        /// <summary>
+        /// Insert the given model objects at the specified position.
+        /// </summary>
+        public virtual void InsertObjects(int index, IEnumerable<T> modelObjects) {
+            this.olv.InsertObjects(index, modelObjects);
+        }
+
+        /// <summary>
+        /// Refresh the rows displaying the given model objects.
+        /// </summary>
+        public virtual void RefreshObjects(IEnumerable<T> modelObjects) {
+            this.olv.RefreshObjects(modelObjects);
+        }
+
+        /// <summary>
+        /// Remove the given model objects.
+        /// </summary>
+        public virtual void RemoveObjects(IEnumerable<T> modelObjects) {
+            this.olv.RemoveObjects(modelObjects);
+        }
+
+        /// <summary>
+        /// Copy the given model objects to the clipboard.
+        /// </summary>
+        public virtual void CopyObjectsToClipboard(IEnumerable<T> modelObjects) {
+            this.olv.CopyObjectsToClipboard(modelObjects);
+        }
 
         /// <summary>
         /// This method will generate AspectGetters for any column that has an AspectName.

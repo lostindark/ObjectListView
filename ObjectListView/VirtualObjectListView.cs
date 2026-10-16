@@ -195,28 +195,27 @@ namespace BrightIdeasSoftware
                 }
                 return objects;
             }
-            set {
-                if (!this.CheckBoxes)
-                    return;
+            set { this.SetCheckedObjects(value); }
+        }
 
-                // If a custom check state getter is install, we can't use our check state management
-                // We have to use the (slower) base version.
-                if (this.CheckStateGetter != null) {
-                    base.CheckedObjects = value;
-                    return;
-                }
+        /// <inheritdoc/>
+        public override void SetCheckedObjects(IEnumerable modelObjects) {
+            if (!this.CheckBoxes)
+                return;
 
-                Stopwatch sw = Stopwatch.StartNew();
+            if (this.CheckStateGetter != null) {
+                base.SetCheckedObjects(modelObjects);
+                return;
+            }
 
-                // Set up an efficient way of testing for the presence of a particular model
-                Hashtable table = new Hashtable(this.GetItemCount());
-                if (value != null) {
-                    foreach (object x in value)
-                        table[x] = true;
-                }
+            Hashtable table = new Hashtable(this.GetItemCount());
+            if (modelObjects != null) {
+                foreach (object x in modelObjects)
+                    table[x] = true;
+            }
 
-                this.BeginUpdate();
-
+            this.BeginUpdate();
+            try {
                 // Uncheck anything that is no longer checked
                 Object[] keys = new Object[this.CheckStateMap.Count];
                 this.CheckStateMap.Keys.CopyTo(keys, 0);
@@ -228,10 +227,9 @@ namespace BrightIdeasSoftware
                 // Check all the new checked objects
                 foreach (Object x in table.Keys)
                     this.SetObjectCheckedness(x, CheckState.Checked);
-
+            }
+            finally {
                 this.EndUpdate();
-
-                // Debug.WriteLine(String.Format("PERF - Setting virtual CheckedObjects on {2} objects took {0}ms / {1} ticks", sw.ElapsedMilliseconds, sw.ElapsedTicks, this.GetItemCount()));
             }
         }
 
@@ -469,22 +467,28 @@ namespace BrightIdeasSoftware
         /// <para>No check is performed to see if any of the objects are already in the ListView.</para>
         /// <para>Null objects are silently ignored.</para>
         /// </remarks>
-        public override void AddObjects(ICollection modelObjects) {
+        public override void AddObjects(IEnumerable modelObjects) {
+            if (this.InvokeRequired) {
+                this.Invoke((MethodInvoker)delegate { this.AddObjects(modelObjects); });
+                return;
+            }
             if (this.VirtualListDataSource == null)
                 return;
 
             // Give the world a chance to cancel or change the added objects
-            ItemsAddingEventArgs args = new ItemsAddingEventArgs(modelObjects);
+            ItemsAddingEventArgs args = new ItemsAddingEventArgs(
+                modelObjects == null ? null : ObjectListView.EnumerableToArray(modelObjects, true));
             this.OnItemsAdding(args);
             if (args.Canceled)
                 return;
 
+            ArrayList snapshot = ObjectListView.EnumerableToArray(args.ObjectsToAdd, true);
             try
             {
                 this.BeginUpdate();
-                this.VirtualListDataSource.AddObjects(args.ObjectsToAdd);
+                this.VirtualListDataSource.AddObjects(snapshot);
                 this.BuildList();
-                this.SubscribeNotifications(args.ObjectsToAdd);
+                this.SubscribeNotifications(snapshot);
             }
             finally
             {
@@ -547,23 +551,29 @@ namespace BrightIdeasSoftware
         /// <para>No check is performed to see if any of the objects are already in the ListView.</para>
         /// <para>Null objects are silently ignored.</para>
         /// </remarks>
-        public override void InsertObjects(int index, ICollection modelObjects)
+        public override void InsertObjects(int index, IEnumerable modelObjects)
         {
+            if (this.InvokeRequired) {
+                this.Invoke((MethodInvoker)delegate { this.InsertObjects(index, modelObjects); });
+                return;
+            }
             if (this.VirtualListDataSource == null)
                 return;
 
             // Give the world a chance to cancel or change the added objects
-            ItemsAddingEventArgs args = new ItemsAddingEventArgs(index, modelObjects);
+            ItemsAddingEventArgs args = new ItemsAddingEventArgs(index,
+                modelObjects == null ? null : ObjectListView.EnumerableToArray(modelObjects, true));
             this.OnItemsAdding(args);
             if (args.Canceled)
                 return;
 
+            ArrayList snapshot = ObjectListView.EnumerableToArray(args.ObjectsToAdd, true);
             try
             {
                 this.BeginUpdate();
-                this.VirtualListDataSource.InsertObjects(index, args.ObjectsToAdd);
+                this.VirtualListDataSource.InsertObjects(index, snapshot);
                 this.BuildList();
-                this.SubscribeNotifications(args.ObjectsToAdd);
+                this.SubscribeNotifications(snapshot);
             }
             finally
             {
@@ -575,7 +585,7 @@ namespace BrightIdeasSoftware
         /// Update the rows that are showing the given objects
         /// </summary>
         /// <remarks>This method does not resort the items.</remarks>
-        public override void RefreshObjects(IList modelObjects) {
+        public override void RefreshObjects(IEnumerable modelObjects) {
             if (this.InvokeRequired) {
                 this.Invoke((MethodInvoker)delegate { this.RefreshObjects(modelObjects); });
                 return;
@@ -585,10 +595,14 @@ namespace BrightIdeasSoftware
             if (this.VirtualListDataSource == null)
                 return;
 
+            if (modelObjects == null)
+                throw new ArgumentNullException("modelObjects");
+
+            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
             try {
                 this.BeginUpdate();
                 this.ClearCachedInfo();
-                foreach (object modelObject in modelObjects) {
+                foreach (object modelObject in snapshot) {
                     int index = this.VirtualListDataSource.GetObjectIndex(modelObject);
                     if (index >= 0) {
                         this.VirtualListDataSource.UpdateObject(index, modelObject);
@@ -622,21 +636,27 @@ namespace BrightIdeasSoftware
         /// the vertical scroll bar will become confused and the control will draw one or more
         /// blank lines at the top of the list. </para>
         /// </remarks>
-        public override void RemoveObjects(ICollection modelObjects) {
+        public override void RemoveObjects(IEnumerable modelObjects) {
+            if (this.InvokeRequired) {
+                this.Invoke((MethodInvoker)delegate { this.RemoveObjects(modelObjects); });
+                return;
+            }
             if (this.VirtualListDataSource == null)
                 return;
 
             // Give the world a chance to cancel or change the removed objects
-            ItemsRemovingEventArgs args = new ItemsRemovingEventArgs(modelObjects);
+            ItemsRemovingEventArgs args = new ItemsRemovingEventArgs(
+                modelObjects == null ? null : ObjectListView.EnumerableToArray(modelObjects, true));
             this.OnItemsRemoving(args);
             if (args.Canceled)
                 return;
 
+            ArrayList snapshot = ObjectListView.EnumerableToArray(args.ObjectsToRemove, true);
             try {
                 this.BeginUpdate();
-                this.VirtualListDataSource.RemoveObjects(args.ObjectsToRemove);
+                this.VirtualListDataSource.RemoveObjects(snapshot);
                 this.BuildList();
-                this.UnsubscribeNotifications(args.ObjectsToRemove);
+                this.UnsubscribeNotifications(snapshot);
             }
             finally {
                 this.EndUpdate();
@@ -675,17 +695,15 @@ namespace BrightIdeasSoftware
         /// <param name="modelObjects">A collection of model objects</param>
         /// <remarks>This method has O(n) performance where n is the number of model objects passed.
         /// Do not use this to select all the rows in the list -- use SelectAll() for that.</remarks>
-        public override void SelectObjects(IList modelObjects) {
+        public override void SelectObjects(IEnumerable modelObjects) {
             // Without a data source, we can't do this.
             if (this.VirtualListDataSource == null)
                 return;
 
+            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
             this.SelectedIndices.Clear();
 
-            if (modelObjects == null)
-                return;
-
-            foreach (object modelObject in modelObjects) {
+            foreach (object modelObject in snapshot) {
                 int index = this.VirtualListDataSource.GetObjectIndex(modelObject);
                 if (index >= 0 && index < this.VirtualListSize)
                     this.SelectedIndices.Add(index);

@@ -177,7 +177,7 @@ namespace BrightIdeasSoftware
         /// <remarks>This is a no-op for data lists, since the data
         /// is controlled by the DataSource. Manipulate the data source
         /// rather than this view of the data source.</remarks>
-        public override void AddObjects(ICollection modelObjects)
+        public override void AddObjects(IEnumerable modelObjects)
         {
         }
 
@@ -189,7 +189,7 @@ namespace BrightIdeasSoftware
         /// <remarks>This is a no-op for data lists, since the data
         /// is controlled by the DataSource. Manipulate the data source
         /// rather than this view of the data source.</remarks>
-        public override void InsertObjects(int index, ICollection modelObjects) {
+        public override void InsertObjects(int index, IEnumerable modelObjects) {
         }
 
         /// <summary>
@@ -198,7 +198,7 @@ namespace BrightIdeasSoftware
         /// <remarks>This is a no-op for data lists, since the data
         /// is controlled by the DataSource. Manipulate the data source
         /// rather than this view of the data source.</remarks>
-        public override void RemoveObjects(ICollection modelObjects)
+        public override void RemoveObjects(IEnumerable modelObjects)
         {
         }
 

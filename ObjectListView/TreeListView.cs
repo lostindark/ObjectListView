@@ -1007,6 +1007,14 @@ namespace BrightIdeasSoftware
             return olvItem;
         }
 
+        /// <inheritdoc/>
+        protected override int CalculateColumnContentWidth(System.Drawing.Graphics graphics, OLVListItem item, OLVColumn column) {
+            int width = base.CalculateColumnContentWidth(graphics, item, column);
+            if (column.Index == 0)
+                width += item.IndentCount * (TreeRenderer.PIXELS_PER_LEVEL - this.SmallImageSize.Width);
+            return width;
+        }
+
         /// <summary>
         /// Reinitialise the Tree structure
         /// </summary>

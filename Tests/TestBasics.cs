@@ -262,6 +262,24 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
+        [DataRow(0)]
+        [DataRow(2)]
+        public void Test_MoveObjects_ToCurrentPosition(int index) {
+            this.olv.SetObjects(PersonDb.All.Take(4).ToArray());
+            this.olv.MoveObjects(index, new[] { PersonDb.All[index] });
+            CollectionAssert.AreEqual(PersonDb.All.Take(4).ToArray(),
+                ObjectListView.EnumerableToArray(this.olv.Objects, true));
+        }
+
+        [TestMethod]
+        public void Test_MoveObjects_FirstObjectsToStart() {
+            this.olv.SetObjects(PersonDb.All.Take(4).ToArray());
+            this.olv.MoveObjects(0, PersonDb.All.Take(2).ToArray());
+            CollectionAssert.AreEqual(PersonDb.All.Take(4).ToArray(),
+                ObjectListView.EnumerableToArray(this.olv.Objects, true));
+        }
+
+        [TestMethod]
         public void Test_DataSource_DirectEnumerableMutations() {
             var source = ((FastObjectListView)this.olv).VirtualListDataSource;
             this.olv.ClearObjects();

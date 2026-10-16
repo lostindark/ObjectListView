@@ -1015,13 +1015,8 @@ namespace BrightIdeasSoftware {
         /// <param name="order"></param>
         /// <param name="column2"></param>
         /// <param name="order2"></param>
-        public BeforeSortingEventArgs(OLVColumn column, SortOrder order, OLVColumn column2, SortOrder order2) {
-            this.ColumnToGroupBy = column;
-            this.GroupByOrder = order;
-            this.ColumnToSort = column;
-            this.SortOrder = order;
-            this.SecondaryColumnToSort = column2;
-            this.SecondarySortOrder = order2;
+        public BeforeSortingEventArgs(OLVColumn column, SortOrder order, OLVColumn column2, SortOrder order2)
+            : this(column, order, column, order, column2, order2) {
         }
 
         /// <summary>
@@ -1033,13 +1028,17 @@ namespace BrightIdeasSoftware {
         /// <param name="order"></param>
         /// <param name="column2"></param>
         /// <param name="order2"></param>
-        public BeforeSortingEventArgs(OLVColumn groupColumn, SortOrder groupOrder, OLVColumn column, SortOrder order, OLVColumn column2, SortOrder order2) {
+        public BeforeSortingEventArgs(OLVColumn groupColumn, SortOrder groupOrder, OLVColumn column, SortOrder order, OLVColumn column2, SortOrder order2)
+            : this(groupColumn, groupOrder, new SortDescriptionCollection(column, order, column2, order2)) {
+        }
+
+        /// <summary>
+        /// Create sorting event arguments with an ordered collection of sort fields.
+        /// </summary>
+        public BeforeSortingEventArgs(OLVColumn groupColumn, SortOrder groupOrder, IEnumerable<OLVSortDescription> sortDescriptions) {
             this.ColumnToGroupBy = groupColumn;
             this.GroupByOrder = groupOrder;
-            this.ColumnToSort = column;
-            this.SortOrder = order;
-            this.SecondaryColumnToSort = column2;
-            this.SecondarySortOrder = order2;
+            this.sortDescriptions = new SortDescriptionCollection(sortDescriptions);
         }
 
         /// <summary>
@@ -1060,22 +1059,46 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// What column will be used for sorting
         /// </summary>
-        public OLVColumn ColumnToSort;
+        public OLVColumn ColumnToSort {
+            get { return this.sortDescriptions.GetColumn(0); }
+            set { this.sortDescriptions.SetColumn(0, value); }
+        }
 
         /// <summary>
         /// What order will be used for sorting. None means no sorting.
         /// </summary>
-        public SortOrder SortOrder;
+        public SortOrder SortOrder {
+            get { return this.sortDescriptions.GetOrder(0); }
+            set { this.sortDescriptions.SetOrder(0, value); }
+        }
 
         /// <summary>
         /// What column will be used for secondary sorting?
         /// </summary>
-        public OLVColumn SecondaryColumnToSort;
+        public OLVColumn SecondaryColumnToSort {
+            get { return this.sortDescriptions.GetColumn(1); }
+            set { this.sortDescriptions.SetColumn(1, value); }
+        }
 
         /// <summary>
         /// What order will be used for secondary sorting?
         /// </summary>
-        public SortOrder SecondarySortOrder;
+        public SortOrder SecondarySortOrder {
+            get { return this.sortDescriptions.GetOrder(1); }
+            set { this.sortDescriptions.SetOrder(1, value); }
+        }
+
+        /// <summary>
+        /// Gets the sort fields in priority order. Event handlers can edit this collection.
+        /// </summary>
+        public IList<OLVSortDescription> SortDescriptions {
+            get { return this.sortDescriptions; }
+        }
+        private readonly SortDescriptionCollection sortDescriptions;
+
+        internal IList<OLVSortDescription> GetActiveSortDescriptions() {
+            return this.sortDescriptions.GetActiveDescriptions();
+        }
     }
 
     /// <summary>
@@ -1094,10 +1117,7 @@ namespace BrightIdeasSoftware {
         public AfterSortingEventArgs(OLVColumn groupColumn, SortOrder groupOrder, OLVColumn column, SortOrder order, OLVColumn column2, SortOrder order2) {
             this.columnToGroupBy = groupColumn;
             this.groupByOrder = groupOrder;
-            this.columnToSort = column;
-            this.sortOrder = order;
-            this.secondaryColumnToSort = column2;
-            this.secondarySortOrder = order2;
+            this.sortDescriptions = new SortDescriptionCollection(column, order, column2, order2);
         }
 
         /// <summary>
@@ -1107,11 +1127,18 @@ namespace BrightIdeasSoftware {
         public AfterSortingEventArgs(BeforeSortingEventArgs args) {
             this.columnToGroupBy = args.ColumnToGroupBy;
             this.groupByOrder = args.GroupByOrder;
-            this.columnToSort = args.ColumnToSort;
-            this.sortOrder = args.SortOrder;
-            this.secondaryColumnToSort = args.SecondaryColumnToSort;
-            this.secondarySortOrder = args.SecondarySortOrder;
+            IList<OLVSortDescription> activeDescriptions = args.GetActiveSortDescriptions();
+            this.sortDescriptions = new SortDescriptionCollection(
+                activeDescriptions.Count > 0 ? activeDescriptions : args.SortDescriptions);
         }
+
+        /// <summary>
+        /// Gets all sort fields used, in priority order.
+        /// </summary>
+        public IList<OLVSortDescription> SortDescriptions {
+            get { return this.sortDescriptions.GetActiveDescriptions(); }
+        }
+        private readonly SortDescriptionCollection sortDescriptions;
 
         /// <summary>
         /// What column was used for grouping?
@@ -1135,37 +1162,29 @@ namespace BrightIdeasSoftware {
         /// What column was used for sorting?
         /// </summary>
         public OLVColumn ColumnToSort {
-            get { return columnToSort; }
+            get { return this.sortDescriptions.GetColumn(0); }
         }
-
-        private OLVColumn columnToSort;
 
         /// <summary>
         /// What ordering was used for sorting?
         /// </summary>
         public SortOrder SortOrder {
-            get { return sortOrder; }
+            get { return this.sortDescriptions.GetOrder(0); }
         }
-
-        private SortOrder sortOrder;
 
         /// <summary>
         /// What column was used for secondary sorting?
         /// </summary>
         public OLVColumn SecondaryColumnToSort {
-            get { return secondaryColumnToSort; }
+            get { return this.sortDescriptions.GetColumn(1); }
         }
-
-        private OLVColumn secondaryColumnToSort;
 
         /// <summary>
         /// What order was used for secondary sorting?
         /// </summary>
         public SortOrder SecondarySortOrder {
-            get { return secondarySortOrder; }
+            get { return this.sortDescriptions.GetOrder(1); }
         }
-
-        private SortOrder secondarySortOrder;
     }
 
     /// <summary>

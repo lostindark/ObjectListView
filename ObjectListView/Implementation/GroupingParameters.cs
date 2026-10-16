@@ -51,14 +51,20 @@ namespace BrightIdeasSoftware {
         /// <param name="sortItemsByPrimaryColumn"></param>
         public GroupingParameters(ObjectListView olv, OLVColumn groupByColumn, SortOrder groupByOrder,
             OLVColumn column, SortOrder order, OLVColumn secondaryColumn, SortOrder secondaryOrder,
-            string titleFormat, string titleSingularFormat, bool sortItemsByPrimaryColumn) {
+            string titleFormat, string titleSingularFormat, bool sortItemsByPrimaryColumn)
+            : this(olv, groupByColumn, groupByOrder, new SortDescriptionCollection(column, order, secondaryColumn, secondaryOrder),
+                titleFormat, titleSingularFormat, sortItemsByPrimaryColumn) {
+        }
+
+        /// <summary>
+        /// Create grouping parameters with an ordered collection of sort fields.
+        /// </summary>
+        public GroupingParameters(ObjectListView olv, OLVColumn groupByColumn, SortOrder groupByOrder,
+            IEnumerable<OLVSortDescription> sortDescriptions, string titleFormat, string titleSingularFormat, bool sortItemsByPrimaryColumn) {
             this.ListView = olv;
             this.GroupByColumn = groupByColumn;
             this.GroupByOrder = groupByOrder;
-            this.PrimarySort = column;
-            this.PrimarySortOrder = order;
-            this.SecondarySort = secondaryColumn;
-            this.SecondarySortOrder = secondaryOrder;
+            this.sortDescriptions = new SortDescriptionCollection(sortDescriptions);
             this.SortItemsByPrimaryColumn = sortItemsByPrimaryColumn;
             this.TitleFormat = titleFormat;
             this.TitleSingularFormat = titleSingularFormat;
@@ -113,37 +119,47 @@ namespace BrightIdeasSoftware {
         /// Gets or sets the column that will be the primary sort
         /// </summary>
         public OLVColumn PrimarySort {
-            get { return this.primarySort; }
-            set { this.primarySort = value; }
+            get { return this.sortDescriptions.GetColumn(0); }
+            set { this.sortDescriptions.SetColumn(0, value); }
         }
-        private OLVColumn primarySort;
 
         /// <summary>
         /// Gets or sets the ordering for the primary sort
         /// </summary>
         public SortOrder PrimarySortOrder {
-            get { return this.primarySortOrder; }
-            set { this.primarySortOrder = value; }
+            get { return this.sortDescriptions.GetOrder(0); }
+            set { this.sortDescriptions.SetOrder(0, value); }
         }
-        private SortOrder primarySortOrder;
 
         /// <summary>
         /// Gets or sets the column used for secondary sorting
         /// </summary>
         public OLVColumn SecondarySort {
-            get { return this.secondarySort; }
-            set { this.secondarySort = value; }
+            get { return this.sortDescriptions.GetColumn(1); }
+            set { this.sortDescriptions.SetColumn(1, value); }
         }
-        private OLVColumn secondarySort;
 
         /// <summary>
         /// Gets or sets the ordering for the secondary sort
         /// </summary>
         public SortOrder SecondarySortOrder {
-            get { return this.secondarySortOrder; }
-            set { this.secondarySortOrder = value; }
+            get { return this.sortDescriptions.GetOrder(1); }
+            set { this.sortDescriptions.SetOrder(1, value); }
         }
-        private SortOrder secondarySortOrder;
+
+        /// <summary>
+        /// Gets the sort fields in priority order.
+        /// </summary>
+        public IList<OLVSortDescription> SortDescriptions {
+            get { return this.sortDescriptions; }
+        }
+        private readonly SortDescriptionCollection sortDescriptions;
+
+        internal IList<OLVSortDescription> GetItemSortDescriptions() {
+            return this.SortItemsByPrimaryColumn
+                ? this.sortDescriptions.WithPrimary(this.ListView.GetColumn(0), this.sortDescriptions.GetOrder(0)).GetActiveDescriptions()
+                : this.sortDescriptions.GetActiveDescriptions();
+        }
 
         /// <summary>
         /// Gets or sets the title format used for groups with zero or more than one element

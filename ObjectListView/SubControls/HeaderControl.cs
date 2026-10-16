@@ -263,8 +263,8 @@ namespace BrightIdeasSoftware {
                 return f.Height + fudge;
 
             Rectangle r = this.GetHeaderDrawRect(i);
-            if (this.HasNonThemedSortIndicator(column))
-                r.Width -= 16;
+            if (this.HasSortIndicator(column))
+                r.Width -= this.CalculateSortIndicatorWidth(g, column, f);
             if (column.HasHeaderImage)
                 r.Width -= column.ImageList.ImageSize.Width + 3;
             if (this.HasFilterIndicator(column))
@@ -304,7 +304,7 @@ namespace BrightIdeasSoftware {
         protected bool HasSortIndicator(OLVColumn column) {
             if (!this.ListView.ShowSortIndicators)
                 return false;
-            return column == this.ListView.LastSortColumn && this.ListView.LastSortOrder != SortOrder.None;
+            return this.ListView.GetSortPriority(column) > 0;
         }
 
         /// <summary>
@@ -734,7 +734,7 @@ namespace BrightIdeasSoftware {
         /// <remarks>Word wrapping and colored text require custom drawing. Funnily enough, we
         /// can change the font natively.</remarks>
         protected bool NeedsCustomDraw() {
-            if (this.WordWrap)
+            if (this.WordWrap || (this.ListView.ShowSortIndicators && this.ListView.SortDescriptions.Count > 0))
                 return true;
             
             if (this.ListView.HeaderUsesThemes)
@@ -824,12 +824,27 @@ namespace BrightIdeasSoftware {
 
             // Draw the sort indicator if this column has one
             if (this.HasSortIndicator(column)) {
-                if (this.ListView.HeaderUsesThemes &&
-                    VisualStyleRenderer.IsSupported &&
-                    VisualStyleRenderer.IsElementDefined(VisualStyleElement.Header.SortArrow.SortedUp))
-                    this.DrawThemedSortIndicator(g, r);
-                else
-                    r = this.DrawUnthemedSortIndicator(g, r);
+                Font font = this.ListView.HeaderUsesThemes ? this.ListView.Font : stateStyle.Font ?? this.ListView.Font;
+                int priority = this.ListView.GetSortPriority(column);
+                string label = priority.ToString();
+                int width = this.CalculateSortIndicatorWidth(g, column, font);
+                Rectangle indicatorBounds = new Rectangle(r.Right - width, r.Top, width, r.Height);
+                SortOrder order = this.ListView.SortDescriptions[priority - 1].SortOrder;
+                GraphicsState savedState = g.Save();
+                try {
+                    g.SetClip(r, CombineMode.Intersect);
+                    this.DrawUnthemedSortIndicator(g, indicatorBounds, order);
+                    if (this.ListView.SortDescriptions.Count > 1) {
+                        indicatorBounds.Width -= 16;
+                        using (Font priorityFont = CreateSortPriorityFont(font))
+                            TextRenderer.DrawText(g, label, priorityFont, indicatorBounds, SystemColors.GrayText,
+                                TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine |
+                                TextFormatFlags.NoPrefix | TextFormatFlags.PreserveGraphicsClipping);
+                    }
+                } finally {
+                    g.Restore(savedState);
+                }
+                r.Width = Math.Max(0, r.Width - width);
             }
 
             if (this.HasFilterIndicator(column))
@@ -843,6 +858,20 @@ namespace BrightIdeasSoftware {
 
             // Finally draw the text
             this.DrawHeaderImageAndText(g, r, column, stateStyle);
+        }
+
+        private int CalculateSortIndicatorWidth(Graphics g, OLVColumn column, Font font) {
+            if (this.ListView.SortDescriptions.Count == 1)
+                return 16;
+
+            string label = this.ListView.GetSortPriority(column).ToString();
+            using (Font priorityFont = CreateSortPriorityFont(font))
+                return TextRenderer.MeasureText(g, label, priorityFont, Size.Empty,
+                    TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix).Width + 16;
+        }
+
+        private static Font CreateSortPriorityFont(Font headerFont) {
+            return new Font(headerFont.FontFamily, headerFont.Size * 0.8f, headerFont.Style, headerFont.Unit);
         }
 
         private Rectangle DrawCheckBox(Graphics g, Rectangle r, CheckState checkState, bool isDisabled, bool isHot,
@@ -1002,6 +1031,10 @@ namespace BrightIdeasSoftware {
         /// <param name="r"></param>
         /// <returns></returns>
         protected Rectangle DrawUnthemedSortIndicator(Graphics g, Rectangle r) {
+            return this.DrawUnthemedSortIndicator(g, r, this.ListView.LastSortOrder);
+        }
+
+        private Rectangle DrawUnthemedSortIndicator(Graphics g, Rectangle r, SortOrder order) {
             // No theme support for sort indicators. So, we draw a triangle at the right edge
             // of the column header.
             const int triangleHeight = 16;
@@ -1014,7 +1047,7 @@ namespace BrightIdeasSoftware {
             Point triangleLocation = new Point(r.Right - triangleWidth - 2, r.Top + (r.Height - triangleHeight)/2);
             Point[] pts = new Point[] {triangleLocation, triangleLocation, triangleLocation};
 
-            if (this.ListView.LastSortOrder == SortOrder.Ascending) {
+            if (order == SortOrder.Ascending) {
                 pts[0].Offset(midX - deltaX, midY + deltaY);
                 pts[1].Offset(midX, midY - deltaY - 1);
                 pts[2].Offset(midX + deltaX, midY + deltaY);

@@ -294,16 +294,22 @@ namespace BrightIdeasSoftware
             get {
                 return base.CheckedObjects;
             }
-            set {
-                ArrayList objectsToRecalculate = new ArrayList(this.CheckedObjects);
-                if (value != null)
-                    objectsToRecalculate.AddRange(value);
+            set { this.SetCheckedObjects(value); }
+        }
 
-                base.CheckedObjects = value;
+        /// <inheritdoc/>
+        public override void SetCheckedObjects(IEnumerable modelObjects) {
+            if (!this.CheckBoxes)
+                return;
 
-                if (this.HierarchicalCheckboxes)
-                    RecalculateHierarchicalCheckBoxGraph(objectsToRecalculate);
-            }
+            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            ArrayList objectsToRecalculate = new ArrayList(this.CheckedObjects);
+            objectsToRecalculate.AddRange(snapshot);
+
+            base.SetCheckedObjects(snapshot);
+
+            if (this.HierarchicalCheckboxes)
+                RecalculateHierarchicalCheckBoxGraph(objectsToRecalculate);
         }
 
         /// <summary>
@@ -759,7 +765,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Update the rows that are showing the given objects
         /// </summary>
-        public override void RefreshObjects(IList modelObjects) {
+        public override void RefreshObjects(IEnumerable modelObjects) {
             if (this.InvokeRequired) {
                 this.Invoke((MethodInvoker) delegate { this.RefreshObjects(modelObjects); });
                 return;
@@ -768,6 +774,10 @@ namespace BrightIdeasSoftware
             if (this.GetItemCount() == 0)
                 return;
 
+            if (modelObjects == null)
+                throw new ArgumentNullException("modelObjects");
+
+            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
             // Remember the selection so we can put it back later
             IList selection = this.SelectedObjects;
 
@@ -775,7 +785,7 @@ namespace BrightIdeasSoftware
             // Refreshes on root objects have to be handled differently
             ArrayList updatedRoots = new ArrayList();
             Hashtable modelsAndParents = new Hashtable();
-            foreach (Object model in modelObjects) {
+            foreach (Object model in snapshot) {
                 if (model == null)
                     continue;
                 modelsAndParents[model] = true;
@@ -1648,9 +1658,10 @@ namespace BrightIdeasSoftware
             /// Add the given collection of objects to the roots of this tree
             /// </summary>
             /// <param name="modelObjects"></param>
-            public virtual void AddObjects(ICollection modelObjects) {
+            public virtual void AddObjects(IEnumerable modelObjects) {
+                ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
                 ArrayList newRoots = ObjectListView.EnumerableToArray(this.treeView.Roots, true);
-                foreach (Object x in modelObjects)
+                foreach (Object x in snapshot)
                     newRoots.Add(x);
                 this.SetObjects(newRoots);
             }
@@ -1660,7 +1671,7 @@ namespace BrightIdeasSoftware
             /// </summary>
             /// <param name="index"></param>
             /// <param name="modelObjects"></param>
-            public void InsertObjects(int index, ICollection modelObjects) {
+            public void InsertObjects(int index, IEnumerable modelObjects) {
                 throw new NotImplementedException();
             }
 
@@ -1669,11 +1680,12 @@ namespace BrightIdeasSoftware
             /// Any objects that is not already in the roots collection is ignored.
             /// </summary>
             /// <param name="modelObjects"></param>
-            public virtual void RemoveObjects(ICollection modelObjects) {
+            public virtual void RemoveObjects(IEnumerable modelObjects) {
+                ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
                 ArrayList newRoots = new ArrayList();
                 foreach (Object x in this.treeView.Roots)
                     newRoots.Add(x);
-                foreach (Object x in modelObjects) {
+                foreach (Object x in snapshot) {
                     newRoots.Remove(x);
                     this.mapObjectToIndex.Remove(x);
                 }

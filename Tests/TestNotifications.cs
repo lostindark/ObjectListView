@@ -25,7 +25,9 @@
  * If you wish to use this code in a closed source application, please contact phillip.piper@gmail.com.
  */
 
+using System;
 using System.Drawing;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 
@@ -152,6 +154,26 @@ namespace BrightIdeasSoftware.Tests
             this.olv.AddObject(PersonDb.All[2]);
             this.SetAndCheckOccupationColumnValue(0, "new name 2");
             this.SetAndCheckOccupationColumnValue(2, "new name 3");
+        }
+
+        [TestMethod]
+        public void Test_EnumerableChanges_ManageSubscriptions() {
+            this.olv.ClearObjects();
+            Person extra = new Person("extra");
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                this.olv.AddObjects(EnumerableTestData.FailAfter(extra)));
+            Assert.AreEqual(0, extra.CountNotifyPropertyChangedSubscriptions);
+            this.olv.AddObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(3)));
+            foreach (Person person in PersonDb.All.Take(3))
+                Assert.AreEqual(1, person.CountNotifyPropertyChangedSubscriptions);
+
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                this.olv.RemoveObjects(EnumerableTestData.FailAfter(PersonDb.All[0])));
+            Assert.AreEqual(1, PersonDb.All[0].CountNotifyPropertyChangedSubscriptions);
+
+            this.olv.RemoveObjects(new SingleUseEnumerable<Person>(this.olv.Objects.Cast<Person>()));
+            foreach (Person person in PersonDb.All)
+                Assert.AreEqual(0, person.CountNotifyPropertyChangedSubscriptions);
         }
 
         [TestMethod]

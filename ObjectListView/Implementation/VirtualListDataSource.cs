@@ -42,7 +42,10 @@ namespace BrightIdeasSoftware
     /// information it needs to be fully functional.
     /// </summary>
     /// <remarks>Implementors must provide functioning implementations of at least GetObjectCount()
-    /// and GetNthObject(), otherwise nothing will appear in the list.</remarks>
+    /// and GetNthObject(), otherwise nothing will appear in the list.
+    /// Mutation methods accept enumerable inputs. Materialize an input before changing state
+    /// when it must be accessed repeatedly or may refer to the data source itself.
+    /// VirtualObjectListView passes snapshots after its cancellable collection events.</remarks>
     public interface IVirtualListDataSource
     {
         /// <summary>
@@ -99,20 +102,20 @@ namespace BrightIdeasSoftware
         /// Add the given collection of model objects to this control.
         /// </summary>
         /// <param name="modelObjects">A collection of model objects</param>
-        void AddObjects(ICollection modelObjects);
+        void AddObjects(IEnumerable modelObjects);
 
         /// <summary>
         /// Insert the given collection of model objects to this control at the position
         /// </summary>
         /// <param name="index">Index where the collection will be added</param>
         /// <param name="modelObjects">A collection of model objects</param>
-        void InsertObjects(int index, ICollection modelObjects);
+        void InsertObjects(int index, IEnumerable modelObjects);
 
         /// <summary>
         /// Remove all of the given objects from the control
         /// </summary>
         /// <param name="modelObjects">Collection of objects to be removed</param>
-        void RemoveObjects(ICollection modelObjects);
+        void RemoveObjects(IEnumerable modelObjects);
 
         /// <summary>
         /// Set the collection of objects that this control will show.
@@ -218,7 +221,7 @@ namespace BrightIdeasSoftware
         /// 
         /// </summary>
         /// <param name="modelObjects"></param>
-        public virtual void AddObjects(ICollection modelObjects) {
+        public virtual void AddObjects(IEnumerable modelObjects) {
         }
 
         /// <summary>
@@ -226,14 +229,14 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="index"></param>
         /// <param name="modelObjects"></param>
-        public virtual void InsertObjects(int index, ICollection modelObjects) {
+        public virtual void InsertObjects(int index, IEnumerable modelObjects) {
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="modelObjects"></param>
-        public virtual void RemoveObjects(ICollection modelObjects) {
+        public virtual void RemoveObjects(IEnumerable modelObjects) {
         }
 
         /// <summary>

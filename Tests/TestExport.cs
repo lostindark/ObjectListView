@@ -26,6 +26,8 @@
  */
 
 using System;
+using System.Linq;
+using System.Windows.Forms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests
@@ -55,6 +57,50 @@ namespace BrightIdeasSoftware.Tests
                 "zzz Last Alphabetical Name\toccupation6\t60\tTrue\t",
                 ""
             }), tabSeparated);
+        }
+
+        [TestMethod]
+        public void Test_DataObject_SingleUseEnumerableAndSnapshot() {
+            this.olv.SetObjects(PersonDb.All);
+            var source = PersonDb.All.Take(2).ToList();
+            var data = new OLVDataObject(this.olv, new SingleUseEnumerable<Person>(source.Where(p => p != null)));
+            source.Clear();
+            data.CreateTextFormats();
+            Assert.AreEqual(2, data.ModelObjects.Count);
+            string text = (string)data.GetData(typeof(string));
+            Assert.Contains("name\toccupation\t300", text);
+            Assert.Contains("name2\toccupation\t200", text);
+            Assert.DoesNotContain("name4\t", text);
+        }
+
+        [TestMethod]
+        public void Test_CopyObjectsToClipboard_EmptyAndFailingEnumerables() {
+            this.olv.CopyObjectsToClipboard(new SingleUseEnumerable<Person>(Enumerable.Empty<Person>()));
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                this.olv.CopyObjectsToClipboard(EnumerableTestData.FailAfter(PersonDb.All[0])));
+            Assert.ThrowsExactly<ArgumentNullException>(() => this.olv.CopyObjectsToClipboard(null));
+            Assert.ThrowsExactly<ArgumentNullException>(() => new OLVDataObject(this.olv, null));
+        }
+
+        [TestMethod]
+        public void Test_CopyObjectsToClipboard_SingleUseQuery() {
+            IDataObject previous = Clipboard.GetDataObject();
+            try {
+                this.olv.SetObjects(PersonDb.All);
+                this.olv.CopyObjectsToClipboard(new SingleUseEnumerable<Person>(PersonDb.All.Take(2)));
+                IDataObject copied = Clipboard.GetDataObject();
+                string text = (string)copied.GetData(typeof(string));
+                Assert.Contains("name\toccupation\t300", text);
+                Assert.Contains("name2\toccupation\t200", text);
+                Assert.DoesNotContain("name4\t", text);
+                Assert.Contains("<td>name2</td>", (string)copied.GetData(DataFormats.Html));
+            }
+            finally {
+                if (previous == null)
+                    Clipboard.Clear();
+                else
+                    Clipboard.SetDataObject(previous, true);
+            }
         }
 
         [TestMethod]

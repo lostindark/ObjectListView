@@ -58,9 +58,14 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <param name="olv">The source of the data object</param>
         /// <param name="modelObjects">The model objects to be put into the data object</param>
-        public OLVDataObject(ObjectListView olv, IList modelObjects) {
+        public OLVDataObject(ObjectListView olv, IEnumerable modelObjects) {
+            if (olv == null)
+                throw new ArgumentNullException("olv");
+            if (modelObjects == null)
+                throw new ArgumentNullException("modelObjects");
+
             this.objectListView = olv;
-            this.modelObjects = modelObjects;
+            this.modelObjects = ObjectListView.EnumerableToArray(modelObjects, true);
             this.includeHiddenColumns = olv.IncludeHiddenColumnsInDataTransfer;
             this.includeColumnHeaders = olv.IncludeColumnHeadersInCopy;
             this.CreateTextFormats();

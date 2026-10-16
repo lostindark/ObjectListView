@@ -8,8 +8,11 @@
  * 10/25/2008 JPP  Initial Version
  */
 
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -98,6 +101,51 @@ namespace BrightIdeasSoftware.Tests
             // We really want to check that the collections contain the same members, but 
             // there is no easy way to do that
             Assert.AreEqual(PersonDb.All.Count, this.olv.CheckedObjects.Count);
+        }
+
+        [TestMethod]
+        public void TestCheckedObjects_SingleUseAndSelfReferentialQueries() {
+            this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(3)));
+            IList snapshot = this.olv.CheckedObjects;
+            this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(
+                this.olv.Objects.Cast<Person>().Where(p => this.olv.IsChecked(p)).Take(2)));
+            CollectionAssert.AreEquivalent(PersonDb.All.Take(2).ToArray(),
+                ObjectListView.EnumerableToArray(this.olv.CheckedObjects, true));
+            CollectionAssert.AreEquivalent(PersonDb.All.Take(3).ToArray(),
+                ObjectListView.EnumerableToArray(snapshot, true));
+            this.olv.SetCheckedObjects(Enumerable.Empty<Person>());
+            Assert.IsEmpty(this.olv.CheckedObjects);
+        }
+
+        [TestMethod]
+        public void TestCheckedObjects_EnumerationFailurePreservesChecks() {
+            this.olv.SetCheckedObjects(PersonDb.All.Take(2));
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                this.olv.SetCheckedObjects(EnumerableTestData.FailAfter(PersonDb.All[2])));
+            CollectionAssert.AreEquivalent(PersonDb.All.Take(2).ToArray(),
+                ObjectListView.EnumerableToArray(this.olv.CheckedObjects, true));
+        }
+
+        [TestMethod]
+        public void TestSetCheckedObjects_CustomGetterAndCompatibilityAlias() {
+            var checkedModels = new HashSet<object>();
+            this.olv.CheckStateGetter = model => checkedModels.Contains(model) ? CheckState.Checked : CheckState.Unchecked;
+            this.olv.CheckStatePutter = delegate(object model, CheckState state) {
+                if (state == CheckState.Checked)
+                    checkedModels.Add(model);
+                else
+                    checkedModels.Remove(model);
+                return state;
+            };
+            this.olv.SetObjects(PersonDb.All);
+            this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(2)));
+            CollectionAssert.AreEquivalent(PersonDb.All.Take(2).ToArray(), this.olv.CheckedObjects);
+
+            this.olv.CheckedObjectsEnumerable = new SingleUseEnumerable<Person>(PersonDb.All.Skip(2).Take(1));
+            Assert.AreEqual(PersonDb.All[2], this.olv.CheckedObjects[0]);
+            Assert.AreEqual(1, this.olv.CheckedObjects.Count);
+            this.olv.SetCheckedObjects(null);
+            Assert.IsEmpty(this.olv.CheckedObjects);
         }
 
         [TestMethod]

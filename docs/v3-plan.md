@@ -44,11 +44,12 @@ Change these APIs together:
 
 | API | Proposed v3 contract |
 | --- | --- |
-| `SelectedObjects`, `CheckedObjects` | Accept `IEnumerable`; return a materialized snapshot exposed as `IEnumerable`. |
+| `SelectedObjects`, `CheckedObjects` | Keep `IList` properties with materialized snapshot getters. |
+| `SetSelectedObjects()`, `SetCheckedObjects()` | Accept `IEnumerable` to replace selection and checked state; retain `SelectObjects()` for compatibility. |
 | `AddObjects()`, `InsertObjects()` | Accept `IEnumerable`. |
 | `RefreshObjects()`, `RemoveObjects()` | Accept `IEnumerable`. |
 | `CopyObjectsToClipboard()` | Accept `IEnumerable`. |
-| `TypedObjectListView<T>` | Expose corresponding `IEnumerable<T>` APIs. |
+| `TypedObjectListView<T>` | Expose corresponding `IEnumerable<T>` methods; retain `IList<T>` selection and check properties. |
 
 Use non-generic `IEnumerable` on the heterogeneous base control, matching the existing `SetObjects()` contract. Typed wrappers provide convenient LINQ access.
 
@@ -66,6 +67,10 @@ Update every override and dependent interface in the same milestone, including `
 **Acceptance cases:** LINQ queries, iterator methods, single-use enumerables, self-referential selection changes, empty/null inputs, enumeration failures, notification cleanup, and the control-specific checked-object behavior of tree and virtual lists.
 
 **Deliverable:** the enumerable API change, its migration examples, and focused additions to the existing collection, selection, checkbox, notification, tree, and export tests.
+
+The enumerable milestone is implemented; see the [migration guide](v3-migration.md)
+for the new signatures, enumeration semantics, and retained control-specific behavior.
+The later phases below are not part of this milestone.
 
 ## Phase 3: replace the grouping-property tangle
 
@@ -121,7 +126,7 @@ Do not let drawing and hit testing independently calculate where an interactive 
 After the behavioral contracts stabilize:
 
 - Split the large `ObjectListView.cs` into focused partial files without unnecessarily redesigning the inheritance hierarchy.
-- Remove redundant compatibility APIs. For example, `CheckedObjectsEnumerable` becomes unnecessary once `CheckedObjects` accepts an enumerable.
+- Remove redundant compatibility APIs. For example, `CheckedObjectsEnumerable` becomes unnecessary once `SetCheckedObjects()` accepts an enumerable.
 - Remove obsolete compatibility paths only where their replacement and support implications are understood.
 - Update demos, designer-generated configuration through the designer, and Markdown examples.
 - Publish a migration guide covering removed members, changed return types, overrides, grouping, custom renderers, and style precedence.

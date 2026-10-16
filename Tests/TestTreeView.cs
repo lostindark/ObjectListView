@@ -12,6 +12,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -272,7 +273,7 @@ namespace BrightIdeasSoftware.Tests {
             this.olv.Expand(firstRoot);
             Assert.IsEmpty(this.olv.CheckedObjects);
 
-            this.olv.CheckedObjects = ObjectListView.EnumerableToArray(firstRoot.Children, true);
+            this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(firstRoot.Children.Where(p => p != null)));
 
             ArrayList checkedObjects = new ArrayList(this.olv.CheckedObjects);
             Assert.AreEqual(firstRoot.Children.Count, checkedObjects.Count);
@@ -286,7 +287,7 @@ namespace BrightIdeasSoftware.Tests {
 
             Assert.IsEmpty(this.olv.CheckedObjects);
 
-            this.olv.CheckedObjects = ObjectListView.EnumerableToArray(firstRoot.Children, true);
+            this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(firstRoot.Children.Where(p => p != null)));
 
             ArrayList checkedObjects = new ArrayList(this.olv.CheckedObjects);
             Assert.AreEqual(firstRoot.Children.Count, checkedObjects.Count);
@@ -475,13 +476,25 @@ namespace BrightIdeasSoftware.Tests {
 
             this.olv.HierarchicalCheckboxes = true;
 
-            this.olv.CheckedObjects = ObjectListView.EnumerableToArray(firstRoot.Children, true);
+            this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(firstRoot.Children.Where(p => p != null)));
 
             ArrayList checkedObjects = new ArrayList(this.olv.CheckedObjects);
             Assert.AreEqual(1 + firstRoot.Children.Count, checkedObjects.Count);
             Assert.IsTrue(checkedObjects.Contains(firstRoot));
             foreach (Person child in firstRoot.Children)
                 Assert.IsTrue(checkedObjects.Contains(child));
+        }
+
+        [TestMethod]
+        public void Test_HierarchicalCheckBoxes_FailingEnumerablePreservesHiddenChecks() {
+            this.olv.HierarchicalCheckboxes = true;
+            this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(PersonDb.All[0].Children));
+            ArrayList before = ObjectListView.EnumerableToArray(this.olv.CheckedObjects, true);
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                this.olv.SetCheckedObjects(EnumerableTestData.FailAfter(PersonDb.All[1])));
+            CollectionAssert.AreEquivalent(before, ObjectListView.EnumerableToArray(this.olv.CheckedObjects, true));
+            this.olv.CheckedObjects = null;
+            Assert.IsEmpty(this.olv.CheckedObjects);
         }
 
         [TestMethod]

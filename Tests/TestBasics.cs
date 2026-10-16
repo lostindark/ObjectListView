@@ -8,8 +8,11 @@
  * 10/25/2008 JPP  Initial Version
  */
 
+using System;
 using System.Collections;
 using System.Drawing;
+using System.Linq;
+using System.ComponentModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 
@@ -65,6 +68,83 @@ namespace BrightIdeasSoftware.Tests
             foreach (object x in PersonDb.All)
                 Assert.AreNotEqual(-1, this.olv.IndexOf(x));
             Assert.AreEqual(PersonDb.All.Count, this.olv.GetItemCount());
+        }
+
+        [TestMethod]
+        public void Test_AddObjects_SingleUseQuery() {
+            this.olv.ClearObjects();
+            this.olv.AddObjects(new SingleUseEnumerable<Person>(PersonDb.All.Where(p => p.CulinaryRating > 100)));
+            CollectionAssert.AreEqual(PersonDb.All.Where(p => p.CulinaryRating > 100).ToArray(),
+                ObjectListView.EnumerableToArray(this.olv.Objects, true));
+        }
+
+        [TestMethod]
+        public void Test_RemoveObjects_SelfReferentialQuery() {
+            this.olv.SetObjects(new ArrayList(PersonDb.All));
+            this.olv.RemoveObjects(new SingleUseEnumerable<Person>(this.olv.Objects.Cast<Person>()));
+            Assert.AreEqual(0, this.olv.GetItemCount());
+        }
+
+        [TestMethod]
+        public void Test_CollectionChanges_EnumerationFailureIsAtomic() {
+            this.olv.SetObjects(PersonDb.All);
+            Person extra = new Person("extra");
+            Assert.ThrowsExactly<InvalidOperationException>(() => this.olv.AddObjects(EnumerableTestData.FailAfter(extra)));
+            Assert.AreEqual(-1, this.olv.IndexOf(extra));
+            Assert.ThrowsExactly<InvalidOperationException>(() => this.olv.RemoveObjects(EnumerableTestData.FailAfter(PersonDb.All[0])));
+            Assert.AreEqual(PersonDb.All.Count, this.olv.GetItemCount());
+        }
+
+        [TestMethod]
+        public void Test_CollectionChanges_EventsCanReplaceAndCancel() {
+            this.olv.ClearObjects();
+            EventHandler<ItemsAddingEventArgs> replace = delegate(object sender, ItemsAddingEventArgs args) {
+                CollectionAssert.AreEqual(new[] { PersonDb.All[0] }, (ICollection)args.ObjectsToAdd);
+                args.ObjectsToAdd = new[] { PersonDb.All[1] };
+            };
+            this.olv.ItemsAdding += replace;
+            this.olv.AddObjects(PersonDb.All.Take(1));
+            this.olv.ItemsAdding -= replace;
+            Assert.AreEqual(PersonDb.All[1], this.olv.GetModelObject(0));
+
+            this.olv.ItemsRemoving += delegate(object sender, ItemsRemovingEventArgs args) { args.Canceled = true; };
+            this.olv.RemoveObjects(PersonDb.All.Skip(1).Take(1));
+            this.olv.ItemsAdding += delegate(object sender, ItemsAddingEventArgs args) { args.Canceled = true; };
+            this.olv.AddObjects(PersonDb.All.Take(1));
+            Assert.AreEqual(1, this.olv.GetItemCount());
+        }
+
+        [TestMethod]
+        public void Test_CollectionChanges_EmptyAndNullInputs() {
+            this.olv.SetObjects(PersonDb.All);
+            this.olv.AddObjects(Enumerable.Empty<Person>());
+            this.olv.RemoveObjects(Enumerable.Empty<Person>());
+            this.olv.AddObjects(null);
+            this.olv.RemoveObjects(null);
+            Assert.AreEqual(PersonDb.All.Count, this.olv.GetItemCount());
+        }
+
+        [TestMethod]
+        public virtual void Test_InsertObjects_SingleUseQuery() {
+            this.olv.SetObjects(new[] { PersonDb.All[0], PersonDb.All[3] });
+            this.olv.InsertObjects(1, new SingleUseEnumerable<Person>(PersonDb.All.Skip(1).Take(2)));
+            CollectionAssert.AreEqual(PersonDb.All.Take(4).ToArray(),
+                ObjectListView.EnumerableToArray(this.olv.Objects, true));
+            Assert.ThrowsExactly<InvalidOperationException>(() => this.olv.InsertObjects(0,
+                EnumerableTestData.FailAfter(new Person("extra"))));
+            Assert.AreEqual(4, this.olv.GetItemCount());
+        }
+
+        [TestMethod]
+        public void Test_RefreshObjects_SingleUseAndFailingSequences() {
+            this.olv.SetObjects(PersonDb.All);
+            Person replacement = new Person(PersonDb.All[0].Name) { Occupation = "replacement occupation" };
+            Assert.ThrowsExactly<InvalidOperationException>(() => this.olv.RefreshObjects(EnumerableTestData.FailAfter(replacement)));
+            Assert.AreSame(PersonDb.All[0], this.olv.GetModelObject(0));
+
+            this.olv.RefreshObjects(new SingleUseEnumerable<Person>(new[] { replacement }));
+            Assert.AreSame(replacement, this.olv.GetModelObject(0));
+            Assert.AreEqual(replacement.Occupation, this.olv.GetItem(0).SubItems[1].Text);
         }
 
         [TestMethod]
@@ -180,6 +260,85 @@ namespace BrightIdeasSoftware.Tests
         protected override ObjectListView GetObjectListView() {
             return mainForm.fastObjectListView1;
         }
+
+        [TestMethod]
+        public void Test_DataSource_DirectEnumerableMutations() {
+            var source = ((FastObjectListView)this.olv).VirtualListDataSource;
+            this.olv.ClearObjects();
+            source.AddObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(2)));
+            source.InsertObjects(1, new SingleUseEnumerable<Person>(PersonDb.All.Skip(2).Take(1)));
+            this.olv.BuildList();
+            CollectionAssert.AreEqual(new[] { PersonDb.All[0], PersonDb.All[2], PersonDb.All[1] },
+                ObjectListView.EnumerableToArray(this.olv.Objects, true));
+            Assert.ThrowsExactly<InvalidOperationException>(() => source.AddObjects(
+                EnumerableTestData.FailAfter(new Person("extra"))));
+            Assert.ThrowsExactly<InvalidOperationException>(() => source.RemoveObjects(
+                EnumerableTestData.FailAfter(PersonDb.All[0])));
+            Assert.AreEqual(3, source.GetObjectCount());
+            source.RemoveObjects(new SingleUseEnumerable<Person>(this.olv.Objects.Cast<Person>()));
+            Assert.AreEqual(0, source.GetObjectCount());
+        }
+    }
+
+    [STATestClass]
+    public class TestVirtualOlvEnumerables : WinFormsTestFixture
+    {
+        [TestMethod]
+        public void Test_CustomDataSource_EnumerableCommands() {
+            var list = CreateVirtualObjectListView();
+            list.AddObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(2)));
+            list.InsertObjects(1, new SingleUseEnumerable<Person>(PersonDb.All.Skip(2).Take(1)));
+            Assert.AreEqual(3, list.GetItemCount());
+            Assert.AreSame(PersonDb.All[2], list.GetModelObject(1));
+            Assert.ThrowsExactly<InvalidOperationException>(() => list.RemoveObjects(
+                EnumerableTestData.FailAfter(PersonDb.All[0])));
+            Assert.AreEqual(3, list.GetItemCount());
+            list.RemoveObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(1)));
+            Assert.AreEqual(2, list.GetItemCount());
+            Person replacement = new Person(PersonDb.All[1].Name);
+            list.RefreshObjects(new SingleUseEnumerable<Person>(new[] { replacement }));
+            Assert.AreSame(replacement, list.GetModelObject(1));
+        }
+
+        [TestMethod]
+        public void Test_CustomDataSource_SelectionAndCheckingSnapshots() {
+            var list = CreateVirtualObjectListView();
+            list.SetObjects(PersonDb.All);
+            list.SetSelectedObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(2)));
+            IList selection = list.SelectedObjects;
+            list.SetSelectedObjects(new SingleUseEnumerable<Person>(
+                list.SelectedIndices.Cast<int>().Select(i => (Person)list.GetModelObject(i)).Take(1)));
+            Assert.AreSame(PersonDb.All[0], list.SelectedObject);
+            Assert.AreEqual(2, ObjectListView.EnumerableCount(selection));
+
+            list.CheckBoxes = true;
+            list.SetCheckedObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(2)));
+            IList checkedObjects = list.CheckedObjects;
+            list.CheckedObjects = null;
+            Assert.IsEmpty(list.CheckedObjects);
+            Assert.AreEqual(2, ObjectListView.EnumerableCount(checkedObjects));
+        }
+    }
+
+    [STATestClass]
+    public class TestDataOlvEnumerables : WinFormsTestFixture
+    {
+        [TestMethod]
+        public void Test_BoundCollectionCommands_RemainNoOps() {
+            using (var list = new DataListView()) {
+                mainForm.Controls.Add(list);
+                var people = new BindingList<Person>(PersonDb.All.Take(2).ToList());
+                list.DataSource = people;
+                Assert.AreEqual(2, list.GetItemCount());
+                list.AddObjects(EnumerableTestData.FailAfter(PersonDb.All[2]));
+                list.InsertObjects(0, EnumerableTestData.FailAfter(PersonDb.All[2]));
+                list.RemoveObjects(EnumerableTestData.FailAfter(PersonDb.All[0]));
+                Assert.AreEqual(2, list.GetItemCount());
+                Assert.AreEqual(2, people.Count);
+                people.Add(PersonDb.All[2]);
+                Assert.AreEqual(3, list.GetItemCount());
+            }
+        }
     }
 
     [STATestClass]
@@ -187,6 +346,12 @@ namespace BrightIdeasSoftware.Tests
     {
         protected override ObjectListView GetObjectListView() {
             return mainForm.treeListView1;
+        }
+
+        [TestMethod]
+        public override void Test_InsertObjects_SingleUseQuery() {
+            Assert.ThrowsExactly<NotImplementedException>(() =>
+                this.olv.InsertObjects(0, new SingleUseEnumerable<Person>(PersonDb.All.Take(1))));
         }
     }
 }

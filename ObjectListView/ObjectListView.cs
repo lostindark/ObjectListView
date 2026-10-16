@@ -4092,6 +4092,12 @@ namespace BrightIdeasSoftware
             if (this.GetItemCount() == 0 || this.Columns.Count == 0)
                 return;
 
+            if (order == SortOrder.None) {
+                order = this.Sorting;
+                if (order == SortOrder.None)
+                    order = SortOrder.Ascending;
+            }
+
             BeforeSortingEventArgs args = this.BuildBeforeSortingEventArgs(column, order);
             this.OnBeforeSorting(args);
             if (args.Canceled)
@@ -4106,11 +4112,6 @@ namespace BrightIdeasSoftware
         private BeforeSortingEventArgs BuildBeforeSortingEventArgs(OLVColumn column, SortOrder order) {
             OLVColumn groupBy = this.AlwaysGroupByColumn ?? column ?? this.GetColumn(0);
             SortOrder groupByOrder = this.AlwaysGroupBySortOrder;
-            if (order == SortOrder.None) {
-                order = this.Sorting;
-                if (order == SortOrder.None)
-                    order = SortOrder.Ascending;
-            }
             if (groupByOrder == SortOrder.None)
                 groupByOrder = order;
 
@@ -8331,7 +8332,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="columnToSortName">The name of the column whose values will be used for the sorting</param>
         public virtual void Sort(string columnToSortName) {
-            this.Sort(this.GetColumn(columnToSortName), this.PrimarySortOrder);
+            this.Sort(this.GetColumn(columnToSortName));
         }
 
         /// <summary>
@@ -8340,7 +8341,7 @@ namespace BrightIdeasSoftware
         /// <param name="columnToSortIndex">The index of the column whose values will be used for the sorting</param>
         public virtual void Sort(int columnToSortIndex) {
             if (columnToSortIndex >= 0 && columnToSortIndex < this.Columns.Count)
-                this.Sort(this.GetColumn(columnToSortIndex), this.PrimarySortOrder);
+                this.Sort(this.GetColumn(columnToSortIndex));
         }
 
         /// <summary>
@@ -8351,7 +8352,8 @@ namespace BrightIdeasSoftware
             if (this.InvokeRequired) {
                 this.Invoke((MethodInvoker)delegate { this.Sort(columnToSort); });
             } else {
-                this.Sort(columnToSort, this.PrimarySortOrder);
+                SortOrder order = this.PrimarySortOrder == SortOrder.None ? this.Sorting : this.PrimarySortOrder;
+                this.Sort(columnToSort, order == SortOrder.None ? SortOrder.Ascending : order);
             }
         }
 
@@ -8360,8 +8362,8 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="columnToSort">The column whose values will be used for the sorting.
         /// If null, the first column will be used.</param>
-        /// <param name="order">The ordering to be used for sorting. If this is None,
-        /// this.Sorting and then SortOrder.Ascending will be used</param>
+        /// <param name="order">The ordering to use. None preserves item order and disables
+        /// automatic sorting. Grouped lists still use Sorting or Ascending as their default order.</param>
         /// <remarks>If ShowGroups is true, the rows will be grouped by the given column.
         /// If AlwaysGroupsByColumn is not null, the rows will be grouped by that column,
         /// and the rows within each group will be sorted by the given column.</remarks>
@@ -8404,6 +8406,9 @@ namespace BrightIdeasSoftware
 
             // Finally, do the work of sorting, unless an event handler has already done the sorting for us
             if (!args.Handled) {
+                if (args.SortOrder == SortOrder.None && !this.VirtualMode)
+                    this.ListViewItemSorter = null;
+
                 // Sanity checks
                 if (args.ColumnToSort != null && args.SortOrder != SortOrder.None) {
                     if (this.ShowGroups)

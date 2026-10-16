@@ -10,10 +10,101 @@
 
 using System;
 using System.Drawing;
+using System.Windows.Forms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests
 {
+    [STATestClass]
+    public class TestColumnButtonRendering : WinFormsTestFixture
+    {
+        [TestMethod]
+        [DataRow("", false, "image", 60)]
+        [DataRow("", false, "image", 16)]
+        [DataRow("Run", false, "image", 60)]
+        [DataRow("Run", true, "image", 60)]
+        [DataRow("Run", false, "index", 60)]
+        [DataRow("Run", false, "key", 60)]
+        public void Test_ButtonImage_IsDrawnBesideText(string text, bool rightToLeft, string selectorKind, int height) {
+            using (var image = new Bitmap(16, 16))
+            using (var imageGraphics = Graphics.FromImage(image))
+            using (var images = new ImageList { ColorDepth = ColorDepth.Depth32Bit, ImageSize = image.Size })
+            using (var bitmap = new Bitmap(240, 80))
+            using (var graphics = Graphics.FromImage(bitmap)) {
+                imageGraphics.Clear(Color.Magenta);
+                images.Images.Add("icon", image);
+                var list = mainForm.objectListView1;
+                list.RightToLeftLayout = rightToLeft;
+                var column = list.GetColumn(0);
+                column.AspectGetter = delegate { return text; };
+                column.ImageGetter = delegate {
+                    if (selectorKind == "index")
+                        return 0;
+                    if (selectorKind == "key")
+                        return "icon";
+                    return image;
+                };
+                column.IsButton = true;
+                list.SetObjects(new[] { PersonDb.All[0] });
+                var item = list.GetItem(0);
+                var renderer = new ButtonRendererProbe {
+                    ListView = list, Column = column, ListItem = item, SubItem = item.GetSubItem(0),
+                    ImageList = images
+                };
+                Rectangle bounds = new Rectangle(10, 10, 200, height);
+                graphics.Clear(Color.White);
+                renderer.DrawButton(graphics, bounds);
+
+                int pixels = 0;
+                int totalX = 0;
+                for (int y = 0; y < bitmap.Height; y++) {
+                    for (int x = 0; x < bitmap.Width; x++) {
+                        if (bitmap.GetPixel(x, y).ToArgb() == Color.Magenta.ToArgb()) {
+                            Assert.IsTrue(bounds.Contains(x, y));
+                            pixels++;
+                            totalX += x;
+                        }
+                    }
+                }
+                Assert.AreEqual(image.Width * image.Height, pixels);
+                if (text.Length > 0)
+                    Assert.AreEqual(rightToLeft, (double)totalX / pixels > bounds.Left + bounds.Width / 2);
+            }
+        }
+
+        [TestMethod]
+        public void Test_ButtonContentSize_IncludesImage() {
+            using (var image = new Bitmap(24, 32))
+            using (var bitmap = new Bitmap(300, 100))
+            using (var graphics = Graphics.FromImage(bitmap)) {
+                var list = mainForm.objectListView1;
+                list.SetObjects(new[] { PersonDb.All[0] });
+                var item = list.GetItem(0);
+                var renderer = new ButtonRendererProbe {
+                    ListView = list, Column = list.GetColumn(0), ListItem = item, SubItem = item.GetSubItem(0)
+                };
+                Rectangle bounds = new Rectangle(0, 0, 300, 100);
+                Size textOnly = renderer.MeasureButton(graphics, bounds);
+                item.ImageSelector = image;
+                Size withImage = renderer.MeasureButton(graphics, bounds);
+                Assert.AreEqual(textOnly.Width + image.Width + renderer.Spacing, withImage.Width);
+                Assert.IsGreaterThanOrEqualTo(image.Height + renderer.ButtonPadding.Value.Height * 2, withImage.Height);
+                Assert.AreEqual(16, renderer.MeasureButton(graphics, new Rectangle(0, 0, 300, 16)).Height);
+            }
+        }
+
+        private sealed class ButtonRendererProbe : ColumnButtonRenderer
+        {
+            public void DrawButton(Graphics graphics, Rectangle bounds) {
+                this.DrawImageAndText(graphics, bounds);
+            }
+
+            public Size MeasureButton(Graphics graphics, Rectangle bounds) {
+                return this.CalculateContentSize(graphics, bounds);
+            }
+        }
+    }
+
     [STATestClass]
     public class TestOlvFormatting : WinFormsTestFixture
     {

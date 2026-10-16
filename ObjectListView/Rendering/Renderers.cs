@@ -3811,18 +3811,26 @@ namespace BrightIdeasSoftware {
             if (this.SizingMode == OLVColumn.ButtonSizingMode.FixedBounds)
                 return this.ButtonSize ?? r.Size;
 
-            // Ok, SizingMode must be TextBounds. So figure out the size of the text
-            Size textSize = this.CalculateTextSize(g, this.GetText(), r.Width);
+            Image image = this.GetImage();
+            Size textSize = this.CalculateButtonContentSize(g, r, this.GetText(), image == null ? Size.Empty : image.Size);
 
             // Allow for padding and max width
             textSize.Height += this.ButtonPaddingOrDefault.Height * 2;
             textSize.Width += this.ButtonPaddingOrDefault.Width * 2;
+            if (image != null)
+                textSize.Height = Math.Min(r.Height, textSize.Height);
             if (this.MaxButtonWidth != -1 && textSize.Width > this.MaxButtonWidth)
                 textSize.Width = this.MaxButtonWidth;
             if (textSize.Width < this.MinButtonWidth)
                 textSize.Width = this.MinButtonWidth;
 
             return textSize;
+        }
+
+        private Size CalculateButtonContentSize(Graphics g, Rectangle bounds, string text, Size imageSize) {
+            int spacing = imageSize.Width > 0 && !String.IsNullOrEmpty(text) ? this.Spacing : 0;
+            Size textSize = this.CalculateTextSize(g, text, Math.Max(1, bounds.Width - imageSize.Width - spacing));
+            return new Size(imageSize.Width + spacing + textSize.Width, Math.Max(imageSize.Height, textSize.Height));
         }
 
         /// <summary>
@@ -3841,8 +3849,43 @@ namespace BrightIdeasSoftware {
                 textFormatFlags |= TextFormatFlags.RightToLeft;
 
             string buttonText = GetText();
-            if (!String.IsNullOrEmpty(buttonText))
-                ButtonRenderer.DrawButton(g, r, buttonText, this.Font, textFormatFlags, false, CalculatePushButtonState());
+            Image image = this.GetImage();
+            PushButtonState state = CalculatePushButtonState();
+            if (image == null) {
+                if (!String.IsNullOrEmpty(buttonText))
+                    ButtonRenderer.DrawButton(g, r, buttonText, this.Font, textFormatFlags, false, state);
+                return;
+            }
+
+            Rectangle contentBounds = r;
+            int horizontalPadding = Math.Min(this.ButtonPaddingOrDefault.Width, Math.Max(0, (r.Width - image.Width) / 2));
+            int verticalPadding = Math.Min(this.ButtonPaddingOrDefault.Height, Math.Max(0, (r.Height - image.Height) / 2));
+            contentBounds.Inflate(-horizontalPadding, -verticalPadding);
+            if (contentBounds.Width <= 0 || contentBounds.Height <= 0) {
+                ButtonRenderer.DrawButton(g, r, false, state);
+                return;
+            }
+
+            double scale = Math.Min(1, Math.Min((double)contentBounds.Width / image.Width, (double)contentBounds.Height / image.Height));
+            Size imageSize = new Size(Math.Max(1, (int)(image.Width * scale)), Math.Max(1, (int)(image.Height * scale)));
+            Size contentSize = this.CalculateButtonContentSize(g, contentBounds, buttonText, imageSize);
+            int contentWidth = Math.Min(contentBounds.Width, contentSize.Width);
+            contentBounds.X += (contentBounds.Width - contentWidth) / 2;
+            contentBounds.Width = contentWidth;
+            Rectangle imageBounds = new Rectangle(
+                this.ListView.RightToLeftLayout ? contentBounds.Right - imageSize.Width : contentBounds.Left,
+                contentBounds.Top + (contentBounds.Height - imageSize.Height) / 2,
+                imageSize.Width, imageSize.Height);
+            ButtonRenderer.DrawButton(g, r, image, imageBounds, false, state);
+
+            int imageAndSpacing = imageSize.Width + (String.IsNullOrEmpty(buttonText) ? 0 : this.Spacing);
+            if (!this.ListView.RightToLeftLayout)
+                contentBounds.X += imageAndSpacing;
+            contentBounds.Width -= imageAndSpacing;
+            if (!String.IsNullOrEmpty(buttonText) && contentBounds.Width > 0) {
+                Color textColor = state == PushButtonState.Disabled ? SystemColors.GrayText : SystemColors.ControlText;
+                TextRenderer.DrawText(g, buttonText, this.Font, contentBounds, textColor, textFormatFlags);
+            }
         }
 
         /// <summary>

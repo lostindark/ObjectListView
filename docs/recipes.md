@@ -240,6 +240,22 @@ This really needs a page to itself: [Cell Editing in an ObjectListView](cell-edi
 
 ## 3. How can I do some fancy sorting?
 
+Click a column header to start a new sort. Hold **Shift** while clicking other headers to
+add secondary, third, fourth, or further sort fields. Shift-clicking an existing sort
+field reverses its direction without changing its priority. When multiple fields are
+sorted, each sorted header shows its priority number beside the direction arrow.
+A single sort field shows only the direction arrow.
+
+For the same behavior in code, use `Sort(column, order, addToSort: true)` to append a
+field or update its direction, or pass `false` to start a fresh sort. `SortDescriptions`
+returns the active fields in priority order. The existing primary and secondary sort
+properties remain available as compatibility wrappers around the first two entries.
+Use `Sort(IEnumerable<OLVSortDescription>)` to replace the complete ordered sort;
+pass an empty collection to remove sorting. Sorting events and grouping parameters
+also expose the full collection through `SortDescriptions`.
+Custom virtual data sources can compare the full chain with
+`new ModelObjectComparer(listView.SortDescriptions)` inside their sort implementation.
+
 There are a couple of ways to change the standard sorting behaviour:
 
 - You can listen for the `BeforeSorting` event, do whatever sorting you like, and then set `Handled` to *true* on the event so that no standard sorting is done. If you want to prevent sorting, you can set `Canceled` to *true*.

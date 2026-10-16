@@ -93,6 +93,23 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
+        /// Create a comparer using columns in order of sort priority.
+        /// </summary>
+        public ColumnComparer(IEnumerable<OLVSortDescription> sortDescriptions) {
+            this.sortOrder = SortOrder.None;
+            ColumnComparer current = this;
+            foreach (OLVSortDescription description in sortDescriptions) {
+                if (current.column != null) {
+                    current.secondComparer = new ColumnComparer(description.Column, description.SortOrder);
+                    current = current.secondComparer;
+                } else {
+                    current.column = description.Column;
+                    current.sortOrder = description.SortOrder;
+                }
+            }
+        }
+
+        /// <summary>
         /// Compare two rows
         /// </summary>
         /// <param name="x">row1</param>
@@ -257,6 +274,23 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
+        /// Create a comparer using columns in order of sort priority.
+        /// </summary>
+        public ModelObjectComparer(IEnumerable<OLVSortDescription> sortDescriptions) {
+            this.sortOrder = SortOrder.None;
+            ModelObjectComparer current = this;
+            foreach (OLVSortDescription description in sortDescriptions) {
+                if (current.column != null) {
+                    current.secondComparer = new ModelObjectComparer(description.Column, description.SortOrder);
+                    current = current.secondComparer;
+                } else {
+                    current.column = description.Column;
+                    current.sortOrder = description.SortOrder;
+                }
+            }
+        }
+
+        /// <summary>
         /// Compare the two model objects
         /// </summary>
         /// <param name="x"></param>
@@ -264,12 +298,12 @@ namespace BrightIdeasSoftware
         /// <returns></returns>
         public int Compare(object x, object y)
         {
+            if (this.sortOrder == SortOrder.None)
+                return 0;
+
             int result = 0;
             object x1 = this.column.GetValue(x);
             object y1 = this.column.GetValue(y);
-
-            if (this.sortOrder == SortOrder.None)
-                return 0;
 
             // Handle nulls. Null values come last
             bool xIsNull = (x1 == null || x1 == System.DBNull.Value);

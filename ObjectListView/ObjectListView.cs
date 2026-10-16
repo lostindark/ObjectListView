@@ -2700,14 +2700,13 @@ namespace BrightIdeasSoftware
         [Browsable(false),
         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual OLVColumn PrimarySortColumn {
-            get { return this.primarySortColumn; }
+            get { return this.sortDescriptions.GetColumn(0); }
             set {
-                this.primarySortColumn = value;
+                this.sortDescriptions.SetColumn(0, value);
                 if (this.TintSortColumn) 
                     this.SelectedColumn = value;
             }
         }
-        private OLVColumn primarySortColumn;
 
         /// <summary>
         /// Which direction did we last sort
@@ -2715,10 +2714,36 @@ namespace BrightIdeasSoftware
         [Browsable(false),
         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual SortOrder PrimarySortOrder {
-            get { return primarySortOrder; }
-            set { primarySortOrder = value; }
+            get { return this.sortDescriptions.GetOrder(0); }
+            set { this.sortDescriptions.SetOrder(0, value); }
         }
-        private SortOrder primarySortOrder;
+
+        /// <summary>
+        /// Gets the active sort columns and directions in priority order.
+        /// Shift-clicking a header appends a column or toggles its direction.
+        /// </summary>
+        [Browsable(false),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public IList<OLVSortDescription> SortDescriptions {
+            get {
+                return this.sortDescriptionsInProgress ?? this.sortDescriptions.GetActiveDescriptions();
+            }
+        }
+        private readonly SortDescriptionCollection sortDescriptions = new SortDescriptionCollection();
+        private SortDescriptionCollection requestedSortDescriptions;
+        private IList<OLVSortDescription> sortDescriptionsInProgress;
+
+        /// <summary>
+        /// Gets the one-based sort priority of a column, or zero if it is not sorted.
+        /// </summary>
+        public int GetSortPriority(OLVColumn column) {
+            IList<OLVSortDescription> descriptions = this.SortDescriptions;
+            for (int i = 0; i < descriptions.Count; i++) {
+                if (descriptions[i].Column == column)
+                    return i + 1;
+            }
+            return 0;
+        }
 
         /// <summary>
         /// Gets or sets if non-editable checkboxes are drawn as disabled. Default is false.
@@ -2805,14 +2830,13 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Get/set the column that will be used to resolve comparisons that are equal when sorting.
         /// </summary>
-        /// <remarks>There is no user interface for this setting. It must be set programmatically.</remarks>
+        /// <remarks>Shift-click a column header to add a secondary or subsequent sort field.</remarks>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual OLVColumn SecondarySortColumn {
-            get { return this.secondarySortColumn; }
-            set { this.secondarySortColumn = value; }
+            get { return this.sortDescriptions.GetColumn(1); }
+            set { this.sortDescriptions.SetColumn(1, value); }
         }
-        private OLVColumn secondarySortColumn;
 
         /// <summary>
         /// When the SecondarySortColumn is used, in what order will it compare results?
@@ -2820,10 +2844,9 @@ namespace BrightIdeasSoftware
         [Browsable(false),
         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual SortOrder SecondarySortOrder {
-            get { return this.secondarySortOrder; }
-            set { this.secondarySortOrder = value; }
+            get { return this.sortDescriptions.GetOrder(1); }
+            set { this.sortDescriptions.SetOrder(1, value); }
         }
-        private SortOrder secondarySortOrder = SortOrder.None;
 
         /// <summary>
         /// Gets or sets if all rows should be selected when the user presses Ctrl-A
@@ -4025,7 +4048,7 @@ namespace BrightIdeasSoftware
                 return;
             }
             this.InsertObjects(ObjectListView.EnumerableCount(this.Objects), modelObjects);
-            this.Sort(this.PrimarySortColumn, this.PrimarySortOrder);
+            this.Sort();
         }
 
         /// <summary>
@@ -4071,7 +4094,8 @@ namespace BrightIdeasSoftware
         /// if there is no last sort column
         /// </summary>
         public virtual void BuildGroups() {
-            this.BuildGroups(this.PrimarySortColumn, this.PrimarySortOrder == SortOrder.None ? SortOrder.Ascending : this.PrimarySortOrder);
+            this.BuildGroups(this.sortDescriptions.GetColumn(0),
+                this.sortDescriptions.GetOrder(0) == SortOrder.None ? SortOrder.Ascending : this.sortDescriptions.GetOrder(0));
         }
 
         /// <summary>
@@ -4103,26 +4127,43 @@ namespace BrightIdeasSoftware
             if (args.Canceled)
                 return;
 
-            this.BuildGroups(args.ColumnToGroupBy, args.GroupByOrder,
-                args.ColumnToSort, args.SortOrder, args.SecondaryColumnToSort, args.SecondarySortOrder);
+            this.BuildGroups(args.ColumnToGroupBy, args.GroupByOrder, args.SortDescriptions);
 
             this.OnAfterSorting(new AfterSortingEventArgs(args));
         }
 
         private BeforeSortingEventArgs BuildBeforeSortingEventArgs(OLVColumn column, SortOrder order) {
+            return this.BuildBeforeSortingEventArgs(this.requestedSortDescriptions ?? this.sortDescriptions.WithPrimary(column, order));
+        }
+
+        private BeforeSortingEventArgs BuildBeforeSortingEventArgs(SortDescriptionCollection descriptions) {
+            OLVColumn column = descriptions.GetColumn(0);
+            SortOrder order = descriptions.GetOrder(0);
             OLVColumn groupBy = this.AlwaysGroupByColumn ?? column ?? this.GetColumn(0);
             SortOrder groupByOrder = this.AlwaysGroupBySortOrder;
             if (groupByOrder == SortOrder.None)
                 groupByOrder = order;
 
-            BeforeSortingEventArgs args = new BeforeSortingEventArgs(
-                groupBy, groupByOrder,
-                column, order,
-                this.SecondarySortColumn ?? this.GetColumn(0),
-                this.SecondarySortOrder == SortOrder.None ? order : this.SecondarySortOrder);
-            if (column != null)
-                args.Canceled = !column.Sortable;
+            BeforeSortingEventArgs args = new BeforeSortingEventArgs(groupBy, groupByOrder, descriptions);
+            foreach (OLVSortDescription description in descriptions)
+                args.Canceled |= description.Column != null && !description.Column.Sortable;
             return args;
+        }
+
+        /// <summary>
+        /// Build groups using an ordered collection of sort fields.
+        /// </summary>
+        public virtual void BuildGroups(OLVColumn groupByColumn, SortOrder groupByOrder,
+            IEnumerable<OLVSortDescription> sortDescriptions) {
+            SortDescriptionCollection descriptions = new SortDescriptionCollection(sortDescriptions);
+            IList<OLVSortDescription> previous = this.sortDescriptionsInProgress;
+            this.sortDescriptionsInProgress = descriptions.GetActiveDescriptions();
+            try {
+                this.BuildGroups(groupByColumn, groupByOrder, descriptions.GetColumn(0), descriptions.GetOrder(0),
+                    descriptions.GetColumn(1), descriptions.GetOrder(1));
+            } finally {
+                this.sortDescriptionsInProgress = previous;
+            }
         }
 
         /// <summary>
@@ -4198,10 +4239,13 @@ namespace BrightIdeasSoftware
 
             string titleFormat = this.ShowItemCountOnGroups ? groupByColumn.GroupWithItemCountFormatOrDefault : null;
             string titleSingularFormat = this.ShowItemCountOnGroups ? groupByColumn.GroupWithItemCountSingularFormatOrDefault : null;
+            SortDescriptionCollection descriptions = this.sortDescriptionsInProgress != null
+                ? new SortDescriptionCollection(this.sortDescriptionsInProgress).WithPrimary(sortByColumn, sortByOrder)
+                : new SortDescriptionCollection(sortByColumn, sortByOrder, secondaryColumn, secondaryOrder);
             GroupingParameters parms = new GroupingParameters(this, groupByColumn, groupByOrder,
-                sortByColumn, sortByOrder, secondaryColumn, secondaryOrder,
+                descriptions,
                 titleFormat, titleSingularFormat, 
-                this.SortGroupItemsByPrimaryColumn && this.AlwaysGroupByColumn == null);
+                this.SortGroupItemsByPrimaryColumn && this.AlwaysGroupByColumn == null && descriptions.GetActiveDescriptions().Count < 2);
             return parms;
         }
 
@@ -4227,10 +4271,9 @@ namespace BrightIdeasSoftware
             }
 
             // Sort the items within each group (unless specifically turned off)
-            OLVColumn sortColumn = parms.SortItemsByPrimaryColumn ? parms.ListView.GetColumn(0) : parms.PrimarySort;
-            if (sortColumn != null && parms.PrimarySortOrder != SortOrder.None) {
-                IComparer<OLVListItem> itemSorter = parms.ItemComparer ?? 
-                    new ColumnComparer(sortColumn, parms.PrimarySortOrder, parms.SecondarySort, parms.SecondarySortOrder);
+            IList<OLVSortDescription> descriptions = parms.GetItemSortDescriptions();
+            if (descriptions.Count > 0) {
+                IComparer<OLVListItem> itemSorter = parms.ItemComparer ?? new ColumnComparer(descriptions);
                 foreach (object key in map.Keys) {
                     map[key].Sort(itemSorter);
                 }
@@ -5671,18 +5714,29 @@ namespace BrightIdeasSoftware
         /// Event handler for the column click event
         /// </summary>
         protected virtual void HandleColumnClick(object sender, ColumnClickEventArgs e) {
+            this.HandleColumnClick(e, Control.ModifierKeys);
+        }
+
+        /// <summary>
+        /// Sort a clicked column using the keyboard modifiers captured for the click.
+        /// </summary>
+        protected virtual void HandleColumnClick(ColumnClickEventArgs e, Keys modifiers) {
             if (!this.PossibleFinishCellEditing())
                 return;
 
-            // Toggle the sorting direction on successive clicks on the same column
-            if (this.PrimarySortColumn != null && e.Column == this.PrimarySortColumn.Index)
-                this.PrimarySortOrder = (this.PrimarySortOrder == SortOrder.Descending ? SortOrder.Ascending : SortOrder.Descending);
-            else
-                this.PrimarySortOrder = SortOrder.Ascending;
+            OLVColumn column = this.GetColumn(e.Column);
+            bool addToSort = (modifiers & Keys.Shift) == Keys.Shift;
+            SortOrder order = SortOrder.Ascending;
+            foreach (OLVSortDescription description in this.SortDescriptions) {
+                if (description.Column == column && (addToSort || column == this.PrimarySortColumn)) {
+                    order = description.SortOrder == SortOrder.Descending ? SortOrder.Ascending : SortOrder.Descending;
+                    break;
+                }
+            }
 
             this.BeginUpdate();
             try {
-                this.Sort(e.Column);
+                this.Sort(column, order, addToSort);
             } finally {
                 this.EndUpdate();
             }
@@ -8324,7 +8378,7 @@ namespace BrightIdeasSoftware
         /// Sort the items by the last sort column and order
         /// </summary>
         public new void Sort() {
-            this.Sort(this.PrimarySortColumn, this.PrimarySortOrder);
+            this.Sort(this.sortDescriptions.GetColumn(0), this.sortDescriptions.GetOrder(0));
         }
 
         /// <summary>
@@ -8352,7 +8406,7 @@ namespace BrightIdeasSoftware
             if (this.InvokeRequired) {
                 this.Invoke((MethodInvoker)delegate { this.Sort(columnToSort); });
             } else {
-                SortOrder order = this.PrimarySortOrder == SortOrder.None ? this.Sorting : this.PrimarySortOrder;
+                SortOrder order = this.sortDescriptions.GetOrder(0) == SortOrder.None ? this.Sorting : this.sortDescriptions.GetOrder(0);
                 this.Sort(columnToSort, order == SortOrder.None ? SortOrder.Ascending : order);
             }
         }
@@ -8371,78 +8425,134 @@ namespace BrightIdeasSoftware
             if (this.InvokeRequired) {
                 this.Invoke((MethodInvoker)delegate { this.Sort(columnToSort, order); });
             } else {
-                this.DoSort(columnToSort, order);
+                this.DoSort(this.requestedSortDescriptions ?? this.sortDescriptions.WithPrimary(columnToSort, order));
                 this.PostProcessRows();
             }
         }
 
-        private void DoSort(OLVColumn columnToSort, SortOrder order) {
+        /// <summary>
+        /// Sort by a column, optionally adding it to the existing sort.
+        /// An existing column keeps its priority and receives the given direction.
+        /// </summary>
+        public virtual void Sort(OLVColumn columnToSort, SortOrder order, bool addToSort) {
+            if (this.InvokeRequired) {
+                this.Invoke((MethodInvoker)delegate { this.Sort(columnToSort, order, addToSort); });
+                return;
+            }
+            if (columnToSort == null)
+                throw new ArgumentNullException("columnToSort");
+            List<OLVSortDescription> descriptions = addToSort
+                ? new List<OLVSortDescription>(this.SortDescriptions) : new List<OLVSortDescription>();
+            int index = descriptions.FindIndex(x => x.Column == columnToSort);
+            OLVSortDescription description = new OLVSortDescription(columnToSort, order);
+            if (index < 0)
+                descriptions.Add(description);
+            else
+                descriptions[index] = description;
+
+            this.Sort(descriptions);
+        }
+
+        /// <summary>
+        /// Replace the sort with the given fields in priority order. An empty collection removes sorting.
+        /// </summary>
+        public virtual void Sort(IEnumerable<OLVSortDescription> sortDescriptions) {
+            if (this.InvokeRequired) {
+                this.Invoke((MethodInvoker)delegate { this.Sort(sortDescriptions); });
+                return;
+            }
+            SortDescriptionCollection descriptions = new SortDescriptionCollection(sortDescriptions);
+            if (descriptions.Count == 0) {
+                this.Unsort();
+                return;
+            }
+            SortDescriptionCollection previous = this.requestedSortDescriptions;
+            this.requestedSortDescriptions = descriptions;
+            try {
+                this.Sort(descriptions.GetColumn(0), descriptions.GetOrder(0));
+            } finally {
+                this.requestedSortDescriptions = previous;
+            }
+        }
+
+        internal ModelObjectComparer CreateModelObjectComparer(OLVColumn column, SortOrder order) {
+            return new ModelObjectComparer(this.sortDescriptionsInProgress ??
+                this.sortDescriptions.WithPrimary(column, order).GetActiveDescriptions());
+        }
+
+        private void DoSort(SortDescriptionCollection descriptions) {
             // Sanity checks
             if (this.GetItemCount() == 0 || this.Columns.Count == 0)
                 return;
 
             // Fill in default values, if the parameters don't make sense
             if (this.ShowGroups) {
-                columnToSort = columnToSort ?? this.GetColumn(0);
-                if (order == SortOrder.None) {
-                    order = this.Sorting;
-                    if (order == SortOrder.None)
-                        order = SortOrder.Ascending;
-                }
+                descriptions = descriptions.WithPrimary(descriptions.GetColumn(0) ?? this.GetColumn(0),
+                    descriptions.GetOrder(0) == SortOrder.None
+                        ? (this.Sorting == SortOrder.None ? SortOrder.Ascending : this.Sorting)
+                        : descriptions.GetOrder(0));
             }
 
             // Give the world a chance to fiddle with or completely avoid the sorting process
-            BeforeSortingEventArgs args = this.BuildBeforeSortingEventArgs(columnToSort, order);
+            BeforeSortingEventArgs args = this.BuildBeforeSortingEventArgs(descriptions);
             this.OnBeforeSorting(args);
             if (args.Canceled)
                 return;
 
-            // Virtual lists don't preserve selection, so we have to do it specifically
-            // THINK: Do we need to preserve focus too?
-            IList selection = this.VirtualMode ? this.SelectedObjects : null;
-            this.SuspendSelectionEvents();
+            IList<OLVSortDescription> previousDescriptions = this.sortDescriptionsInProgress;
+            this.sortDescriptionsInProgress = args.GetActiveSortDescriptions();
+            try {
+                // Virtual lists don't preserve selection, so we have to do it specifically
+                IList selection = this.VirtualMode ? this.SelectedObjects : null;
+                this.SuspendSelectionEvents();
+                try {
+                    this.ClearHotItem();
 
-            this.ClearHotItem();
+                    // An event handler may have already performed the sort.
+                    if (!args.Handled) {
+                        if (this.sortDescriptionsInProgress.Count == 0 && !this.VirtualMode)
+                            this.ListViewItemSorter = null;
 
-            // Finally, do the work of sorting, unless an event handler has already done the sorting for us
-            if (!args.Handled) {
-                if (args.SortOrder == SortOrder.None && !this.VirtualMode)
-                    this.ListViewItemSorter = null;
+                        if (this.sortDescriptionsInProgress.Count > 0) {
+                            if (this.ShowGroups)
+                                this.BuildGroups(args.ColumnToGroupBy, args.GroupByOrder, args.SortDescriptions);
+                            else if (this.CustomSorter != null)
+                                this.CustomSorter(args.ColumnToSort, args.SortOrder);
+                            else
+                                this.ListViewItemSorter = new ColumnComparer(this.sortDescriptionsInProgress);
+                        }
+                    }
 
-                // Sanity checks
-                if (args.ColumnToSort != null && args.SortOrder != SortOrder.None) {
-                    if (this.ShowGroups)
-                        this.BuildGroups(args.ColumnToGroupBy, args.GroupByOrder, args.ColumnToSort, args.SortOrder,
-                            args.SecondaryColumnToSort, args.SecondarySortOrder);
-                    else if (this.CustomSorter != null)
-                        this.CustomSorter(args.ColumnToSort, args.SortOrder);
-                    else
-                        this.ListViewItemSorter = new ColumnComparer(args.ColumnToSort, args.SortOrder,
-                            args.SecondaryColumnToSort, args.SecondarySortOrder);
+                    this.sortDescriptions.ReplaceWith(this.sortDescriptionsInProgress.Count > 0
+                        ? this.sortDescriptionsInProgress : args.SortDescriptions);
+                    if (this.TintSortColumn)
+                        this.SelectedColumn = this.sortDescriptions.GetColumn(0);
+
+                    if (this.ShowSortIndicators)
+                        this.ShowSortIndicator(args.ColumnToSort, args.SortOrder);
+
+                    if (selection != null && selection.Count > 0)
+                        this.SelectedObjects = selection;
+                } finally {
+                    this.ResumeSelectionEvents();
                 }
+
+                this.RefreshHotItem();
+                this.OnAfterSorting(new AfterSortingEventArgs(args));
+            } finally {
+                this.sortDescriptionsInProgress = previousDescriptions;
             }
-
-            if (this.ShowSortIndicators)
-                this.ShowSortIndicator(args.ColumnToSort, args.SortOrder);
-
-            this.PrimarySortColumn = args.ColumnToSort;
-            this.PrimarySortOrder = args.SortOrder;
-
-            if (selection != null && selection.Count > 0)
-                this.SelectedObjects = selection;
-            this.ResumeSelectionEvents();
-
-            this.RefreshHotItem();
-
-            this.OnAfterSorting(new AfterSortingEventArgs(args));
         }
 
         /// <summary>
         /// Put a sort indicator next to the text of the sort column
         /// </summary>
         public virtual void ShowSortIndicator() {
-            if (this.ShowSortIndicators && this.PrimarySortOrder != SortOrder.None)
-                this.ShowSortIndicator(this.PrimarySortColumn, this.PrimarySortOrder);
+            if (this.ShowSortIndicators) {
+                IList<OLVSortDescription> descriptions = this.SortDescriptions;
+                this.ShowSortIndicator(descriptions.Count > 0 ? descriptions[0].Column : null,
+                    descriptions.Count > 0 ? descriptions[0].SortOrder : SortOrder.None);
+            }
         }
 
         /// <summary>
@@ -8473,6 +8583,7 @@ namespace BrightIdeasSoftware
                 else
                     NativeMethods.SetColumnImage(this, i, SortOrder.None, -1);
             }
+            this.HeaderControl.Invalidate();
         }
 
         /// <summary>
@@ -8537,8 +8648,11 @@ namespace BrightIdeasSoftware
         /// </summary>
         public virtual void Unsort() {
             this.ShowGroups = false;
-            this.PrimarySortColumn = null;
-            this.PrimarySortOrder = SortOrder.None;
+            this.sortDescriptions.Clear();
+            if (this.TintSortColumn)
+                this.SelectedColumn = null;
+            if (this.ShowSortIndicators)
+                this.ShowSortIndicator(null, SortOrder.None);
             this.BuildList();
         }
 
@@ -8971,8 +9085,9 @@ namespace BrightIdeasSoftware
             this.Clear();
             this.AllColumns.Clear();
             this.ClearObjects();
-            this.PrimarySortColumn = null;
-            this.SecondarySortColumn = null;
+            this.sortDescriptions.Clear();
+            if (this.TintSortColumn)
+                this.SelectedColumn = null;
             this.ClearDisabledObjects();
             this.ClearPersistentCheckState();
             this.ClearUrlVisited();

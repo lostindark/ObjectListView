@@ -144,9 +144,7 @@ namespace BrightIdeasSoftware
         /// the original ordering of model objects is lost when Sort() is called. So this method
         /// effectively just turns off sorting.</remarks>
         public override void Unsort() {
-            this.ShowGroups = false;
-            this.PrimarySortColumn = null;
-            this.PrimarySortOrder = SortOrder.None;
+            base.Unsort();
             this.SetObjects(this.Objects);
         }
     }
@@ -237,7 +235,7 @@ namespace BrightIdeasSoftware
         /// <param name="sortOrder"></param>
         public override void Sort(OLVColumn column, SortOrder sortOrder) {
             if (sortOrder != SortOrder.None) {
-                ModelObjectComparer comparer = new ModelObjectComparer(column, sortOrder, this.listView.SecondarySortColumn, this.listView.SecondarySortOrder);
+                ModelObjectComparer comparer = this.listView.CreateModelObjectComparer(column, sortOrder);
                 this.fullObjectList.Sort(comparer);
                 this.filteredObjectList.Sort(comparer);
             }

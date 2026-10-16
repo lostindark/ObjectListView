@@ -1410,7 +1410,9 @@ namespace BrightIdeasSoftware
             /// <returns>Return the index of the first branch that was expanded</returns>
             public virtual int ExpandAll() {
                 this.trunk.ExpandAll();
-                this.Sort(this.lastSortColumn, this.lastSortOrder);
+                IList<OLVSortDescription> descriptions = this.treeView.SortDescriptions;
+                this.Sort(descriptions.Count > 0 ? descriptions[0].Column : null,
+                    descriptions.Count > 0 ? descriptions[0].SortOrder : SortOrder.None);
                 return 0;
             }
 
@@ -1633,10 +1635,13 @@ namespace BrightIdeasSoftware
             /// <param name="column"></param>
             /// <param name="order"></param>
             public virtual void Sort(OLVColumn column, SortOrder order) {
-                this.lastSortColumn = column;
-                this.lastSortOrder = order;
-
-                // TODO: Need to raise an AboutToSortEvent here
+                IList<OLVSortDescription> descriptions = this.treeView.SortDescriptions;
+                OLVColumn currentColumn = descriptions.Count > 0 ? descriptions[0].Column : null;
+                SortOrder currentOrder = descriptions.Count > 0 ? descriptions[0].SortOrder : SortOrder.None;
+                if (order != currentOrder || (order != SortOrder.None && column != currentColumn)) {
+                    this.treeView.Sort(column, order);
+                    return;
+                }
 
                 // Sorting is going to change the order of the branches so clear
                 // the "first branch" flag
@@ -1652,14 +1657,11 @@ namespace BrightIdeasSoftware
             /// </summary>
             /// <returns></returns>
             protected virtual BranchComparer GetBranchComparer() {
-                if (this.lastSortColumn == null)
+                IList<OLVSortDescription> descriptions = this.treeView.SortDescriptions;
+                if (descriptions.Count == 0)
                     return null;
                 
-                return new BranchComparer(new ModelObjectComparer(
-                    this.lastSortColumn, 
-                    this.lastSortOrder,
-                    this.treeView.SecondarySortColumn ?? this.treeView.GetColumn(0), 
-                    this.treeView.SecondarySortColumn == null ? this.lastSortOrder : this.treeView.SecondarySortOrder));
+                return new BranchComparer(new ModelObjectComparer(descriptions));
             }
 
             /// <summary>
@@ -1765,8 +1767,6 @@ namespace BrightIdeasSoftware
             //------------------------------------------------------------------------------------------
             // Private instance variables
 
-            private OLVColumn lastSortColumn;
-            private SortOrder lastSortOrder;
             private readonly Dictionary<Object, Branch> mapObjectToBranch = new Dictionary<object, Branch>();
 // ReSharper disable once InconsistentNaming
             internal Dictionary<Object, bool> mapObjectToExpanded = new Dictionary<object, bool>();

@@ -166,9 +166,7 @@ namespace BrightIdeasSoftware
             }
 
             // Sort the items within each group
-            OLVColumn primarySortColumn = parameters.SortItemsByPrimaryColumn ? parameters.ListView.GetColumn(0) : parameters.PrimarySort;
-            ModelObjectComparer sorter = new ModelObjectComparer(primarySortColumn, parameters.PrimarySortOrder,
-                parameters.SecondarySort, parameters.SecondarySortOrder);
+            ModelObjectComparer sorter = new ModelObjectComparer(parameters.GetItemSortDescriptions());
             foreach (object key in map.Keys) {
                 map[key].Sort(sorter);
             }

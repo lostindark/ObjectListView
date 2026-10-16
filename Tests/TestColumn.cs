@@ -11,10 +11,84 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests
 {
+    [STATestClass]
+    public class TestVirtualColumnSizing : WinFormsTestFixture
+    {
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void Test_FullContentSizing_MeasuresOffscreenRowsWithoutChangingNativeSizing(bool fast) {
+            var list = fast ? mainForm.fastObjectListView1 : CreateVirtualObjectListView();
+            var models = Enumerable.Range(0, 200).Select(i => new Person(i == 199 ? new string('W', 100) : "x")).ToArray();
+            list.SetObjects(models);
+            int expected = TextRenderer.MeasureText(models[199].Name, list.Font, Size.Empty,
+                TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix).Width;
+
+            list.AutoResizeColumnToContents(0);
+            Assert.IsGreaterThanOrEqualTo(expected, list.GetColumn(0).Width);
+            list.AutoResizeColumn(0, ColumnHeaderAutoResizeStyle.ColumnContent);
+            Assert.IsLessThan(expected, list.GetColumn(0).Width);
+        }
+
+        [TestMethod]
+        public void Test_FullContentSizing_UsesFormattedFontAndColumnLimits() {
+            var list = mainForm.fastObjectListView1;
+            using (var font = new Font(list.Font.FontFamily, 28)) {
+                list.RowFormatter = delegate(OLVListItem item) { item.Font = font; };
+                list.SetObjects(new[] { new Person("A wide formatted row") });
+                int expected = TextRenderer.MeasureText("A wide formatted row", font, Size.Empty,
+                    TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix).Width;
+                list.AutoResizeColumnToContents(0);
+                Assert.IsGreaterThanOrEqualTo(expected, list.GetColumn(0).Width);
+                list.GetColumn(0).MaximumWidth = 80;
+                list.AutoResizeColumnToContents(0);
+                Assert.AreEqual(80, list.GetColumn(0).Width);
+            }
+        }
+
+        [TestMethod]
+        public void Test_FullContentSizing_FailurePreservesWidth() {
+            var list = mainForm.fastObjectListView1;
+            list.SetObjects(new[] { new Person("first"), new Person("second") });
+            var column = list.GetColumn(0);
+            column.Width = 123;
+            column.AspectGetter = delegate(object model) {
+                if (((Person)model).Name == "second")
+                    throw new InvalidOperationException("Cannot fetch this row.");
+                return "first";
+            };
+            Assert.ThrowsExactly<InvalidOperationException>(() => list.AutoResizeColumnToContents(0));
+            Assert.AreEqual(123, column.Width);
+        }
+
+        [TestMethod]
+        public void Test_FullContentSizing_IncludesImagesCheckboxesAndPadding() {
+            var list = mainForm.fastObjectListView1;
+            using (var image = new Bitmap(32, 16)) {
+                var column = list.GetColumn(0);
+                column.ImageGetter = delegate { return image; };
+                column.CellPadding = new Rectangle(3, 0, 5, 0);
+                list.CheckBoxes = true;
+                list.SetObjects(new[] { new Person("Image row") });
+                int textWidth = TextRenderer.MeasureText("Image row", list.Font).Width;
+                int checkboxWidth;
+                using (var graphics = list.CreateGraphics())
+                    checkboxWidth = CheckBoxRenderer.GetGlyphSize(graphics, System.Windows.Forms.VisualStyles.CheckBoxState.UncheckedNormal).Width;
+                int expected = textWidth + image.Width + 8 + checkboxWidth;
+                list.AutoResizeColumnToContents(0);
+                Assert.IsGreaterThanOrEqualTo(expected, column.Width);
+                list.ClearObjects();
+            }
+        }
+    }
+
     [STATestClass]
     public class TestColumn
     {

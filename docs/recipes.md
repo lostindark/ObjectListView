@@ -320,6 +320,28 @@ this.titleColumn.MinimumWidth = 30
 
 will stop the "Title" column from becoming less than 30 pixels in width. This is useful for preventing users from shrinking columns to 0 width and then not being able to find them again.
 
+### Sizing virtual columns to all rows
+
+Native `AutoResizeColumn()` and `ColumnHeader.AutoResize()` on virtual lists only
+consider realized rows. Their behavior is unchanged. In Details view, opt in to
+measuring every row in the current virtual view with:
+
+```csharp
+this.myFastObjectListView.AutoResizeColumnToContents(this.titleColumn.Index);
+```
+
+This method is available on `VirtualObjectListView`, `FastObjectListView`, and
+`TreeListView`. It includes offscreen rows but excludes filtered-out objects and
+collapsed tree descendants. It sizes standard cell content, not the header,
+using formatted fonts, images, checkboxes, indentation, and cell padding.
+Column minimum and maximum widths still apply. For custom renderer layouts,
+override `CalculateColumnContentWidth(Graphics, OLVListItem, OLVColumn)`.
+
+This is an explicit full scan on the control thread, so it can be expensive for
+very large or remotely backed data sources. It does not cache the complete
+collection or enable full scans for native resize calls. If fetching or measuring
+a row throws, the exception propagates and the column width is left unchanged.
+
 <a name="how-can-i-stop-the-user-from-resizing-a-column"></a> <a name="recipe-fixed-column"></a>
 
 ## 6. How can I stop the user from resizing a column?

@@ -62,6 +62,26 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         [TestMethod]
+        public void Test_FullContentSizing_UsesExpandedRowsAndTreeIndentation() {
+            var root = new Person("root");
+            var child = new Person(new string('W', 60));
+            root.AddChild(child);
+            this.olv.Roots = new[] { root };
+            this.olv.AutoResizeColumnToContents(0);
+            int collapsedWidth = this.olv.GetColumn(0).Width;
+
+            this.olv.Expand(root);
+            this.olv.AutoResizeColumnToContents(0);
+            int textWidth = TextRenderer.MeasureText(child.Name, this.olv.Font).Width;
+            Assert.IsGreaterThanOrEqualTo(textWidth + TreeListView.TreeRenderer.PIXELS_PER_LEVEL * 2,
+                this.olv.GetColumn(0).Width);
+
+            this.olv.Collapse(root);
+            this.olv.AutoResizeColumnToContents(0);
+            Assert.AreEqual(collapsedWidth, this.olv.GetColumn(0).Width);
+        }
+
+        [TestMethod]
         public void TestExpandAll() {
             this.olv.ExpandAll();
             Assert.AreEqual(PersonDb.All.Count, this.olv.GetItemCount());

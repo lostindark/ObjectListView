@@ -78,6 +78,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 using System.Runtime.InteropServices;
 
 namespace BrightIdeasSoftware
@@ -456,6 +457,71 @@ namespace BrightIdeasSoftware
         #endregion
 
         #region Object manipulation
+
+        /// <summary>
+        /// Resize a column to fit every row in the current virtual view, including offscreen rows.
+        /// </summary>
+        /// <remarks>This opt-in operation fetches and measures every displayed model on the
+        /// control thread. It can be expensive for large or remote data sources. Native
+        /// AutoResizeColumn and ColumnHeader.AutoResize behavior is unchanged.
+        /// Custom-rendered layouts can override CalculateColumnContentWidth.</remarks>
+        /// <param name="columnIndex">The column's collection index, not its display index.</param>
+        public virtual void AutoResizeColumnToContents(int columnIndex) {
+            if (this.InvokeRequired) {
+                this.Invoke((MethodInvoker)delegate { this.AutoResizeColumnToContents(columnIndex); });
+                return;
+            }
+            if (columnIndex < 0 || columnIndex >= this.Columns.Count)
+                throw new ArgumentOutOfRangeException("columnIndex");
+            if (this.View != View.Details)
+                throw new InvalidOperationException("Column content sizing requires Details view.");
+
+            OLVColumn column = this.GetColumn(columnIndex);
+            int width = 0;
+            int count = this.GetItemCount();
+            using (Graphics graphics = this.CreateGraphics()) {
+                for (int i = 0; i < count; i++)
+                    width = Math.Max(width, this.CalculateColumnContentWidth(graphics, this.GetItem(i), column));
+            }
+            column.Width = width;
+        }
+
+        /// <summary>
+        /// Measure a standard cell's text, images, checkboxes, indentation, and padding.
+        /// Override this for custom renderer layouts.
+        /// </summary>
+        protected virtual int CalculateColumnContentWidth(Graphics graphics, OLVListItem item, OLVColumn column) {
+            OLVListSubItem subItem = item.GetSubItem(column.Index);
+            Font font = (item.UseItemStyleForSubItems ? item.Font : subItem.Font) ?? this.Font;
+            int width = TextRenderer.MeasureText(graphics, subItem.Text, font,
+                new Size(Int32.MaxValue, Int32.MaxValue),
+                TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix).Width;
+
+            object selector = column.Index == 0 ? item.ImageSelector :
+                (this.OwnerDraw || this.ShowImagesOnSubItems ? subItem.ImageSelector : null);
+            BaseRenderer renderer = this.GetCellRenderer(item.RowObject, column) as BaseRenderer;
+            ImageList images = renderer != null && renderer.ImageList != null ? renderer.ImageList : this.SmallImageList;
+            Image image = selector as Image;
+            if (image != null)
+                width += image.Width;
+            else if (images != null && ((selector is int && (int)selector >= 0 && (int)selector < images.Images.Count) ||
+                (selector is string && images.Images.ContainsKey((string)selector))))
+                width += images.ImageSize.Width;
+
+            if (column.Index == 0) {
+                width += item.IndentCount * this.SmallImageSize.Width;
+                if (this.CheckBoxes)
+                    width += (this.StateImageList == null ? CheckBoxRenderer.GetGlyphSize(graphics, CheckBoxState.UncheckedNormal).Width :
+                        this.StateImageList.ImageSize.Width) + 6;
+            } else if (column.CheckBoxes) {
+                width += CheckBoxRenderer.GetGlyphSize(graphics, CheckBoxState.UncheckedNormal).Width;
+            }
+
+            Rectangle? padding = subItem.CellPadding ?? item.CellPadding ?? column.CellPadding ?? this.CellPadding;
+            if (padding.HasValue)
+                width += padding.Value.X + padding.Value.Width;
+            return width + (int)Math.Ceiling(6 * graphics.DpiX / 96);
+        }
 
         /// <summary>
         /// Add the given collection of model objects to this control.

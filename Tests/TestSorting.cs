@@ -86,6 +86,49 @@ namespace BrightIdeasSoftware.Tests
             CollectionAssert.AreNotEqual(beforeContents, GetContents());
         }
 
+        [TestMethod]
+        public void TestExplicitNone_DoesNotInvokeCustomSorterOnUpdates() {
+            int sortCalls = 0;
+            this.olv.PrimarySortColumn = this.olv.GetColumn(0);
+            this.olv.PrimarySortOrder = SortOrder.None;
+            this.olv.CustomSorter = delegate { sortCalls++; };
+            Person extra = new Person("000 extra");
+
+            this.olv.AddObject(extra);
+            this.olv.RemoveObject(PersonDb.All[1]);
+
+            Assert.AreEqual(0, sortCalls);
+            Assert.AreEqual(SortOrder.None, this.olv.PrimarySortOrder);
+            Assert.AreSame(extra, this.olv.GetModelObject(this.olv.GetItemCount() - 1));
+        }
+
+        [TestMethod]
+        public void TestExplicitNone_DisablesAutomaticResorting() {
+            this.olv.Sort(this.olv.GetColumn(0), SortOrder.Ascending);
+            this.olv.Sort(this.olv.GetColumn(0), SortOrder.None);
+            Person extra = new Person("000 extra");
+            this.olv.AddObject(extra);
+            Assert.AreSame(extra, this.olv.GetModelObject(this.olv.GetItemCount() - 1));
+            Assert.AreEqual(SortOrder.None, this.olv.PrimarySortOrder);
+        }
+
+        [TestMethod]
+        public void TestSortColumn_DefaultsToAscending() {
+            this.olv.Sort(this.olv.GetColumn(0));
+            Assert.AreEqual(PersonDb.FirstAlphabeticalName, ((Person)this.olv.GetModelObject(0)).Name);
+        }
+
+        [TestMethod]
+        public void TestBuildGroups_NoneStillUsesDefaultOrder() {
+            this.olv.ShowGroups = true;
+            SortOrder groupOrder = SortOrder.None;
+            this.olv.BeforeSorting += delegate(object sender, BeforeSortingEventArgs args) {
+                groupOrder = args.GroupByOrder;
+            };
+            this.olv.BuildGroups(this.olv.GetColumn(0), SortOrder.None);
+            Assert.AreEqual(SortOrder.Ascending, groupOrder);
+        }
+
         private ArrayList GetContents()
         {
             ArrayList contents = new ArrayList();

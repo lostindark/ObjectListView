@@ -122,7 +122,7 @@ namespace BrightIdeasSoftware
             int displacedObjectCount = 0;
             foreach (object modelObject in modelObjects) {
                 int i = this.IndexOf(modelObject);
-                if (i >= 0 && i <= index)
+                if (i >= 0 && i < index)
                     displacedObjectCount++;
             }
             index -= displacedObjectCount;

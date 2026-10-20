@@ -55,6 +55,6 @@
     <EmbeddedResource Update="Properties\Resources.resx" Generator="ResXFileCodeGenerator" LastGenOutput="Resources.Designer.cs" SubType="Designer" />
     <EmbeddedResource Update="Utilities\ColumnSelectionForm.resx" DependentUpon="ColumnSelectionForm.cs" />
     <None Include="..\LICENSE" Pack="true" PackagePath="\" />
-    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Update="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

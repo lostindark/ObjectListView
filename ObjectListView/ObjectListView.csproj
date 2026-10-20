@@ -10,6 +10,18 @@
     <AssemblyOriginatorKeyFile>olv-keyfile.snk</AssemblyOriginatorKeyFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <GenerateResourceUsePreserializedResources>false</GenerateResourceUsePreserializedResources>
+    <PackageId>ObjectListView.WinForms</PackageId>
+    <Version>3.0.0-dev</Version>
+    <Title>ObjectListView for Windows Forms</Title>
+    <Authors>Phillip Piper; Teddy Z</Authors>
+    <Description>A maintained fork of ObjectListView, a Windows Forms ListView control with model-based rows, sorting, grouping, filtering, cell editing, and tree views.</Description>
+    <PackageProjectUrl>https://github.com/lostindark/ObjectListView</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/lostindark/ObjectListView</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseFile>COPYING</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageTags>WinForms;ListView;ObjectListView;Controls</PackageTags>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <WarningLevel>1</WarningLevel>
@@ -42,6 +54,7 @@
     <Compile Update="Properties\Resources.Designer.cs" AutoGen="true" DesignTime="true" DependentUpon="Resources.resx" />
     <EmbeddedResource Update="Properties\Resources.resx" Generator="ResXFileCodeGenerator" LastGenOutput="Resources.Designer.cs" SubType="Designer" />
     <EmbeddedResource Update="Utilities\ColumnSelectionForm.resx" DependentUpon="ColumnSelectionForm.cs" />
-    <None Update="ObjectListView.nuspec" SubType="Designer" />
+    <None Include="..\COPYING" Pack="true" PackagePath="\" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

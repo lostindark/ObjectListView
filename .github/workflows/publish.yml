@@ -1,0 +1,97 @@
+name: Publish NuGet
+
+on:
+  workflow_dispatch:
+    inputs:
+      build-number:
+        description: CI build number to publish (empty for latest successful on the selected branch)
+        required: false
+        type: string
+      preview:
+        description: Publish as a preview package
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    environment: nuget
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Select successful CI build
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          BUILD_NUMBER: ${{ inputs.build-number }}
+          PREVIEW: ${{ inputs.preview }}
+        run: |
+          if ($env:BUILD_NUMBER -and $env:BUILD_NUMBER -cnotmatch '^[1-9][0-9]*$') {
+            throw "Build number must be a positive integer."
+          }
+          $selected = $null
+          for ($page = 1; ; $page++) {
+            $json = gh api --method GET "repos/$env:GH_REPO/actions/workflows/ci.yml/runs" -f "branch=$env:REF_NAME" -f status=success -f per_page=100 -f "page=$page"
+            if ($LASTEXITCODE -ne 0) { throw "Could not query successful CI builds." }
+            $runs = @((($json -join "`n") | ConvertFrom-Json).workflow_runs)
+            if ($runs.Count -eq 0) { break }
+            $selected = $runs | Where-Object {
+              $_.event -in @('push', 'workflow_dispatch') -and
+              (!$env:BUILD_NUMBER -or [string]$_.run_number -eq $env:BUILD_NUMBER)
+            } | Select-Object -First 1
+            if ($selected) { break }
+          }
+          if (!$selected) {
+            throw "No successful CI build matching '$env:BUILD_NUMBER' was found on '$env:REF_NAME'. Pull request builds cannot be published."
+          }
+          $version = "3.0.$($selected.run_number)"
+          if ($env:PREVIEW -eq 'true') { $version += '-preview' }
+          "run-id=$($selected.id)" >> $env:GITHUB_OUTPUT
+          "PACKAGE_VERSION=$version" >> $env:GITHUB_ENV
+          "Publishing CI build $($selected.run_number), commit $($selected.head_sha), as $version."
+          "## NuGet publication`nCI build: $($selected.run_number)`n`nCommit: $($selected.head_sha)`n`nVersion: $version" >> $env:GITHUB_STEP_SUMMARY
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: nuget-package
+          path: artifacts\packages
+          run-id: ${{ steps.build.outputs.run-id }}
+          github-token: ${{ github.token }}
+
+      - name: Check publishing configuration
+        env:
+          NUGET_USER: ${{ vars.NUGET_USER }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_USER)) {
+            throw "Set the NUGET_USER Actions variable to your nuget.org username."
+          }
+          if (!(Test-Path -LiteralPath "artifacts\packages\ObjectListView.WinForms.$env:PACKAGE_VERSION.nupkg")) {
+            throw "The selected CI artifact does not contain package version $env:PACKAGE_VERSION."
+          }
+
+      - name: Authenticate to NuGet
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Publish package
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push "artifacts\packages\ObjectListView.WinForms.$env:PACKAGE_VERSION.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$env:NUGET_API_KEY" --skip-duplicate

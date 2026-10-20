@@ -1321,8 +1321,10 @@ namespace BrightIdeasSoftware
 
             this.BeginUpdate();
             try {
-                foreach (Object x in this.ModelObjects) {
-                    this.SetObjectCheckedness(x, table.ContainsKey(x) ? CheckState.Checked : CheckState.Unchecked);
+                IEnumerable source = this.ModelObjects;
+                if (source != null) {
+                    foreach (Object x in source)
+                        this.SetObjectCheckedness(x, table.ContainsKey(x) ? CheckState.Checked : CheckState.Unchecked);
                 }
             }
             finally {
@@ -5300,7 +5302,7 @@ namespace BrightIdeasSoftware
             this.OnItemsChanging(args);
             if (args.Canceled)
                 return;
-            this.SetStoredModelObjects(this.MaterializeModelObjects(args.NewObjects));
+            this.SetStoredModelObjects(args.NewObjects == null ? null : this.MaterializeModelObjects(args.NewObjects));
             this.BuildList(preserveState);
 
             // Tell the world that the list has changed
@@ -7824,8 +7826,11 @@ namespace BrightIdeasSoftware
             if (!column.CheckBoxes || column.HeaderCheckState == CheckState.Indeterminate)
                 return;
 
-            foreach (object model in this.ModelObjects)
-                column.PutCheckState(model, column.HeaderCheckState);
+            IEnumerable source = this.ModelObjects;
+            if (source != null) {
+                foreach (object model in source)
+                    column.PutCheckState(model, column.HeaderCheckState);
+            }
             this.BuildList(true);
         }
 

@@ -17,6 +17,84 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         [TestMethod]
+        public void Test_Objects_PreserveNullAndExplicitEmptySourcesAcrossStaticTypes() {
+            using (var list = new ObjectListView { View = View.Details, ShowGroups = false, CheckBoxes = true }) {
+                list.Columns.Add(new OLVColumn("Name", "Name"));
+                mainForm.Controls.Add(list);
+                list.CreateControl();
+                TypedObjectListView<object> typed = list;
+                var adapter = new TypedObjectListViewAdapter<Person>(list);
+
+                Assert.IsNull(list.Objects);
+                Assert.IsNull(typed.Objects);
+                Assert.IsNull(adapter.Objects);
+                Assert.IsNull(typed.GetObjectsSnapshot());
+                Assert.AreEqual(0, list.Rows.Count);
+                adapter.CheckedObjects = null;
+
+                adapter.Objects = Enumerable.Empty<Person>();
+                Assert.IsNotNull(list.Objects);
+                Assert.IsEmpty(typed.Objects);
+                Assert.IsEmpty(adapter.Objects);
+                Assert.IsNotNull(typed.GetObjectsSnapshot());
+                Assert.IsEmpty(typed.GetObjectsSnapshot());
+                ((IList)list.Objects).Add(PersonDb.All[0]);
+                Assert.IsEmpty(list.Objects);
+
+                typed.Objects = null;
+                Assert.IsNull(list.Objects);
+                Assert.IsNull(typed.Objects);
+                Assert.IsNull(adapter.Objects);
+                Assert.IsNull(typed.GetObjectsSnapshot());
+
+                list.AddObject(PersonDb.All[0]);
+                CollectionAssert.AreEqual(PersonDb.All.Take(1).ToArray(), adapter.Objects.ToArray());
+                list.RemoveObject(PersonDb.All[0]);
+                Assert.IsNotNull(list.Objects);
+                Assert.IsEmpty(list.Objects);
+            }
+        }
+
+        [TestMethod]
+        public void Test_TypedObjects_ClearAndEmptySourceSemantics() {
+            Assert.IsNull(this.tolv.Objects);
+            this.tolv.Objects = Enumerable.Empty<Person>();
+            Assert.IsNotNull(this.tolv.Objects);
+            Assert.IsEmpty(this.tolv.Objects);
+            Assert.IsNotNull(this.tolv.GetObjectsSnapshot());
+            Assert.IsEmpty(this.tolv.GetObjectsSnapshot());
+            this.tolv.Objects = PersonDb.All.Take(1);
+            this.tolv.Objects = null;
+            Assert.IsNull(this.tolv.Objects);
+            Assert.IsNull(this.tolv.GetObjectsSnapshot());
+            Assert.AreEqual(0, this.tolv.Rows.Count);
+
+            this.tolv.ClearObjects();
+            Assert.IsNull(this.tolv.Objects);
+            Assert.IsNull(this.tolv.GetObjectsSnapshot());
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void Test_Objects_NullStateFollowsAcceptedEventSource(bool replaceWithNull) {
+            this.tolv.ItemsChanging += delegate(object sender, ItemsChangingEventArgs args) {
+                args.NewObjects = replaceWithNull ? null : Enumerable.Empty<Person>();
+            };
+            this.tolv.Objects = replaceWithNull ? PersonDb.All : null;
+            Assert.AreEqual(replaceWithNull, this.tolv.Objects == null);
+            Assert.AreEqual(replaceWithNull, this.tolv.GetObjectsSnapshot() == null);
+            if (!replaceWithNull)
+                Assert.IsEmpty(this.tolv.GetObjectsSnapshot());
+
+            this.tolv.ItemsChanging += delegate(object sender, ItemsChangingEventArgs args) {
+                args.Canceled = true;
+            };
+            this.tolv.Objects = PersonDb.All;
+            Assert.AreEqual(replaceWithNull, this.tolv.Objects == null);
+        }
+
+        [TestMethod]
         public void Test_EnumerableCollections_QueriesAndSnapshots() {
             this.tolv.UseNotifyPropertyChanged = true;
             this.tolv.Objects = new SingleUseEnumerable<Person>(PersonDb.All.Where(p => p.CulinaryRating >= 100));
@@ -605,7 +683,7 @@ namespace BrightIdeasSoftware.Tests {
             this.tolv.GenerateAspectGetters();
             this.tolv.Objects = PersonDb.All;
             this.tolv.ClearObjects();
-            Assert.AreEqual(0, this.tolv.Objects.Count());
+            Assert.IsNull(this.tolv.Objects);
             this.tolv.Objects = PersonDb.All;
             Assert.AreEqual(PersonDb.All.Count, this.tolv.Objects.Count());
         }

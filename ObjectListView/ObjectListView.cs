@@ -11,10 +11,11 @@ namespace BrightIdeasSoftware {
     public class ObjectListView : TypedObjectListView<object> {
         /// <summary>
         /// Get or set all model objects, without applying filters.
+        /// Returns null for an unset/null source, otherwise an independent snapshot.
         /// </summary>
         [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public new virtual IEnumerable Objects {
-            get { return CreateModelList(base.ModelObjects); }
+            get { return this.GetObjectsSnapshot(); }
             set { base.ModelObjects = value; }
         }
 

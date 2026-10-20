@@ -114,6 +114,11 @@ no longer need a caller-side `ToList()` or `ToArray()`.
 | `OLVDataObject` constructor | `IList` input, retained by reference | `IEnumerable` input, copied into a snapshot |
 
 The non-generic `Objects` and `SetObjects` APIs still accept `IEnumerable`.
+Regular and typed controls preserve the legacy null-source distinction:
+`Objects` is null until a source is assigned or after assigning null, while an
+explicitly empty source returns an empty snapshot. Typed adapters preserve the
+same distinction. `GetObjectsSnapshot()` also returns null for an unset/null
+source and an independent list otherwise.
 `Objects` getters on regular, fast, virtual, and tree controls now return
 independent snapshots. Mutating the returned collection no longer mutates an
 internal backing list. Tree snapshots contain roots, not flattened rows.

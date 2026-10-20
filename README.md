@@ -70,6 +70,62 @@ To run a focused group:
 dotnet test Tests\Tests.csproj --configuration Release --no-build --no-restore --filter "FullyQualifiedName~TestMunger"
 ```
 
+## CI and NuGet releases
+
+GitHub Actions builds the full solution in Release mode and runs the Windows
+tests for pushes to `main`, pull requests, and manual CI runs. Successful runs
+upload `ObjectListView.WinForms` NuGet packages as the `nuget-package` artifact;
+test results are uploaded separately. The workflows use Windows Server 2025,
+Visual Studio 2026 MSBuild, and the .NET 10 SDK to build the existing `net462`
+target. They do not add a modern .NET target.
+
+Package metadata is defined in `ObjectListView\ObjectListView.csproj`, replacing
+the old upstream `ObjectListView.Official` NuGet manifest. To pack locally after
+building Release:
+
+```powershell
+dotnet pack ObjectListView\ObjectListView.csproj --configuration Release --no-build --no-restore -p:PackageVersion=3.0.1-preview --output artifacts\packages
+```
+
+CI assigns `3.0.<CI run number>` automatically: `3.0.1`, `3.0.2`, and so on.
+Each successful build packages both that version and its `-preview` variant
+from the same tested binaries. Failed, cancelled, and pull request runs can
+leave gaps in the publishable sequence; reruns retain their original number.
+The package version is independent of the existing legacy assembly version.
+
+Publishing is manual only and never rebuilds the package. By default it selects
+the latest successful CI build for the selected branch; optionally supply a
+specific **CI build number** (the run number, not the long run ID from its URL).
+Only push and manual CI runs can be published, not pull request runs.
+The **Preview** checkbox defaults to enabled: checked publishes `3.0.N-preview`,
+unchecked publishes `3.0.N`. Republishing an existing version skips it rather
+than overwriting it. CI artifacts must still be available; if expired, rerun CI
+before publishing.
+
+Before publishing:
+
+1. Ensure your nuget.org account can publish `ObjectListView.WinForms`.
+2. In GitHub repository **Settings > Environments**, create the `nuget`
+   environment. Configure required reviewers and deployment branch/tag restrictions
+   as appropriate, so package publishing requires approval.
+3. Add an Actions variable named `NUGET_USER` containing your nuget.org profile
+   username (not an email address), either at repository level or in `nuget`.
+4. In nuget.org **Trusted Publishing**, add a GitHub policy with owner
+   `lostindark`, repository `ObjectListView`, workflow filename `publish.yml`,
+   and environment `nuget`. Scope it to `ObjectListView.WinForms`, allowing
+   new packages for the first publication and new versions thereafter.
+
+No long-lived NuGet API key is needed. The publishing job requests an OIDC token
+only after CI passes and the environment's protection rules are satisfied.
+To publish, open **Actions > Publish NuGet > Run workflow**, choose the intended
+branch, optionally enter a build number, choose **Preview**, and run it.
+Alternatively, use the GitHub CLI:
+
+```powershell
+gh workflow run publish.yml --ref main -f preview=true
+gh workflow run publish.yml --ref main -f build-number=42 -f preview=false
+```
+
 ## License
 
 See [COPYING](COPYING) for the GNU General Public License, version 3.

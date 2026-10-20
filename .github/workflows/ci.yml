@@ -1,0 +1,63 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: microsoft/setup-msbuild@v3
+        with:
+          vs-version: '[18.0,19.0)'
+          msbuild-architecture: x64
+
+      - name: Determine package version
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          "PACKAGE_VERSION=3.0.$env:RUN_NUMBER" >> $env:GITHUB_ENV
+
+      - name: Restore and build solution
+        run: msbuild ObjectListView.sln -restore -m -p:Configuration=Release "-p:Platform=Any CPU" "-p:PackageVersion=$env:PACKAGE_VERSION" -verbosity:minimal -nologo
+
+      - name: Run tests
+        run: dotnet test Tests\Tests.csproj --configuration Release --no-build --no-restore --logger trx --results-directory artifacts\TestResults
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: artifacts\TestResults\*.trx
+          if-no-files-found: ignore
+
+      - name: Build NuGet packages
+        run: |
+          foreach ($version in @($env:PACKAGE_VERSION, "$env:PACKAGE_VERSION-preview")) {
+            dotnet pack ObjectListView\ObjectListView.csproj --configuration Release --no-build --no-restore "-p:PackageVersion=$version" --output artifacts\packages
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Upload NuGet package
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget-package
+          path: artifacts\packages\*.nupkg
+          if-no-files-found: error

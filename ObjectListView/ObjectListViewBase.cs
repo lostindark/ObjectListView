@@ -5733,7 +5733,7 @@ namespace BrightIdeasSoftware
             bool addToSort = (modifiers & Keys.Shift) == Keys.Shift;
             SortOrder order = SortOrder.Ascending;
             foreach (OLVSortDescription description in this.SortDescriptions) {
-                if (description.Column == column && (addToSort || column == this.PrimarySortColumn)) {
+                if (description.Column == column) {
                     order = description.SortOrder == SortOrder.Descending ? SortOrder.Ascending : SortOrder.Descending;
                     break;
                 }

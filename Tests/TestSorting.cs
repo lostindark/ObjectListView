@@ -292,6 +292,38 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(0)]
         [DataRow(1)]
         [DataRow(2)]
+        [DataRow(3)]
+        public void TestPlainHeaderClickReplacesSortAndTogglesAnySortedColumn(int kind) {
+            ObjectListView list = this.CreateList(kind);
+            foreach (SortOrder currentOrder in new[] { SortOrder.Ascending, SortOrder.Descending }) {
+                foreach (int clickedColumn in new[] { 0, 1, 2 }) {
+                    list.Sort(new[] {
+                        new OLVSortDescription(list.GetColumn(0), currentOrder),
+                        new OLVSortDescription(list.GetColumn(1), currentOrder)
+                    });
+
+                    this.ClickHeader(list, clickedColumn, Keys.None);
+
+                    SortOrder expectedOrder = clickedColumn == 2 || currentOrder == SortOrder.Descending ?
+                        SortOrder.Ascending : SortOrder.Descending;
+                    Assert.AreEqual(1, list.SortDescriptions.Count);
+                    Assert.AreSame(list.GetColumn(clickedColumn), list.PrimarySortColumn);
+                    Assert.AreEqual(expectedOrder, list.PrimarySortOrder);
+                    Assert.IsNull(list.SecondarySortColumn);
+                    for (int column = 0; column < list.Columns.Count; column++)
+                        Assert.AreEqual(column == clickedColumn ? 1 : 0, list.GetSortPriority(list.GetColumn(column)));
+                    int[] values = Enumerable.Range(0, list.GetItemCount())
+                        .Select(i => ((SortRow)list.GetModelObject(i)).Values[clickedColumn]).ToArray();
+                    CollectionAssert.AreEqual(expectedOrder == SortOrder.Ascending ?
+                        new[] { 0, 0, 0, 0, 1 } : new[] { 1, 0, 0, 0, 0 }, values);
+                }
+            }
+        }
+
+        [TestMethod]
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(2)]
         public void TestFourSortFieldsAndChangingDirections(int kind) {
             ObjectListView list = this.CreateList(kind);
             this.SortFourFields(list);

@@ -187,11 +187,11 @@ namespace BrightIdeasSoftware
                 if (value) {
                     windowStyle |= (TTS_BALLOON | TTS_USEVISUALSTYLE);
                     // On XP, a border makes the balloon look wrong
-                    if (!ObjectListView.IsVistaOrLater)
+                    if (!ObjectListViewBase.IsVistaOrLater)
                         windowStyle &= ~WS_BORDER; 
                 } else {
                     windowStyle &= ~(TTS_BALLOON | TTS_USEVISUALSTYLE);
-                    if (!ObjectListView.IsVistaOrLater) {
+                    if (!ObjectListViewBase.IsVistaOrLater) {
                         if (this.hasBorder)
                             windowStyle |= WS_BORDER;
                         else
@@ -233,7 +233,7 @@ namespace BrightIdeasSoftware
             set {
                 // For some reason, setting the color fails on Vista and messes up later ops.
                 // So we don't even try to set it.
-                if (!ObjectListView.IsVistaOrLater) {
+                if (!ObjectListViewBase.IsVistaOrLater) {
                     int color = ColorTranslator.ToWin32(value);
                     NativeMethods.SendMessage(this.Handle, TTM_SETTIPBKCOLOR, color, 0);
                     //int x2 = Marshal.GetLastWin32Error();
@@ -252,7 +252,7 @@ namespace BrightIdeasSoftware
             set {
                 // For some reason, setting the color fails on Vista and messes up later ops.
                 // So we don't even try to set it.
-                if (!ObjectListView.IsVistaOrLater) {
+                if (!ObjectListViewBase.IsVistaOrLater) {
                     int color = ColorTranslator.ToWin32(value);
                     NativeMethods.SendMessage(this.Handle, TTM_SETTIPTEXTCOLOR, color, 0);
                 }

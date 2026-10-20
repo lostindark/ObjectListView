@@ -1,4 +1,4 @@
-﻿/*
+/*
  * OLVColumn - A column in an ObjectListView
  *
  * Author: Phillip Piper
@@ -297,7 +297,7 @@ namespace BrightIdeasSoftware {
         public virtual bool CellEditUseWholeCellEffective {
             get {
                 bool? columnSpecificValue = this.ListView.View == View.Details ? this.CellEditUseWholeCell : (bool?) null;
-                return (columnSpecificValue ?? ((ObjectListView) this.ListView).CellEditUseWholeCell);
+                return (columnSpecificValue ?? ((ObjectListViewBase) this.ListView).CellEditUseWholeCell);
             }
         }
 
@@ -577,7 +577,7 @@ namespace BrightIdeasSoftware {
                     return this.GroupWithItemCountFormat;
 
                 if (this.ListView != null) {
-                    cachedGroupWithItemCountFormat = ((ObjectListView)this.ListView).GroupWithItemCountFormatOrDefault;
+                    cachedGroupWithItemCountFormat = ((ObjectListViewBase)this.ListView).GroupWithItemCountFormatOrDefault;
                     return cachedGroupWithItemCountFormat;
                 }
 
@@ -624,7 +624,7 @@ namespace BrightIdeasSoftware {
                     return this.GroupWithItemCountSingularFormat;
 
                 if (this.ListView != null) {
-                    cachedGroupWithItemCountSingularFormat = ((ObjectListView)this.ListView).GroupWithItemCountSingularFormatOrDefault;
+                    cachedGroupWithItemCountSingularFormat = ((ObjectListViewBase)this.ListView).GroupWithItemCountSingularFormatOrDefault;
                     return cachedGroupWithItemCountSingularFormat;
                 }
 
@@ -1239,7 +1239,7 @@ namespace BrightIdeasSoftware {
         /// <para>
         /// If this is false, the only thing rendered in the column header will be the image from <see cref="HeaderImageKey"/>.
         /// </para>
-        /// <para>This setting is only considered when <see cref="ObjectListView.HeaderUsesThemes"/> is false on the owning ObjectListView.</para>
+        /// <para>This setting is only considered when <see cref="ObjectListViewBase.HeaderUsesThemes"/> is false on the owning ObjectListView.</para>
         /// </remarks>
         [Category("ObjectListView"),
          Description("Will the header for this column include text?"),
@@ -1454,7 +1454,7 @@ namespace BrightIdeasSoftware {
             if (this.groupKeyToTitleConverter != null)
                 return this.groupKeyToTitleConverter(value);
 
-            return value == null ? ObjectListView.GroupTitleDefault : this.ValueToString(value);
+            return value == null ? ObjectListViewBase.GroupTitleDefault : this.ValueToString(value);
         }
 
         /// <summary>
@@ -1561,12 +1561,12 @@ namespace BrightIdeasSoftware {
             CheckState checkState = this.GetCheckState(rowObject);
 
             if (checkState == CheckState.Checked)
-                return ObjectListView.CHECKED_KEY;
+                return ObjectListViewBase.CHECKED_KEY;
 
             if (checkState == CheckState.Unchecked)
-                return ObjectListView.UNCHECKED_KEY;
+                return ObjectListViewBase.UNCHECKED_KEY;
 
-            return ObjectListView.INDETERMINATE_KEY;
+            return ObjectListViewBase.INDETERMINATE_KEY;
         }
 
         /// <summary>
@@ -1699,7 +1699,7 @@ namespace BrightIdeasSoftware {
         public Type DataType {
             get {
                 if (this.dataType == null) {
-                    ObjectListView olv = this.ListView as ObjectListView;
+                    ObjectListViewBase olv = this.ListView as ObjectListViewBase;
                     if (olv != null) {
                         object value = olv.GetFirstNonNullValue(this);
                         if (value != null)

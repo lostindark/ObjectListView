@@ -1,4 +1,4 @@
-﻿/*
+/*
  * DataSourceAdapter - A helper class that translates DataSource events for an ObjectListView
  *
  * Author: Phillip Piper
@@ -54,7 +54,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Make a DataSourceAdapter
         /// </summary>
-        public DataSourceAdapter(ObjectListView olv) {
+        public DataSourceAdapter(ObjectListViewBase olv) {
             if (olv == null) throw new ArgumentNullException("olv");
 
             this.ListView = olv;
@@ -130,11 +130,11 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets the ObjectListView upon which this adaptor will operate
         /// </summary>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return listView; }
             internal set { listView = value; }
         }
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         #endregion
 
@@ -157,7 +157,7 @@ namespace BrightIdeasSoftware
         /// 
         /// </summary>
         /// <param name="olv"></param>
-        protected virtual void BindListView(ObjectListView olv) {
+        protected virtual void BindListView(ObjectListViewBase olv) {
             if (olv == null)
                 return;
 
@@ -170,7 +170,7 @@ namespace BrightIdeasSoftware
         /// 
         /// </summary>
         /// <param name="olv"></param>
-        protected virtual void UnbindListView(ObjectListView olv) {
+        protected virtual void UnbindListView(ObjectListViewBase olv) {
             if (olv == null)
                 return;
 
@@ -258,7 +258,7 @@ namespace BrightIdeasSoftware
         /// Take the contents of the currently bound list and put them into the control
         /// </summary>
         protected virtual void SetListContents() {
-            this.ListView.Objects = this.CurrencyManager.List;
+            this.ListView.ModelObjects = this.CurrencyManager.List;
         }
 
         /// <summary>
@@ -554,7 +554,7 @@ namespace BrightIdeasSoftware
         /// <param name="index">The index of the row to be selected</param>
         protected virtual void ChangePosition(int index) {
             // We can't use the index directly, since our listview may be sorted
-            this.ListView.SelectedObject = this.CurrencyManager.List[index];
+            this.ListView.SelectedModelObject = this.CurrencyManager.List[index];
 
             // THINK: Do we always want to bring it into view?
             if (this.ListView.SelectedIndices.Count > 0)
@@ -591,7 +591,7 @@ namespace BrightIdeasSoftware
 
                 // We can't use the selectedIndex directly, since our listview may be sorted and/or filtered
                 // So we have to find the index of the selected object within the original list.
-                this.CurrencyManager.Position = this.CurrencyManager.List.IndexOf(this.ListView.SelectedObject);
+                this.CurrencyManager.Position = this.CurrencyManager.List.IndexOf(this.ListView.SelectedModelObject);
             } finally {
                 this.isChangingIndex = false;
             }

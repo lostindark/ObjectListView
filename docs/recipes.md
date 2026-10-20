@@ -659,7 +659,7 @@ If you only use Details view, you don't need to maintain the `LargeImageList`, b
 
 ## 14. Isn't there are way to get rid of all the casts in the delegates?
 
-Yes. You can use a `TypedObjectListView` wrapper.
+Use a `TypedObjectListView<T>` control and its typed column helpers.
 
 One annoyance with `ObjectListView` is all the casting that is needed. Because the `ObjectListView` makes no assumptions about what sort of model objects you will be using, it handles all models as `objects` and it's up to you to cast them to the right type when you need to. This leads to many delegates starting with a cast like this:
 
@@ -670,35 +670,36 @@ this.objectListView1.SomeDelegate = delegate(object x) {
 }
 ```
 
-which becomes tiresome after a while. It would be nice if you could tell the `ObjectListView` that it would always be displaying, say, Person objects. Something like:
+`TypedObjectListView<T>` is a real control backed by `List<T>`, not a wrapper
+around another control. Its model properties are typed. The `Typed` adapter
+configures check-state and tooltip callbacks without model casts:
 
 ```csharp
-this.objectListView1 = new ObjectListView<Person>();
-this.objectListView1.SomeDelegate = delegate(Person model) {
-    ...
-}
-```
-
-Unfortunately, this is not possible, so we have a `TypedObjectListView` class instead. This is not another `ObjectListView` subclass, but rather it's a typed wrapper around an existing ObjectListView. To use one, you create an `ObjectListView` within the IDE as normal. When it is time to implement your delegates, you create a `TypedObjectListView` wrapper around your list view, and declare your delegates against that wrapper. It's easier to use than it is to explain, so look at this example:
-
-```csharp
-TypedObjectListView<Person> tlist = new TypedObjectListView<Person>(this.listViewSimple);
-tlist.BooleanCheckStateGetter = delegate(Person x) {
-    return x.IsActive;
+var tlist = new TypedObjectListView<Person>();
+tlist.Columns.Add(new OLVColumn("Name", "Name"));
+tlist.Columns.Add(new OLVColumn("Occupation", "Occupation"));
+tlist.Typed.BooleanCheckStateGetter = delegate(Person model) {
+    return model.IsActive;
 };
-tlist.BooleanCheckStatePutter = delegate(Person x, bool newValue) {
-    x.IsActive = newValue;
+tlist.Typed.BooleanCheckStatePutter = delegate(Person model, bool newValue) {
+    model.IsActive = newValue;
     return newValue;
 };
 ```
 
-Look ma! No casts! The delegates are declared against the typed wrapper, which does know what model objects are being used.
+For the Windows Forms designer, define a concrete subclass such as
+`public class PersonListView : TypedObjectListView<Person> { }`.
 
-You can also use the `TypedObjectListView` for typed access to the delegates on your columns:
+To keep a control already configured in the designer, including a virtual or tree
+control, use `new TypedObjectListViewAdapter<Person>(existingControl)`.
+This adapter supplies the former wrapper conveniences without creating a second
+control. It uses the same callback slots as the underlying control.
+
+Column helpers provide delegates without model casts:
 
 ```csharp
-tlist.GetColumn(0).AspectGetter = delegate(Person x) { return x.Name; };
-tlist.GetColumn(1).AspectGetter = delegate(Person x) { return x.Occupation; };
+tlist.GetTypedColumn(0).AspectGetter = delegate(Person x) { return x.Name; };
+tlist.GetTypedColumn(1).AspectGetter = delegate(Person x) { return x.Occupation; };
 ```
 
 If you don't like referring to columns by their index, you can create `TypedColumn` objects around a given `ColumnHeader` object:

@@ -226,7 +226,7 @@ namespace ObjectListViewDemo
                 return bounds;
             }
 
-            public override void Draw(ObjectListView olv, Graphics g, Rectangle r)
+            public override void Draw(ObjectListViewBase olv, Graphics g, Rectangle r)
             {
                 Rectangle bounds = this.CalculateBounds();
                 if (!bounds.IsEmpty && this.BorderPen != null)

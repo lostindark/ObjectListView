@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Generator - Utility methods that generate columns or methods
  *
  * Author: Phillip Piper
@@ -66,7 +66,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv">The ObjectListView to modify</param>
         /// <param name="type">The model type whose attributes will be considered.</param>
         /// <param name="allProperties">Will columns be generated for properties that are not marked with [OLVColumn].</param>
-        void GenerateAndReplaceColumns(ObjectListView olv, Type type, bool allProperties);
+        void GenerateAndReplaceColumns(ObjectListViewBase olv, Type type, bool allProperties);
 
         /// <summary>
         /// Generate a list of OLVColumns based on the attributes of the given type
@@ -110,7 +110,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="olv">The ObjectListView to modify</param>
         /// <param name="enumerable">The collection whose first element will be used to generate columns.</param>
-        static public void GenerateColumns(ObjectListView olv, IEnumerable enumerable) {
+        static public void GenerateColumns(ObjectListViewBase olv, IEnumerable enumerable) {
             Generator.GenerateColumns(olv, enumerable, false);
         }
 
@@ -122,7 +122,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv">The ObjectListView to modify</param>
         /// <param name="enumerable">The collection whose first element will be used to generate columns.</param>
         /// <param name="allProperties">Will columns be generated for properties that are not marked with [OLVColumn].</param>
-        static public void GenerateColumns(ObjectListView olv, IEnumerable enumerable, bool allProperties) {
+        static public void GenerateColumns(ObjectListViewBase olv, IEnumerable enumerable, bool allProperties) {
             // Generate columns based on the type of the first model in the collection and then quit
             if (enumerable != null) {
                 foreach (object model in enumerable) {
@@ -141,7 +141,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="olv">The ObjectListView to modify</param>
         /// <param name="type">The model type whose attributes will be considered.</param>
-        static public void GenerateColumns(ObjectListView olv, Type type) {
+        static public void GenerateColumns(ObjectListViewBase olv, Type type) {
             Generator.Instance.GenerateAndReplaceColumns(olv, type, false);
         }
 
@@ -152,7 +152,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv">The ObjectListView to modify</param>
         /// <param name="type">The model type whose attributes will be considered.</param>
         /// <param name="allProperties">Will columns be generated for properties that are not marked with [OLVColumn].</param>
-        static public void GenerateColumns(ObjectListView olv, Type type, bool allProperties) {
+        static public void GenerateColumns(ObjectListViewBase olv, Type type, bool allProperties) {
             Generator.Instance.GenerateAndReplaceColumns(olv, type, allProperties);
         }
 
@@ -177,7 +177,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv">The ObjectListView to modify</param>
         /// <param name="type">The model type whose attributes will be considered.</param>
         /// <param name="allProperties">Will columns be generated for properties that are not marked with [OLVColumn].</param>
-        public virtual void GenerateAndReplaceColumns(ObjectListView olv, Type type, bool allProperties) {
+        public virtual void GenerateAndReplaceColumns(ObjectListViewBase olv, Type type, bool allProperties) {
             IList<OLVColumn> columns = this.GenerateColumns(type, allProperties);
             TreeListView tlv = olv as TreeListView;
             if (tlv != null)
@@ -244,7 +244,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="olv"></param>
         /// <param name="columns"></param>
-        protected virtual void ReplaceColumns(ObjectListView olv, IList<OLVColumn> columns) {
+        protected virtual void ReplaceColumns(ObjectListViewBase olv, IList<OLVColumn> columns) {
             olv.Reset();
 
             // Are there new columns to add?
@@ -260,7 +260,7 @@ namespace BrightIdeasSoftware
         /// Post process columns after creating them and adding them to the AllColumns collection.
         /// </summary>
         /// <param name="olv"></param>
-        public virtual void PostCreateColumns(ObjectListView olv) {
+        public virtual void PostCreateColumns(ObjectListViewBase olv) {
             if (olv.AllColumns.Exists(delegate(OLVColumn x) { return x.CheckBoxes; }))
                 olv.UseSubItemCheckBoxes = true;
             if (olv.AllColumns.Exists(delegate(OLVColumn x) { return x.Index > 0 && (x.ImageGetter != null || !String.IsNullOrEmpty(x.ImageAspectName)); }))
@@ -413,7 +413,7 @@ namespace BrightIdeasSoftware
             tlv.CanExpandGetter = delegate(object x) {
                 try {
                     IEnumerable result = childrenGetter.GetValueEx(x) as IEnumerable;
-                    return !ObjectListView.IsEnumerableEmpty(result);
+                    return !ObjectListViewBase.IsEnumerableEmpty(result);
                 }
                 catch (MungerException ex) {
                     System.Diagnostics.Debug.WriteLine(ex);

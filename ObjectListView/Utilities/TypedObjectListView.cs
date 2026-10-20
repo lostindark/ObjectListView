@@ -1,5 +1,5 @@
 /*
- * TypedObjectListView - A wrapper around an ObjectListView that provides type-safe delegates.
+ * TypedObjectListView - A list view with strongly typed model storage.
  *
  * Author: Phillip Piper
  * Date: 27/09/2008 9:15 AM
@@ -36,33 +36,29 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 using System.Windows.Forms;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 
 namespace BrightIdeasSoftware
 {
     /// <summary>
-    /// A TypedObjectListView is a type-safe wrapper around an ObjectListView.
+    /// A list view that owns a strongly typed collection of model objects.
     /// </summary>
     /// <remarks>
-    /// <para>VCS does not support generics on controls. It can be faked to some degree, but it
-    /// cannot be completely overcome. In our case in particular, there is no way to create
-    /// the custom OLVColumn's that we need to truly be generic. So this wrapper is an 
-    /// experiment in providing some type-safe access in a way that is useful and available today.</para>
-    /// <para>A TypedObjectListView is not more efficient than a normal ObjectListView.
-    /// Underneath, the same name of casts are performed. But it is easier to use since you
-    /// do not have to write the casts yourself.
-    /// </para>
+    /// Columns, rendering and callbacks use the shared non-generic control API.
+    /// Use a concrete subclass of this control in the Windows Forms designer.
     /// </remarks>
     /// <typeparam name="T">The class of model object that the list will manage</typeparam>
     /// <example>
     /// To use a TypedObjectListView, you write code like this:
     /// <code>
-    /// TypedObjectListView&lt;Person> tlist = new TypedObjectListView&lt;Person>(this.listView1);
-    /// tlist.CheckStateGetter = delegate(Person x) { return x.IsActive; };
-    /// tlist.GetColumn(0).AspectGetter = delegate(Person x) { return x.Name; };
+    /// TypedObjectListView&lt;Person> tlist = new TypedObjectListView&lt;Person>();
+    /// tlist.Columns.Add(new OLVColumn("Name", "Name"));
+    /// tlist.GetTypedColumn(0).AspectGetter = delegate(Person x) { return x.Name; };
     /// ...
     /// </code>
     /// To iterate over the selected objects, you can write something elegant like this:
@@ -72,14 +68,104 @@ namespace BrightIdeasSoftware
     /// }
     /// </code>
     /// </example>
-    public class TypedObjectListView<T> where T : class
+    public class TypedObjectListView<T> : ObjectListViewBase where T : class
     {
+        private List<T> objects = new List<T>();
+        private System.Collections.ObjectModel.ReadOnlyCollection<T> sourceView;
+        private ModelRowCollection<T> rows;
+        private TypedObjectListViewAdapter<T> typed;
+
+        /// <inheritdoc/>
+        protected override IEnumerable StoredModelObjects {
+            get { return this.objects; }
+        }
+
+        /// <inheritdoc/>
+        protected override ICollection MaterializeModelObjects(IEnumerable collection) {
+            return CreateModelList(collection);
+        }
+
+        /// <inheritdoc/>
+        protected override void SetStoredModelObjects(IEnumerable collection) {
+            this.objects = collection as List<T> ?? CreateModelList(collection);
+            this.sourceView = null;
+            this.InvalidateModelRows();
+        }
+
+        /// <inheritdoc/>
+        protected override void InsertStoredModelObjects(int index, IEnumerable collection, bool includeNulls) {
+            List<T> models = collection as List<T> ?? CreateModelList(collection);
+            if (!includeNulls)
+                models.RemoveAll(model => model == null);
+            index = Math.Max(0, Math.Min(index, this.objects.Count));
+            this.InvalidateModelRows();
+            this.objects.InsertRange(index, models);
+        }
+
+        /// <inheritdoc/>
+        protected override void RemoveStoredModelObject(object modelObject) {
+            int index = this.IndexOfStoredModel((T)modelObject);
+            if (index >= 0) {
+                this.InvalidateModelRows();
+                this.objects.RemoveAt(index);
+            }
+        }
+
+        /// <inheritdoc/>
+        protected override bool ReplaceStoredModelObject(object oldModel, object newModel) {
+            T replacement = (T)newModel;
+            int index = this.IndexOfStoredModel((T)oldModel);
+            if (index < 0)
+                return false;
+            this.InvalidateModelRows();
+            this.objects[index] = replacement;
+            return true;
+        }
+
+        private int IndexOfStoredModel(T model) {
+            for (int i = 0; i < this.objects.Count; i++) {
+                if (Object.Equals(this.objects[i], model))
+                    return i;
+            }
+            return -1;
+        }
+
         /// <summary>
-        /// Create a typed wrapper around the given list.
+        /// Enumerate the source without exposing mutable storage. Override for a custom source.
         /// </summary>
-        /// <param name="olv">The listview to be wrapped</param>
-        public TypedObjectListView(ObjectListView olv) {
-            this.olv = olv;
+        protected virtual IEnumerable GetModelObjectsCore() {
+            return this.sourceView ?? (this.sourceView = this.objects.AsReadOnly());
+        }
+
+        /// <summary>
+        /// Assign a source through its normal mutation pipeline, preserving view state.
+        /// </summary>
+        protected virtual void SetModelObjectsCore(IEnumerable collection) {
+            this.SetObjects(collection, true);
+        }
+
+        /// <inheritdoc/>
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public sealed override IEnumerable ModelObjects {
+            get { return this.GetModelObjectsCore(); }
+            set { this.SetModelObjectsCore(value); }
+        }
+
+        /// <summary>
+        /// Copy and validate a sequence at the typed model boundary.
+        /// </summary>
+        protected internal static List<T> CreateModelList(IEnumerable collection) {
+            IEnumerable<T> typed = collection as IEnumerable<T>;
+            if (typed != null)
+                return new List<T>(typed);
+
+            List<T> snapshot = new List<T>();
+            if (collection != null) {
+                foreach (object model in collection)
+                    snapshot.Add((T)model);
+            }
+            return snapshot;
         }
 
         //--------------------------------------------------------------------------------------
@@ -89,76 +175,154 @@ namespace BrightIdeasSoftware
         /// Return the model object that is checked, if only one row is checked.
         /// If zero rows are checked, or more than one row, null is returned.
         /// </summary>
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual T CheckedObject {
-            get { return (T)this.olv.CheckedObject; }
+            get { return (T)base.CheckedModelObject; }
+            set { base.CheckedModelObject = value; }
         }
 
         /// <summary>
         /// Return the list of all the checked model objects
         /// </summary>
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual IList<T> CheckedObjects {
-            get {
-                List<T> objects = new List<T>();
-                foreach (object x in this.olv.CheckedObjects)
-                    objects.Add((T)x);
-
-                return objects;
-            }
-            set {
-                this.olv.CheckedObjects = value == null ? null :
-                    value as IList ?? ObjectListView.EnumerableToArray(value, true);
-            }
+            get { return this.GetCheckedObjectsCore(); }
+            set { this.SetCheckedObjectsCore(value); }
         }
 
         /// <summary>
-        /// The ObjectListView that is being wrapped
+        /// Read checked models through the control's canonical extension point.
         /// </summary>
-        public virtual ObjectListView ListView {
-            get { return olv; }
-            set { olv = value; }
+        protected virtual IList<T> GetCheckedObjectsCore() {
+            List<T> checkedObjects = new List<T>();
+            if (this.CheckBoxes) {
+                for (int i = 0; i < this.GetItemCount(); i++) {
+                    if (this.GetItem(i).CheckState == CheckState.Checked)
+                        checkedObjects.Add(this.GetModelObject(i));
+                }
+            }
+            return checkedObjects;
         }
-        private ObjectListView olv;
+
+        /// <summary>
+        /// Apply a checked-model snapshot. Null clears the checked state.
+        /// </summary>
+        protected virtual void SetCheckedObjectsCore(IList<T> value) {
+            ((ObjectListViewBase)this).SetCheckedObjects(value);
+        }
 
         /// <summary>
         /// Get or set the list of all model objects
         /// </summary>
         /// <remarks>Both accessors use materialized snapshots. An assigned sequence is
-        /// consumed once before it is passed to the control.</remarks>
-        public virtual IEnumerable<T> Objects {
-            get {
-                List<T> objects = new List<T>(this.olv.GetItemCount());
-                for (int i = 0; i < this.olv.GetItemCount(); i++)
-                    objects.Add(this.GetModelObject(i));
+        /// consumed once on the control thread before it replaces the owned List.</remarks>
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public IEnumerable<T> Objects {
+            get { return this.GetObjectsSnapshot(); }
+            set { this.SetModelObjectsCore(value); }
+        }
 
-                return objects;
-            }
-            set { this.olv.SetObjects(value == null ? null : ObjectListView.EnumerableToArray(value, true)); }
+        /// <summary>
+        /// Return an independent snapshot of all source models, not just visible rows.
+        /// </summary>
+        public List<T> GetObjectsSnapshot() {
+            return CreateModelList(this.ModelObjects);
+        }
+
+        /// <summary>
+        /// Read the current displayed models without materializing the whole list.
+        /// </summary>
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public IReadOnlyList<T> Rows {
+            get { return this.rows ?? (this.rows = new ModelRowCollection<T>(this)); }
+        }
+
+        /// <summary>
+        /// Access typed callbacks and compatibility helpers without wrapping another control.
+        /// </summary>
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public TypedObjectListViewAdapter<T> Typed {
+            get { return this.typed ?? (this.typed = new TypedObjectListViewAdapter<T>(this)); }
         }
 
         /// <summary>
         /// Return the model object that is selected, if only one row is selected.
         /// If zero rows are selected, or more than one row, null is returned.
         /// </summary>
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual T SelectedObject {
-            get { return (T)this.olv.SelectedObject; }
-            set { this.olv.SelectedObject = value; }
+            get { return (T)base.SelectedModelObject; }
+            set { base.SelectedModelObject = value; }
         }
 
         /// <summary>
         /// The list of model objects that are selected.
         /// </summary>
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual IList<T> SelectedObjects {
-            get {
-                List<T> objects = new List<T>(this.olv.SelectedIndices.Count);
-                foreach (int index in this.olv.SelectedIndices)
-                    objects.Add((T)this.olv.GetModelObject(index));
+            get { return this.GetSelectedObjectsCore(); }
+            set { this.SetSelectedObjectsCore(value); }
+        }
 
-                return objects;
+        /// <summary>
+        /// Read selected models through the control's canonical extension point.
+        /// </summary>
+        protected virtual IList<T> GetSelectedObjectsCore() {
+            List<T> selected = new List<T>(this.SelectedIndices.Count);
+            foreach (int index in this.SelectedIndices)
+                selected.Add(this.GetModelObject(index));
+            return selected;
+        }
+
+        /// <summary>
+        /// Apply a selection snapshot. Null clears selection.
+        /// </summary>
+        protected virtual void SetSelectedObjectsCore(IList<T> value) {
+            ((ObjectListViewBase)this).SetSelectedObjects(value);
+        }
+
+        /// <inheritdoc/>
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public sealed override object SelectedModelObject {
+            get { return this.SelectedObject; }
+            set { this.SelectedObject = (T)value; }
+        }
+
+        /// <inheritdoc/>
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public sealed override object CheckedModelObject {
+            get { return this.CheckedObject; }
+            set { this.CheckedObject = (T)value; }
+        }
+
+        /// <inheritdoc/>
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public sealed override IList SelectedModelObjects {
+            get {
+                IList<T> selected = this.SelectedObjects;
+                return selected as IList ?? CreateModelList(selected);
             }
-            set {
-                this.olv.SelectedObjects = value == null ? null :
-                    value as IList ?? ObjectListView.EnumerableToArray(value, true);
+            set { this.SelectedObjects = value == null ? null : value as IList<T> ?? CreateModelList(value); }
+        }
+
+        /// <inheritdoc/>
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never),
+         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public sealed override IList CheckedModelObjects {
+            get {
+                IList<T> checkedObjects = this.CheckedObjects;
+                return checkedObjects as IList ?? CreateModelList(checkedObjects);
             }
+            set { this.CheckedObjects = value == null ? null : value as IList<T> ?? CreateModelList(value); }
+        }
+
+        /// <inheritdoc/>
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public sealed override object GetModelAt(int index) {
+            return this.GetModelObject(index);
         }
 
         //--------------------------------------------------------------------------------------
@@ -169,8 +333,8 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="i">The index of the column</param>
         /// <returns>A typed column or null</returns>
-        public virtual TypedColumn<T> GetColumn(int i) {
-            return new TypedColumn<T>(this.olv.GetColumn(i));
+        public virtual TypedColumn<T> GetTypedColumn(int i) {
+            return TypedColumn<T>.For(this.GetColumn(i));
         }
 
         /// <summary>
@@ -178,8 +342,8 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="name">The name of the column</param>
         /// <returns>A typed column or null</returns>
-        public virtual TypedColumn<T> GetColumn(string name) {
-            return new TypedColumn<T>(this.olv.GetColumn(name));
+        public virtual TypedColumn<T> GetTypedColumn(string name) {
+            return TypedColumn<T>.For(this.GetColumn(name));
         }
 
         /// <summary>
@@ -188,199 +352,85 @@ namespace BrightIdeasSoftware
         /// <param name="index">The index of the model object</param>
         /// <returns>The model object or null</returns>
         public virtual T GetModelObject(int index) {
-            return (T)this.olv.GetModelObject(index);
-        }
-
-        //--------------------------------------------------------------------------------------
-        // Delegates
-
-        /// <summary>
-        /// CheckStateGetter
-        /// </summary>
-        /// <param name="rowObject"></param>
-        /// <returns></returns>
-        public delegate CheckState TypedCheckStateGetterDelegate(T rowObject);
-
-        /// <summary>
-        /// Gets or sets the check state getter
-        /// </summary>
-        public virtual TypedCheckStateGetterDelegate CheckStateGetter {
-            get { return checkStateGetter; }
-            set {
-                this.checkStateGetter = value;
-                if (value == null)
-                    this.olv.CheckStateGetter = null;
-                else
-                    this.olv.CheckStateGetter = delegate(object x) {
-                        return this.checkStateGetter((T)x);
-                    };
-            }
-        }
-        private TypedCheckStateGetterDelegate checkStateGetter;
-
-        /// <summary>
-        /// BooleanCheckStateGetter
-        /// </summary>
-        /// <param name="rowObject"></param>
-        /// <returns></returns>
-        public delegate bool TypedBooleanCheckStateGetterDelegate(T rowObject);
-
-        /// <summary>
-        /// Gets or sets the boolean check state getter
-        /// </summary>
-        public virtual TypedBooleanCheckStateGetterDelegate BooleanCheckStateGetter {
-            set {
-                if (value == null)
-                    this.olv.BooleanCheckStateGetter = null;
-                else
-                    this.olv.BooleanCheckStateGetter = delegate(object x) {
-                        return value((T)x);
-                    };
-            }
+            return (T)base.GetModelAt(index);
         }
 
         /// <summary>
-        /// CheckStatePutter
+        /// Replace the model objects without preserving selection.
         /// </summary>
-        /// <param name="rowObject"></param>
-        /// <param name="newValue"></param>
-        /// <returns></returns>
-        public delegate CheckState TypedCheckStatePutterDelegate(T rowObject, CheckState newValue);
-
-        /// <summary>
-        /// Gets or sets the check state putter delegate
-        /// </summary>
-        public virtual TypedCheckStatePutterDelegate CheckStatePutter {
-            get { return checkStatePutter; }
-            set {
-                this.checkStatePutter = value;
-                if (value == null)
-                    this.olv.CheckStatePutter = null;
-                else
-                    this.olv.CheckStatePutter = delegate(object x, CheckState newValue) {
-                        return this.checkStatePutter((T)x, newValue);
-                    };
-            }
-        }
-        private TypedCheckStatePutterDelegate checkStatePutter;
-
-        /// <summary>
-        /// BooleanCheckStatePutter
-        /// </summary>
-        /// <param name="rowObject"></param>
-        /// <param name="newValue"></param>
-        /// <returns></returns>
-        public delegate bool TypedBooleanCheckStatePutterDelegate(T rowObject, bool newValue);
-
-        /// <summary>
-        /// Gets or sets the boolean check state putter
-        /// </summary>
-        public virtual TypedBooleanCheckStatePutterDelegate BooleanCheckStatePutter {
-            set {
-                if (value == null)
-                    this.olv.BooleanCheckStatePutter = null;
-                else
-                    this.olv.BooleanCheckStatePutter = delegate(object x, bool newValue) {
-                        return value((T)x, newValue);
-                    };
-            }
+        public void SetObjects(IEnumerable<T> modelObjects) {
+            ((ObjectListViewBase)this).SetObjects(modelObjects);
         }
 
         /// <summary>
-        /// ToolTipGetter
+        /// Replace the model objects, optionally preserving control state.
         /// </summary>
-        /// <param name="column"></param>
-        /// <param name="modelObject"></param>
-        /// <returns></returns>
-        public delegate String TypedCellToolTipGetterDelegate(OLVColumn column, T modelObject);
-
-        /// <summary>
-        /// Gets or sets the cell tooltip getter
-        /// </summary>
-        public virtual TypedCellToolTipGetterDelegate CellToolTipGetter {
-            set {
-                if (value == null)
-                    this.olv.CellToolTipGetter = null;
-                else
-                    this.olv.CellToolTipGetter = delegate(OLVColumn col, Object x) {
-                        return value(col, (T)x);
-                    };
-            }
+        public void SetObjects(IEnumerable<T> modelObjects, bool preserveState) {
+            ((ObjectListViewBase)this).SetObjects(modelObjects, preserveState);
         }
 
         /// <summary>
-        /// Gets or sets the header tool tip getter
+        /// Select the given models and deselect all other models.
         /// </summary>
-        public virtual HeaderToolTipGetterDelegate HeaderToolTipGetter {
-            get { return this.olv.HeaderToolTipGetter; }
-            set { this.olv.HeaderToolTipGetter = value; }
-        }
-
-        //--------------------------------------------------------------------------------------
-        // Commands
-
-        /// <summary>
-        /// Select the given model objects and deselect all other objects.
-        /// </summary>
-        public virtual void SetSelectedObjects(IEnumerable<T> modelObjects) {
-            this.SelectObjects(modelObjects);
+        public void SetSelectedObjects(IEnumerable<T> modelObjects) {
+            ((ObjectListViewBase)this).SetSelectedObjects(modelObjects);
         }
 
         /// <summary>
-        /// Select the given model objects and deselect all other objects.
+        /// Select the given models and deselect all other models.
         /// </summary>
-        public virtual void SelectObjects(IEnumerable<T> modelObjects) {
-            this.olv.SetSelectedObjects(modelObjects);
+        public void SelectObjects(IEnumerable<T> modelObjects) {
+            ((ObjectListViewBase)this).SelectObjects(modelObjects);
         }
 
         /// <summary>
-        /// Check the given model objects and uncheck all other objects.
+        /// Check the given models and uncheck all other models.
         /// </summary>
-        public virtual void SetCheckedObjects(IEnumerable<T> modelObjects) {
-            this.olv.SetCheckedObjects(modelObjects);
+        public void SetCheckedObjects(IEnumerable<T> modelObjects) {
+            ((ObjectListViewBase)this).SetCheckedObjects(modelObjects);
         }
 
         /// <summary>
-        /// Add the given model objects.
+        /// Add the given models.
         /// </summary>
-        public virtual void AddObjects(IEnumerable<T> modelObjects) {
-            this.olv.AddObjects(modelObjects);
+        public void AddObjects(IEnumerable<T> modelObjects) {
+            ((ObjectListViewBase)this).AddObjects(modelObjects);
         }
 
         /// <summary>
-        /// Insert the given model objects at the specified position.
+        /// Insert the given models before the specified index.
         /// </summary>
-        public virtual void InsertObjects(int index, IEnumerable<T> modelObjects) {
-            this.olv.InsertObjects(index, modelObjects);
+        public void InsertObjects(int index, IEnumerable<T> modelObjects) {
+            ((ObjectListViewBase)this).InsertObjects(index, modelObjects);
         }
 
         /// <summary>
-        /// Refresh the rows displaying the given model objects.
+        /// Refresh the rows displaying the given models.
         /// </summary>
-        public virtual void RefreshObjects(IEnumerable<T> modelObjects) {
-            this.olv.RefreshObjects(modelObjects);
+        public void RefreshObjects(IEnumerable<T> modelObjects) {
+            ((ObjectListViewBase)this).RefreshObjects(modelObjects);
         }
 
         /// <summary>
-        /// Remove the given model objects.
+        /// Remove the given models.
         /// </summary>
-        public virtual void RemoveObjects(IEnumerable<T> modelObjects) {
-            this.olv.RemoveObjects(modelObjects);
+        public void RemoveObjects(IEnumerable<T> modelObjects) {
+            ((ObjectListViewBase)this).RemoveObjects(modelObjects);
         }
 
         /// <summary>
-        /// Copy the given model objects to the clipboard.
+        /// Copy the given models to the clipboard.
         /// </summary>
-        public virtual void CopyObjectsToClipboard(IEnumerable<T> modelObjects) {
-            this.olv.CopyObjectsToClipboard(modelObjects);
+        public void CopyObjectsToClipboard(IEnumerable<T> modelObjects) {
+            ((ObjectListViewBase)this).CopyObjectsToClipboard(modelObjects);
         }
 
         /// <summary>
         /// This method will generate AspectGetters for any column that has an AspectName.
         /// </summary>
         public virtual void GenerateAspectGetters() {
-            for (int i = 0; i < this.ListView.Columns.Count; i++)
-                this.GetColumn(i).GenerateAspectGetter();
+            for (int i = 0; i < this.Columns.Count; i++)
+                this.GetTypedColumn(i).GenerateAspectGetter();
         }
     }
 
@@ -390,11 +440,20 @@ namespace BrightIdeasSoftware
     /// <typeparam name="T"></typeparam>
     public class TypedColumn<T> where T : class
     {
+        private static readonly ConditionalWeakTable<OLVColumn, TypedColumn<T>> adapters =
+            new ConditionalWeakTable<OLVColumn, TypedColumn<T>>();
+
+        internal static TypedColumn<T> For(OLVColumn column) {
+            return column == null ? null : adapters.GetValue(column, key => new TypedColumn<T>(key));
+        }
+
         /// <summary>
         /// Creates a TypedColumn
         /// </summary>
         /// <param name="column"></param>
         public TypedColumn(OLVColumn column) {
+            if (column == null)
+                throw new ArgumentNullException("column");
             this.column = column;
         }
         private OLVColumn column;
@@ -431,69 +490,73 @@ namespace BrightIdeasSoftware
         /// 
         /// </summary>
         public TypedAspectGetterDelegate AspectGetter {
-            get { return this.aspectGetter; }
+            get {
+                AspectGetterDelegate getter = this.column.AspectGetter;
+                return getter == null ? null : new TypedAspectGetterDelegate(model => getter(model));
+            }
             set {
-                this.aspectGetter = value;
                 if (value == null)
                     this.column.AspectGetter = null;
                 else
                     this.column.AspectGetter = delegate(object x) {
-                        return x == null ? null : this.aspectGetter((T)x);
+                        return x == null ? null : value((T)x);
                     };
             }
         }
-        private TypedAspectGetterDelegate aspectGetter;
 
         /// <summary>
         /// 
         /// </summary>
         public TypedAspectPutterDelegate AspectPutter {
-            get { return aspectPutter; }
+            get {
+                AspectPutterDelegate putter = this.column.AspectPutter;
+                return putter == null ? null : new TypedAspectPutterDelegate((model, value) => putter(model, value));
+            }
             set {
-                this.aspectPutter = value;
                 if (value == null)
                     this.column.AspectPutter = null;
                 else
                     this.column.AspectPutter = delegate(object x, object newValue) {
-                        this.aspectPutter((T)x, newValue);
+                        value((T)x, newValue);
                     };
             }
         }
-        private TypedAspectPutterDelegate aspectPutter;
 
         /// <summary>
         /// 
         /// </summary>
         public TypedImageGetterDelegate ImageGetter {
-            get { return imageGetter; }
+            get {
+                ImageGetterDelegate getter = this.column.ImageGetter;
+                return getter == null ? null : new TypedImageGetterDelegate(model => getter(model));
+            }
             set {
-                this.imageGetter = value;
                 if (value == null)
                     this.column.ImageGetter = null;
                 else
                     this.column.ImageGetter = delegate(object x) {
-                        return this.imageGetter((T)x);
+                        return value((T)x);
                     };
             }
         }
-        private TypedImageGetterDelegate imageGetter;
 
         /// <summary>
         /// 
         /// </summary>
         public TypedGroupKeyGetterDelegate GroupKeyGetter {
-            get { return groupKeyGetter; }
+            get {
+                GroupKeyGetterDelegate getter = this.column.GroupKeyGetter;
+                return getter == null ? null : new TypedGroupKeyGetterDelegate(model => getter(model));
+            }
             set {
-                this.groupKeyGetter = value;
                 if (value == null)
                     this.column.GroupKeyGetter = null;
                 else
                     this.column.GroupKeyGetter = delegate(object x) {
-                        return this.groupKeyGetter((T)x);
+                        return value((T)x);
                     };
             }
         }
-        private TypedGroupKeyGetterDelegate groupKeyGetter;
 
         #region Dynamic methods
 

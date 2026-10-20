@@ -1,4 +1,4 @@
-﻿/*
+/*
  * OLVDataObject.cs - An OLE DataObject that knows how to convert rows of an OLV to text and HTML
  *
  * Author: Phillip Piper
@@ -48,8 +48,8 @@ namespace BrightIdeasSoftware {
         /// Create a data object from the selected objects in the given ObjectListView
         /// </summary>
         /// <param name="olv">The source of the data object</param>
-        public OLVDataObject(ObjectListView olv)
-            : this(olv, olv.SelectedObjects) {
+        public OLVDataObject(ObjectListViewBase olv)
+            : this(olv, olv.SelectedModelObjects) {
         }
 
         /// <summary>
@@ -58,14 +58,14 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <param name="olv">The source of the data object</param>
         /// <param name="modelObjects">The model objects to be put into the data object</param>
-        public OLVDataObject(ObjectListView olv, IEnumerable modelObjects) {
+        public OLVDataObject(ObjectListViewBase olv, IEnumerable modelObjects) {
             if (olv == null)
                 throw new ArgumentNullException("olv");
             if (modelObjects == null)
                 throw new ArgumentNullException("modelObjects");
 
             this.objectListView = olv;
-            this.modelObjects = ObjectListView.EnumerableToArray(modelObjects, true);
+            this.modelObjects = ObjectListViewBase.EnumerableToArray(modelObjects, true);
             this.includeHiddenColumns = olv.IncludeHiddenColumnsInDataTransfer;
             this.includeColumnHeaders = olv.IncludeColumnHeadersInCopy;
             this.CreateTextFormats();
@@ -97,10 +97,10 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets the ObjectListView that is being used as the source of the data
         /// </summary>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return objectListView; }
         }
-        private readonly ObjectListView objectListView;
+        private readonly ObjectListViewBase objectListView;
 
         /// <summary>
         /// Gets the model objects that are to be placed in the data object

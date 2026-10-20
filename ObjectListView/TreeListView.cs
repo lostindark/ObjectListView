@@ -302,7 +302,7 @@ namespace BrightIdeasSoftware
             if (!this.CheckBoxes)
                 return;
 
-            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(modelObjects, true);
             ArrayList objectsToRecalculate = new ArrayList(this.CheckedObjects);
             objectsToRecalculate.AddRange(snapshot);
 
@@ -387,8 +387,19 @@ namespace BrightIdeasSoftware
         [Browsable(false),
         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public override IEnumerable Objects {
-            get { return this.Roots; }
+            get { return ObjectListViewBase.EnumerableToArray(this.Roots, true); }
             set { this.Roots = value; }
+        }
+
+        /// <inheritdoc/>
+        protected override IEnumerable GetModelObjectsCore() {
+            foreach (object root in this.Roots)
+                yield return root;
+        }
+
+        /// <inheritdoc/>
+        protected override void SetModelObjectsCore(IEnumerable collection) {
+            this.Roots = collection;
         }
 
         /// <summary>
@@ -427,6 +438,7 @@ namespace BrightIdeasSoftware
         public virtual IEnumerable Roots {
             get { return this.TreeModel.RootObjects; }
             set {
+                this.InvalidateModelRows();
                 this.TreeColumnRenderer = this.TreeColumnRenderer;
                 this.TreeModel.RootObjects = value ?? new ArrayList();
                 this.UpdateVirtualListSize();
@@ -777,7 +789,7 @@ namespace BrightIdeasSoftware
             if (modelObjects == null)
                 throw new ArgumentNullException("modelObjects");
 
-            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(modelObjects, true);
             // Remember the selection so we can put it back later
             IList selection = this.SelectedObjects;
 
@@ -799,7 +811,7 @@ namespace BrightIdeasSoftware
 
             // Update any changed roots
             if (updatedRoots.Count > 0) {
-                ArrayList newRoots = ObjectListView.EnumerableToArray(this.Roots, false);
+                ArrayList newRoots = ObjectListViewBase.EnumerableToArray(this.Roots, false);
                 bool changed = false;
                 foreach (Object model in updatedRoots) {
                     int index = newRoots.IndexOf(model);
@@ -1669,8 +1681,8 @@ namespace BrightIdeasSoftware
             /// </summary>
             /// <param name="modelObjects"></param>
             public virtual void AddObjects(IEnumerable modelObjects) {
-                ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
-                ArrayList newRoots = ObjectListView.EnumerableToArray(this.treeView.Roots, true);
+                ArrayList snapshot = ObjectListViewBase.EnumerableToArray(modelObjects, true);
+                ArrayList newRoots = ObjectListViewBase.EnumerableToArray(this.treeView.Roots, true);
                 foreach (Object x in snapshot)
                     newRoots.Add(x);
                 this.SetObjects(newRoots);
@@ -1691,7 +1703,7 @@ namespace BrightIdeasSoftware
             /// </summary>
             /// <param name="modelObjects"></param>
             public virtual void RemoveObjects(IEnumerable modelObjects) {
-                ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+                ArrayList snapshot = ObjectListViewBase.EnumerableToArray(modelObjects, true);
                 ArrayList newRoots = new ArrayList();
                 foreach (Object x in this.treeView.Roots)
                     newRoots.Add(x);
@@ -1717,7 +1729,7 @@ namespace BrightIdeasSoftware
             /// <param name="index"></param>
             /// <param name="modelObject"></param>
             public void UpdateObject(int index, object modelObject) {
-                ArrayList newRoots = ObjectListView.EnumerableToArray(this.treeView.Roots, false);
+                ArrayList newRoots = ObjectListViewBase.EnumerableToArray(this.treeView.Roots, false);
                 if (index < newRoots.Count)
                     newRoots[index] = modelObject;
                 SetObjects(newRoots);
@@ -2256,7 +2268,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Get whether this this model can be expanded? If true, an expand glyph will be drawn next to it.
         /// </summary>
-        /// <remarks>This is called often! It must be fast. Don’t do a database lookup, calculate pi, or do linear searches – just return a property value.</remarks>
+        /// <remarks>This is called often! It must be fast. Donï¿½t do a database lookup, calculate pi, or do linear searches ï¿½ just return a property value.</remarks>
         bool TreeCanExpand { get; }
 
         /// <summary>

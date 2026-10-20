@@ -68,7 +68,7 @@ namespace BrightIdeasSoftware {
     /// </remarks>
     public delegate void CellEditEventHandler(object sender, CellEditEventArgs e);
 
-    public partial class ObjectListView {
+    public partial class ObjectListViewBase {
         //-----------------------------------------------------------------------------------
 
         #region Events
@@ -445,6 +445,7 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <param name="e"></param>
         protected virtual void OnAfterSorting(AfterSortingEventArgs e) {
+            this.InvalidateModelRows();
             if (this.AfterSorting != null)
                 this.AfterSorting(this, e);
         }
@@ -670,6 +671,7 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <param name="e"></param>
         protected virtual void OnItemsChanged(ItemsChangedEventArgs e) {
+            this.InvalidateModelRows();
             if (this.ItemsChanged != null)
                 this.ItemsChanged(this, e);
         }
@@ -1408,12 +1410,12 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets the ObjectListView that is the source of the event
         /// </summary>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return this.listView; }
             internal set { this.listView = value; }
         }
 
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Gets the model object under the cell
@@ -1648,12 +1650,12 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets the ObjectListView that is the source of the event
         /// </summary>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return this.listView; }
             internal set { this.listView = value; }
         }
 
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Gets the model object under the cell
@@ -1748,12 +1750,12 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets the ObjectListView that is the source of the event
         /// </summary>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return this.listView; }
             internal set { this.listView = value; }
         }
 
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Gets the model object under the cell
@@ -1812,12 +1814,12 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets the ObjectListView that is the source of the event
         /// </summary>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return this.listView; }
             internal set { this.listView = value; }
         }
 
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Gets the item of the cell

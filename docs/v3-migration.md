@@ -2,9 +2,97 @@
 
 [Documentation index](README.md) | [Implementation plan](v3-plan.md)
 
-This guide covers the **enumerable collection API milestone**, not a completed v3
+This guide covers the **enumerable collection API and generic-control milestones**, not a completed v3
 release. Grouping, styling, renderer/layout changes, and release versioning remain
 separate milestones. The target remains .NET Framework 4.6.2.
+
+## Generic control hierarchy
+
+`TypedObjectListView<T>` is now a Windows Forms control with owned `List<T>`
+storage, rather than a wrapper around another control:
+
+```csharp
+ObjectListViewBase
+    -> TypedObjectListView<T>
+        -> ObjectListView : TypedObjectListView<object>
+```
+
+The generic control implements collection assignment, bulk insertion, removal,
+and replacement with `List<T>` operations. The shared UI base only enumerates
+stored models and invokes storage-operation hooks. Event collections are
+snapshots, not the mutable backing-store contract. The shared `ModelObjects`
+bridge is read-only source access; it is not a snapshot guarantee.
+Accepted `ItemsChanging` payloads are also copied before becoming stored models,
+so retaining and later modifying an event payload does not alter the control.
+
+Replace `new TypedObjectListView<Person>(existingControl)` with a new
+`TypedObjectListView<Person>()`, configure its columns, and add that control to
+the form. Access control properties directly instead of through `.ListView`.
+Use `GetTypedColumn(...)` for typed column delegates; `GetColumn(...)` returns
+the shared `OLVColumn`. Check-state and tooltip callbacks retain the object-based
+control signatures. Use `control.Typed` for typed callback configuration.
+
+To retain the existing control instead, migrate the old wrapper constructor to
+`new TypedObjectListViewAdapter<Person>(existingControl)`. The adapter supports
+typed source/selection/check snapshots, callbacks, column helpers, and enumerable
+commands. It neither creates nor disposes a control. Its `ListView` is read-only:
+construct another adapter when adapting a different control.
+
+```csharp
+var people = new TypedObjectListViewAdapter<Person>(existingControl);
+people.BooleanCheckStateGetter = person => person.IsActive;
+people.CellToolTipGetter = (column, person) => person.Name;
+people.GetColumn(0).AspectGetter = person => person.Name;
+```
+
+Typed callback adapters write to the existing callback slots. Reading a callback
+through an adapter reflects later changes made through the untyped API too.
+`GetTypedColumn` and adapter `GetColumn` share weakly cached column adapters;
+removed columns are not retained by the cache.
+
+For designer use, declare a concrete, non-generic subclass such as
+`public class PersonListView : TypedObjectListView<Person> { }`.
+Typed controls are not subclasses of `ObjectListView`. Custom renderers,
+overlays, drag/drop implementations, and other integrations that previously
+accepted `ObjectListView` now accept `ObjectListViewBase`; update overrides and
+interface implementations accordingly. The shared base exposes `ModelObjects`,
+`SelectedModelObjects`, `CheckedModelObjects`, `SelectedModelObject`,
+`CheckedModelObject`, and `GetModelAt` for untyped access.
+
+Existing subclasses of `ObjectListView` retain their legacy virtual model
+properties and `GetModelObject` extension point. Fast, virtual, tree, and
+data-bound controls remain non-generic and keep their specialized data sources.
+They do not materialize those data sources into the generic backing list.
+
+### Subclass extension points
+
+`GetModelAt` and the shared selection/check-state bridges are sealed on the
+generic control. Override `GetModelObject`, `SelectedObject`, `CheckedObject`,
+`SelectedObjects`, or `CheckedObjects` instead. Those overrides are honored by
+shared UI operations, `Rows`, and adapters. The compatibility class routes typed
+selection/check operations through legacy `IList` property overrides, including
+when it is referenced as `TypedObjectListView<object>`.
+
+For source customization, override `GetModelObjectsCore` and
+`SetModelObjectsCore`. Move source-producing or source-assigning logic out of
+legacy `Objects` overrides into those hooks. **The UI no longer calls the public
+`Objects` snapshot getter to obtain its source.** This is an intentional migration
+for custom source subclasses; otherwise every internal query would allocate a
+full snapshot. Existing built-in control sources have been migrated.
+
+The typed `Objects` accessor and typed enumerable command overloads are
+non-virtual entry points. The commands dispatch through the existing untyped
+virtual command pipeline, so legacy command overrides still run. Storage
+extensions use `MaterializeModelObjects`, `SetStoredModelObjects`,
+`InsertStoredModelObjects`, `RemoveStoredModelObject`, and
+`ReplaceStoredModelObject`. Adopt/insert hooks receive private, validated
+snapshots, not caller/event-owned collections. Do not retain or mutate a
+transferred snapshot outside the storage implementation. Custom storage must
+implement both its read and mutation hooks consistently.
+
+Storage lookup retains `object.Equals` semantics to match the existing UI
+selection, checking, and model maps. Implementing only `IEquatable<T>` does not
+change the control's identity policy.
 
 ## Changed contracts
 
@@ -25,10 +113,16 @@ no longer need a caller-side `ToList()` or `ToArray()`.
 | `IVirtualListDataSource` add, insert, and remove methods | `ICollection` input | `IEnumerable` input |
 | `OLVDataObject` constructor | `IList` input, retained by reference | `IEnumerable` input, copied into a snapshot |
 
-`Objects` and `SetObjects` on the base control already accept `IEnumerable` and
-their contracts are unchanged. The typed `Objects` setter now copies its input
-before calling `SetObjects`, so single-use iterators also work when model
-notification subscriptions are enabled. It no longer borrows the caller's list.
+The non-generic `Objects` and `SetObjects` APIs still accept `IEnumerable`.
+`Objects` getters on regular, fast, virtual, and tree controls now return
+independent snapshots. Mutating the returned collection no longer mutates an
+internal backing list. Tree snapshots contain roots, not flattened rows.
+Regular controls now copy assigned sequences into their owned `List<T>` before
+events or rebuilding rows, so single-use iterators also work when model
+notification subscriptions are enabled. The source collection is no longer
+borrowed. Later changes to it do not update the control; use the control's
+mutation methods or assign the sequence again. Untyped mutations on a typed
+control reject incompatible model types before modifying rows.
 
 ## Queries and snapshot getters
 
@@ -36,7 +130,8 @@ notification subscriptions are enabled. It no longer borrows the caller's list.
 using System.Linq;
 using BrightIdeasSoftware;
 
-var peopleView = new TypedObjectListView<Person>(listView);
+var peopleView = new TypedObjectListView<Person>();
+peopleView.Columns.Add(new OLVColumn("Name", "Name"));
 peopleView.Objects = people.Where(person => person.IsActive == true);
 peopleView.SetSelectedObjects(people.Where(person => person.Name.StartsWith("A")));
 peopleView.SetCheckedObjects(peopleView.SelectedObjects.Where(person => person.CanTellJokes));
@@ -59,10 +154,30 @@ the control after reading a getter does not change that snapshot; changing the
 returned collection does not update the control. Snapshot contents still refer
 to the original model objects.
 
+Use `GetObjectsSnapshot()` when the copy should be explicit. For display-order
+access without a full copy, use `Rows`, an `IReadOnlyList<T>` available on both
+typed controls and adapters:
+
+```csharp
+IReadOnlyList<Person> rows = peopleView.Rows;
+int visibleCount = rows.Count;
+Person firstVisible = visibleCount == 0 ? null : rows[0];
+```
+
+The cached row view follows source replacement, filtering, sorting, and tree
+expansion. It has no collection mutation API. Count and indexed access do not
+enumerate a virtual source; an explicit source snapshot still can. Rebuilding,
+sorting, and row changes invalidate active row enumerators. Use these APIs on
+the UI thread and use a snapshot if a stable collection is needed across changes.
+
+Read-only `ModelObjects` access is reserved for the shared integration boundary.
+Its source ordering is distinct from `Rows` display ordering, and callers must
+not assume it remains attached to the same collection after source replacement.
+
 Existing collection assignments to `SelectedObjects` and `CheckedObjects` still
 work. For sequence inputs, use `SetSelectedObjects(IEnumerable)` and
 `SetCheckedObjects(IEnumerable)` rather than changing the property types.
-Both methods replace the current set; they do not add to it. The typed wrapper
+Both methods replace the current set; they do not add to it. The typed control
 provides equivalent `IEnumerable<T>` methods and keeps `IList<T>` selection and
 check snapshots.
 
@@ -72,9 +187,10 @@ the selection property setter uses `SetSelectedObjects`.
 
 `CheckedObjectsEnumerable` remains as a compatibility alias in this milestone.
 Its setter materializes the input and assigns the virtual `CheckedObjects`
-property, preserving existing property overrides. The typed selection and check
-property setters also assign the wrapped control's virtual properties, adapting
-generic-only lists when necessary and preserving null assignments.
+property, preserving existing property overrides. Typed selection and check
+property setters adapt generic-only lists when necessary and preserve null
+assignments. Shared UI operations on non-generic controls continue to honor
+their legacy virtual property overrides.
 Prefer `SetCheckedObjects` for new sequence-based calls.
 
 ## Enumeration, events, and threading
@@ -96,11 +212,16 @@ remain `ICollection`. They receive materialized input that handlers can inspect,
 modify, replace, or cancel. Accepted event payloads are copied before mutation
 so an event handler can also replace a payload with a collection owned by the
 control. Notification subscriptions use the accepted snapshot.
+The typed storage layer adopts or inserts the private accepted batch directly,
+without making a third copy. Event payload isolation is retained even when an
+event handler saves the arguments for later use. Overrides of notification
+methods should call their base implementation to preserve row-enumerator
+invalidation and normal event delivery.
 
 Add, insert, remove, and refresh operations marshal to an existing control
 handle's thread before enumeration. This does not make the source collection
 itself thread-safe. Selection and check properties, `SetSelectedObjects`, `SelectObjects`,
-`SetCheckedObjects`, typed `Objects`, and data transfer APIs still require the
+`SetCheckedObjects`, and data transfer APIs still require the
 appropriate UI thread; clipboard operations require STA. Direct
 virtual-data-source calls do not marshal automatically.
 

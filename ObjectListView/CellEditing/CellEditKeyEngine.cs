@@ -1,4 +1,4 @@
-﻿/*
+/*
  * CellEditKeyEngine - A engine that allows the behaviour of arbitrary keys to be configured
  *
  * Author: Phillip Piper
@@ -197,7 +197,7 @@ namespace BrightIdeasSoftware {
         /// <param name="olv"></param>
         /// <param name="keyData"></param>
         /// <returns>True if the key was completely handled.</returns>
-        public virtual bool HandleKey(ObjectListView olv, Keys keyData) {
+        public virtual bool HandleKey(ObjectListViewBase olv, Keys keyData) {
             if (olv == null) throw new ArgumentNullException("olv");
 
             CellEditCharacterBehaviour behaviour;
@@ -238,11 +238,11 @@ namespace BrightIdeasSoftware {
         /// Gets or sets the ObjectListView on which the current key is being handled.
         /// This cannot be null.
         /// </summary>
-        protected ObjectListView ListView {
+        protected ObjectListViewBase ListView {
             get { return listView; }
             set { listView = value; }
         }
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Gets the row of the cell that is currently being edited

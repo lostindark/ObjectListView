@@ -61,7 +61,7 @@ namespace BrightIdeasSoftware
         /// item selected.</param>
         /// <returns>The data object that will be used for data transfer. This will often be a subclass
         /// of DataObject, but does not need to be.</returns>
-        Object StartDrag(ObjectListView olv, MouseButtons button, OLVListItem item);
+        Object StartDrag(ObjectListViewBase olv, MouseButtons button, OLVListItem item);
 
         /// <summary>
         /// What operations are possible for this drag? This controls the icon shown during the drag
@@ -92,7 +92,7 @@ namespace BrightIdeasSoftware
         /// <param name="button"></param>
         /// <param name="item"></param>
         /// <returns></returns>
-        public virtual Object StartDrag(ObjectListView olv, MouseButtons button, OLVListItem item) {
+        public virtual Object StartDrag(ObjectListViewBase olv, MouseButtons button, OLVListItem item) {
             return null;
         }
 
@@ -170,7 +170,7 @@ namespace BrightIdeasSoftware
         /// <param name="button"></param>
         /// <param name="item"></param>
         /// <returns></returns>
-        public virtual Object StartDrag(ObjectListView olv, MouseButtons button, OLVListItem item) {
+        public virtual Object StartDrag(ObjectListViewBase olv, MouseButtons button, OLVListItem item) {
             // We only drag on left mouse
             if (button != MouseButtons.Left)
                 return null;
@@ -210,7 +210,7 @@ namespace BrightIdeasSoftware
         /// </remarks>
         /// <param name="olv">The ObjectListView that is the source of the drag</param>
         /// <returns>A data object for the drag</returns>
-        protected virtual object CreateDataObject(ObjectListView olv) {
+        protected virtual object CreateDataObject(ObjectListViewBase olv) {
             return new OLVDataObject(olv);
         }
 

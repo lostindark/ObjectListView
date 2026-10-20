@@ -1200,8 +1200,8 @@ namespace BrightIdeasSoftware
         override protected float CalculateRowHeight(Graphics g, ListView lv, int n)
         {
             float height = base.CalculateRowHeight(g, lv, n);
-            if (lv is ObjectListView)
-                height = Math.Max(height, ((ObjectListView)lv).RowHeightEffective);
+            if (lv is ObjectListViewBase)
+                height = Math.Max(height, ((ObjectListViewBase)lv).RowHeightEffective);
             return height;
         }
 
@@ -1232,13 +1232,13 @@ namespace BrightIdeasSoftware
         /// <param name="cell"></param>
         protected override void PrintCell(Graphics g, ListView lv, ListViewItem lvi, int row, int column, RectangleF cell)
         {
-            if (this.IsTextOnly || !(lv is ObjectListView)) {
+            if (this.IsTextOnly || !(lv is ObjectListViewBase)) {
                 base.PrintCell(g, lv, lvi, row, column, cell);
                 return;
             }
 
             // Decide which renderer should be used for drawing the cell
-            ObjectListView listView = (ObjectListView)lv;
+            ObjectListViewBase listView = (ObjectListViewBase)lv;
             OLVColumn olvc = (OLVColumn)this.GetColumn(column);
             OLVListItem olvItem = (OLVListItem)lvi;
             BaseRenderer renderer = listView.GetCellRenderer(olvItem.RowObject, olvc) as BaseRenderer;

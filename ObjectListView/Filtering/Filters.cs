@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Filters - Filtering on ObjectListViews
  *
  * Author: Phillip Piper
@@ -476,7 +476,7 @@ namespace BrightIdeasSoftware
             if (this.Count <= 0)
                 return modelObjects;
 
-            ArrayList list = ObjectListView.EnumerableToArray(modelObjects, false);
+            ArrayList list = ObjectListViewBase.EnumerableToArray(modelObjects, false);
 
             if (this.Count > list.Count)
                 return list;

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * OLVExporter - Export the contents of an ObjectListView into various text-based formats
  *
  * Author: Phillip Piper
@@ -75,19 +75,19 @@ namespace BrightIdeasSoftware {
         /// Create an exporter that will export all the rows of the given ObjectListView
         /// </summary>
         /// <param name="olv"></param>
-        public OLVExporter(ObjectListView olv) : this(olv, olv.Objects) {}
+        public OLVExporter(ObjectListViewBase olv) : this(olv, olv.ModelObjects) {}
 
         /// <summary>
         /// Create an exporter that will export all the given rows from the given ObjectListView
         /// </summary>
         /// <param name="olv"></param>
         /// <param name="objectsToExport"></param>
-        public OLVExporter(ObjectListView olv, IEnumerable objectsToExport) {
+        public OLVExporter(ObjectListViewBase olv, IEnumerable objectsToExport) {
             if (olv == null) throw new ArgumentNullException("olv");
             if (objectsToExport == null) throw new ArgumentNullException("objectsToExport");
 
             this.ListView = olv;
-            this.ModelObjects = ObjectListView.EnumerableToArray(objectsToExport, true);
+            this.ModelObjects = ObjectListViewBase.EnumerableToArray(objectsToExport, true);
         }
 
         #endregion
@@ -119,11 +119,11 @@ namespace BrightIdeasSoftware {
         /// Gets the ObjectListView that is being used as the source of the data
         /// to be exported
         /// </summary>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return objectListView; }
             set { objectListView = value; }
         }
-        private ObjectListView objectListView;
+        private ObjectListViewBase objectListView;
 
         /// <summary>
         /// Gets the model objects that are to be placed in the data object

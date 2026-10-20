@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Groups - Enhancements to the normal ListViewGroup
  *
  * Author: Phillip Piper
@@ -403,11 +403,11 @@ namespace BrightIdeasSoftware
         /// Gets the ObjectListView that this group belongs to
         /// </summary>
         /// <remarks>If this is null, the group has not yet been created.</remarks>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return this.listView; }
             protected set { this.listView = value; }
         }
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Gets or sets the name of the group
@@ -602,7 +602,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="olv"></param>
         /// <remarks>This is used when creating virtual groups</remarks>
-        public void InsertGroupNewStyle(ObjectListView olv) {
+        public void InsertGroupNewStyle(ObjectListViewBase olv) {
             this.ListView = olv;
             NativeMethods.InsertGroup(olv, this.AsNativeGroup(true));
         }
@@ -611,7 +611,7 @@ namespace BrightIdeasSoftware
         /// Insert a native group into the underlying control via a ListViewGroup
         /// </summary>
         /// <param name="olv"></param>
-        public void InsertGroupOldStyle(ObjectListView olv) {
+        public void InsertGroupOldStyle(ObjectListViewBase olv) {
             this.ListView = olv;
 
             // Create/update the associated ListViewGroup

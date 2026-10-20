@@ -72,7 +72,7 @@ namespace ObjectListViewDemo
             // Setup a right click handler that will show a menu that allows the user to jump to any group
             this.olvComplex.CellRightClick += delegate(object sender, CellRightClickEventArgs cellRightClickEventArgs) {
                 ContextMenuStrip ms = new ContextMenuStrip();
-                ObjectListView olv = cellRightClickEventArgs.ListView;
+                ObjectListViewBase olv = cellRightClickEventArgs.ListView;
                 if (olv.ShowGroups) {
                     foreach (ListViewGroup lvg in olv.Groups) {
                         ToolStripMenuItem mi = new ToolStripMenuItem(String.Format("Jump to group '{0}'", lvg.Header));
@@ -267,23 +267,23 @@ namespace ObjectListViewDemo
 
         private void SetupFasterAspectGetters() {
 
-            // The following line makes getting aspect about 10x faster. Since getting the aspect is
+            // Generating aspect getters makes getting aspects about 10x faster. Since getting the aspect is
             // the slowest part of building the ListView, it is worthwhile BUT NOT NECESSARY to do.
 
-            TypedObjectListView<Person> tlist = new TypedObjectListView<Person>(this.olvComplex);
-            tlist.GenerateAspectGetters();
+            var typed = new TypedObjectListViewAdapter<Person>(this.olvComplex);
+            typed.GenerateAspectGetters();
 
             /* 
-             * The line above the equivalent to typing the following:
+             * Generating getters is equivalent to typing the following:
              */ 
 
-//            tlist.GetColumn(0).AspectGetter = delegate(Person x) { return x.Name; };
-//            tlist.GetColumn(1).AspectGetter = delegate(Person x) { return x.Occupation; };
-//            tlist.GetColumn(2).AspectGetter = delegate(Person x) { return x.CulinaryRating; };
-//            tlist.GetColumn(3).AspectGetter = delegate(Person x) { return x.YearOfBirth; };
-//            tlist.GetColumn(4).AspectGetter = delegate(Person x) { return x.BirthDate; };
-//            tlist.GetColumn(5).AspectGetter = delegate(Person x) { return x.GetRate(); };
-//            tlist.GetColumn(6).AspectGetter = delegate(Person x) { return x.Comments; };
+//            new TypedColumn<Person>(this.olvComplex.GetColumn(0)).AspectGetter = x => x.Name;
+//            new TypedColumn<Person>(this.olvComplex.GetColumn(1)).AspectGetter = x => x.Occupation;
+//            new TypedColumn<Person>(this.olvComplex.GetColumn(2)).AspectGetter = x => x.CulinaryRating;
+//            new TypedColumn<Person>(this.olvComplex.GetColumn(3)).AspectGetter = x => x.YearOfBirth;
+//            new TypedColumn<Person>(this.olvComplex.GetColumn(4)).AspectGetter = x => x.BirthDate;
+//            new TypedColumn<Person>(this.olvComplex.GetColumn(5)).AspectGetter = x => x.GetRate();
+//            new TypedColumn<Person>(this.olvComplex.GetColumn(6)).AspectGetter = x => x.Comments;
         }
 
         private void SetupDarkerStyle() {

@@ -132,12 +132,12 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="lv"></param>
         /// <param name="column"></param>
-        public AutoCompleteCellEditor(ObjectListView lv, OLVColumn column) {
+        public AutoCompleteCellEditor(ObjectListViewBase lv, OLVColumn column) {
             this.DropDownStyle = ComboBoxStyle.DropDown;
 
             Dictionary<String, bool> alreadySeen = new Dictionary<string, bool>();
             for (int i = 0; i < Math.Min(lv.GetItemCount(), 1000); i++) {
-                String str = column.GetStringValue(lv.GetModelObject(i));
+                String str = column.GetStringValue(lv.GetModelAt(i));
                 if (!alreadySeen.ContainsKey(str)) {
                     this.Items.Add(str);
                     alreadySeen[str] = true;

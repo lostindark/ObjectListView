@@ -989,7 +989,7 @@ namespace BrightIdeasSoftware
         /// <param name="columnIndex"></param>
         /// <returns>A Point holding the left and right co-ords of the column.
         /// -1 means that the sides could not be retrieved.</returns>
-        public static Point GetColumnSides(ObjectListView lv, int columnIndex) {
+        public static Point GetColumnSides(ObjectListViewBase lv, int columnIndex) {
             Point sides = new Point(-1, -1);
             IntPtr hdr = NativeMethods.GetHeaderControl(lv);
             if (hdr == IntPtr.Zero)
@@ -1186,23 +1186,23 @@ namespace BrightIdeasSoftware
             public int y;
         }
 
-        public static int GetGroupInfo(ObjectListView olv, int groupId, ref LVGROUP2 group) {
+        public static int GetGroupInfo(ObjectListViewBase olv, int groupId, ref LVGROUP2 group) {
             return (int)NativeMethods.SendMessage(olv.Handle, LVM_GETGROUPINFO, groupId, ref group);
         }
 
-        public static GroupState GetGroupState(ObjectListView olv, int groupId, GroupState mask) {
+        public static GroupState GetGroupState(ObjectListViewBase olv, int groupId, GroupState mask) {
             return (GroupState)NativeMethods.SendMessage(olv.Handle, LVM_GETGROUPSTATE, groupId, (int)mask);
         }
 
-        public static int InsertGroup(ObjectListView olv, LVGROUP2 group) {
+        public static int InsertGroup(ObjectListViewBase olv, LVGROUP2 group) {
             return (int)NativeMethods.SendMessage(olv.Handle, LVM_INSERTGROUP, -1, ref group);
         }
 
-        public static int SetGroupInfo(ObjectListView olv, int groupId, LVGROUP2 group) {
+        public static int SetGroupInfo(ObjectListViewBase olv, int groupId, LVGROUP2 group) {
             return (int)NativeMethods.SendMessage(olv.Handle, LVM_SETGROUPINFO, groupId, ref group);
         }
 
-        public static int SetGroupMetrics(ObjectListView olv, LVGROUPMETRICS metrics) {
+        public static int SetGroupMetrics(ObjectListViewBase olv, LVGROUPMETRICS metrics) {
             return (int)NativeMethods.SendMessage(olv.Handle, LVM_SETGROUPMETRICS, 0, ref metrics);
         }
 
@@ -1210,12 +1210,12 @@ namespace BrightIdeasSoftware
             NativeMethods.SendMessage(virtualObjectListView.Handle, LVM_REMOVEALLGROUPS, 0, 0);
         }
 
-        public static void SetGroupImageList(ObjectListView olv, ImageList il) {
+        public static void SetGroupImageList(ObjectListViewBase olv, ImageList il) {
             const int LVSIL_GROUPHEADER = 3;
             NativeMethods.SendMessage(olv.Handle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, il == null ? IntPtr.Zero : il.Handle);
         }
 
-        public static int HitTest(ObjectListView olv, ref LVHITTESTINFO hittest)
+        public static int HitTest(ObjectListViewBase olv, ref LVHITTESTINFO hittest)
         {
             return (int)NativeMethods.SendMessage(olv.Handle, olv.View == View.Details ? LVM_SUBITEMHITTEST : LVM_HITTEST, -1, ref hittest);
         }

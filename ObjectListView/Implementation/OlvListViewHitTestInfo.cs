@@ -1,4 +1,4 @@
-﻿/*
+/*
  * OlvListViewHitTestInfo - All information gathered during a OlvHitTest() operation
  *
  * Author: Phillip Piper
@@ -206,7 +206,7 @@ namespace BrightIdeasSoftware {
             this.HitTestLocationEx = (HitTestLocationEx)flags;
             this.Group = group;
             this.ColumnIndex = iColumn;
-            this.ListView = olvListItem == null ? null : (ObjectListView)olvListItem.ListView;
+            this.ListView = olvListItem == null ? null : (ObjectListViewBase)olvListItem.ListView;
 
             switch (location) {
                 case ListViewHitTestLocations.StateImage:
@@ -232,7 +232,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Create a OlvListViewHitTestInfo when the header was hit
         /// </summary>
-        public OlvListViewHitTestInfo(ObjectListView olv, int iColumn, bool isOverCheckBox, int iDivider) {
+        public OlvListViewHitTestInfo(ObjectListViewBase olv, int iColumn, bool isOverCheckBox, int iDivider) {
             this.ListView = olv;
             this.ColumnIndex = iColumn;
             this.HeaderDividerIndex = iDivider;
@@ -313,11 +313,11 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets the ObjectListView that was tested
         /// </summary>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return listView; }
             internal set { listView = value; }
         }
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Gets the model object that was hit

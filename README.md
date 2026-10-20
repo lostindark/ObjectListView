@@ -128,4 +128,4 @@ gh workflow run publish.yml --ref main -f build-number=42 -f preview=false
 
 ## License
 
-See [COPYING](COPYING) for the GNU General Public License, version 3.
+See [LICENSE](LICENSE) for the GNU General Public License, version 3.

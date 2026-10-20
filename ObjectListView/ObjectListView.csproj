@@ -18,7 +18,7 @@
     <PackageProjectUrl>https://github.com/lostindark/ObjectListView</PackageProjectUrl>
     <RepositoryUrl>https://github.com/lostindark/ObjectListView</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageLicenseFile>COPYING</PackageLicenseFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageTags>WinForms;ListView;ObjectListView;Controls</PackageTags>
@@ -54,7 +54,7 @@
     <Compile Update="Properties\Resources.Designer.cs" AutoGen="true" DesignTime="true" DependentUpon="Resources.resx" />
     <EmbeddedResource Update="Properties\Resources.resx" Generator="ResXFileCodeGenerator" LastGenOutput="Resources.Designer.cs" SubType="Designer" />
     <EmbeddedResource Update="Utilities\ColumnSelectionForm.resx" DependentUpon="ColumnSelectionForm.cs" />
-    <None Include="..\COPYING" Pack="true" PackagePath="\" />
+    <None Include="..\LICENSE" Pack="true" PackagePath="\" />
     <None Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

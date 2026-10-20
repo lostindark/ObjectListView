@@ -1,4 +1,4 @@
-﻿/*
+/*
  * GlassPanelForm - A transparent form that is placed over an ObjectListView
  * to allow flicker-free overlay images during scrolling.
  *
@@ -106,7 +106,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Attach this form to the given ObjectListView
         /// </summary>        
-        public void Bind(ObjectListView olv, IOverlay overlay) {
+        public void Bind(ObjectListViewBase olv, IOverlay overlay) {
             if (this.objectListView != null)
                 this.Unbind();
 
@@ -360,7 +360,7 @@ namespace BrightIdeasSoftware
         /// <param name="sender"></param>
         /// <param name="e"></param>
         void objectListView_ParentChanged(object sender, EventArgs e) {
-            ObjectListView olv = this.objectListView;
+            ObjectListViewBase olv = this.objectListView;
             IOverlay overlay = this.Overlay;
             this.Unbind();
             this.Bind(olv, overlay);
@@ -388,8 +388,8 @@ namespace BrightIdeasSoftware
                 return;
 
             Graphics g = e.Graphics;
-            g.TextRenderingHint = ObjectListView.TextRenderingHint;
-            g.SmoothingMode = ObjectListView.SmoothingMode;
+            g.TextRenderingHint = ObjectListViewBase.TextRenderingHint;
+            g.SmoothingMode = ObjectListViewBase.SmoothingMode;
             //g.DrawRectangle(new Pen(Color.Green, 4.0f), this.ClientRectangle);
 
             // If we are part of an MDI app, make sure we don't draw outside the bounds
@@ -442,7 +442,7 @@ namespace BrightIdeasSoftware
 
         #region Private variables
 
-        private ObjectListView objectListView;
+        private ObjectListViewBase objectListView;
         private bool isDuringResizeSequence;
         private bool isGlassShown;
         private bool wasGlassShownBeforeResize;

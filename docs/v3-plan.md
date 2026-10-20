@@ -10,7 +10,7 @@ The main goals are enumerable-friendly collection APIs, explicit grouping config
 
 The upstream roadmap's proposed .NET Framework 4.0 minimum is historical. The current repository already targets **.NET Framework 4.6.2**; this plan does not lower that target or reintroduce .NET 2.0 support.
 
-Keep the current framework target during the refactor. Before shipping v3, review the support policy: Microsoft support for .NET Framework 4.6.2 ends on January 12, 2027. Raising the minimum or adding a modern .NET Windows target, such as .NET 10, is a separate decision and workstream. Do not remove Windows compatibility branches without a separate operating-system support decision.
+Keep the current framework target during the refactor. .NET 8+ runtime and modern designer support are deferred; do not add new target frameworks or Designer SDK projects in the immediate control-design work. Before shipping v3, review the support policy: Microsoft support for .NET Framework 4.6.2 ends on January 12, 2027. Raising the minimum or adding a modern .NET Windows target is a separate workstream. Do not remove Windows compatibility branches without a separate operating-system support decision.
 
 ## Current foundations
 
@@ -51,7 +51,7 @@ Change these APIs together:
 | `CopyObjectsToClipboard()` | Accept `IEnumerable`. |
 | `TypedObjectListView<T>` | Expose corresponding `IEnumerable<T>` methods; retain `IList<T>` selection and check properties. |
 
-Use non-generic `IEnumerable` on the heterogeneous base control, matching the existing `SetObjects()` contract. Typed wrappers provide convenient LINQ access.
+Use non-generic `IEnumerable` at the heterogeneous UI boundary, matching the existing `SetObjects()` contract. Typed controls and adapters provide convenient LINQ access.
 
 Enumeration semantics are part of the contract:
 
@@ -71,6 +71,25 @@ Update every override and dependent interface in the same milestone, including `
 The enumerable milestone is implemented; see the [migration guide](v3-migration.md)
 for the new signatures, enumeration semantics, and retained control-specific behavior.
 The later phases below are not part of this milestone.
+
+### Immediate generic-control design
+
+`ObjectListViewBase` owns shared UI behavior, `TypedObjectListView<T>` owns typed
+model storage/operations, and `ObjectListView` retains the non-generic facade.
+The immediate work keeps the existing Framework designer and focuses on:
+
+- Canonical row, selection, and check-state dispatch through typed and legacy overrides.
+- Snapshot `Objects` access, with separate read-only source hooks and an inexpensive
+  display-order `Rows` view.
+- Non-virtual typed command overloads that preserve the existing virtual command pipeline.
+- `TypedObjectListViewAdapter<T>` for existing controls and typed callbacks, with weak
+  column-adapter caching and a single underlying callback slot.
+- Private accepted mutation batches, event-payload isolation, and consistent model equality.
+
+Custom source subclasses migrate from `Objects` source overrides to
+`GetModelObjectsCore`/`SetModelObjectsCore`; public getters no longer drive UI
+source enumeration. Generic virtual/tree controls and new data-source interfaces
+remain separate work. See the migration guide for the supported hooks and ownership rules.
 
 ## Phase 3: replace the grouping-property tangle
 

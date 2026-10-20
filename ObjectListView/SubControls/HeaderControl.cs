@@ -72,7 +72,7 @@ namespace BrightIdeasSoftware {
         /// Create a header control for the given ObjectListView.
         /// </summary>
         /// <param name="olv"></param>
-        public HeaderControl(ObjectListView olv) {
+        public HeaderControl(ObjectListViewBase olv) {
             this.ListView = olv;
             this.AssignHandle(NativeMethods.GetHeaderControl(olv));
         }
@@ -185,12 +185,12 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets or sets the listview that this header belongs to
         /// </summary>
-        protected ObjectListView ListView {
+        protected ObjectListViewBase ListView {
             get { return this.listView; }
             set { this.listView = value; }
         }
 
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Gets the maximum height of the header. -1 means no maximum.
@@ -639,7 +639,7 @@ namespace BrightIdeasSoftware {
 
                     if (this.cachedNeedsCustomDraw) {
                         using (Graphics g = Graphics.FromHdc(nmcustomdraw.hdc)) {
-                            g.TextRenderingHint = ObjectListView.TextRenderingHint;
+                            g.TextRenderingHint = ObjectListViewBase.TextRenderingHint;
                             this.CustomDrawHeaderCell(g, columnIndex, nmcustomdraw.uItemState);
                         }
                         m.Result = (IntPtr) CDRF_SKIPDEFAULT;
@@ -689,7 +689,7 @@ namespace BrightIdeasSoftware {
             NativeMethods.WINDOWPOS wpos = (NativeMethods.WINDOWPOS) Marshal.PtrToStructure(hdlayout.pwpos, typeof (NativeMethods.WINDOWPOS));
 
             using (Graphics g = this.ListView.CreateGraphics()) {
-                g.TextRenderingHint = ObjectListView.TextRenderingHint;
+                g.TextRenderingHint = ObjectListViewBase.TextRenderingHint;
                 int height = this.CalculateHeight(g);
                 wpos.hwnd = this.Handle;
                 wpos.hwndInsertAfter = IntPtr.Zero;

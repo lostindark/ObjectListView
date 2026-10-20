@@ -1,4 +1,4 @@
-﻿/*
+/*
  * DesignSupport - Design time support for the various classes within ObjectListView
  *
  * Author: Phillip Piper
@@ -209,7 +209,7 @@ namespace BrightIdeasSoftware.Design
             // non-browsable attributes so that they are hidden from the user
             foreach (string unwantedProperty in unwantedProperties) {
                 PropertyDescriptor propertyDesc = TypeDescriptor.CreateProperty(
-                    typeof(ObjectListView),
+                    typeof(ObjectListViewBase),
                     (PropertyDescriptor)properties[unwantedProperty],
                     new BrowsableAttribute(false));
                 properties[unwantedProperty] = propertyDesc;
@@ -253,7 +253,7 @@ namespace BrightIdeasSoftware.Design
 
             foreach (string unwantedEvent in unwanted) {
                 EventDescriptor eventDesc = TypeDescriptor.CreateEvent(
-                   typeof(ObjectListView),
+                   typeof(ObjectListViewBase),
                     (EventDescriptor)events[unwantedEvent],
                     new BrowsableAttribute(false));
                 events[unwantedEvent] = eventDesc;
@@ -495,7 +495,7 @@ namespace BrightIdeasSoftware.Design
                 throw new ArgumentNullException("provider");
 
             // Figure out which ObjectListView we are working on. This should be the Instance of the context.
-            ObjectListView olv = context.Instance as ObjectListView;
+            ObjectListViewBase olv = context.Instance as ObjectListViewBase;
             Debug.Assert(olv != null, "Instance must be an ObjectListView");
 
             // Edit all the columns, not just the ones that are visible

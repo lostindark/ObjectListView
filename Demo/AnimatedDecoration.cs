@@ -114,7 +114,7 @@ namespace BrightIdeasSoftware
 
         #region IOverlay implementation
 
-        public override void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public override void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
             if (!this.Animation.Running)
                 return;
 

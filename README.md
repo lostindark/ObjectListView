@@ -2,6 +2,35 @@
 
 ObjectListView is a Windows Forms control that presents model objects in a .NET `ListView`, with support for sorting, grouping, filtering, cell editing, and tree views.
 
+## Version 3 development
+
+ObjectListView v3 is a work in progress, not a completed release. It modernizes
+the control API and internal design while preserving existing behavior and
+source compatibility where practical. The priorities are clear collection
+semantics, extensibility, designer support, and low-overhead model operations.
+
+Implemented milestones include:
+
+- Enumerable-friendly collection commands that accept LINQ queries and iterators.
+- A real `TypedObjectListView<T>` control backed by `List<T>`, with shared UI
+  behavior and `ObjectListView` as its non-generic `<object>` specialization.
+- Snapshot collection getters and a read-only `Rows` view for inexpensive
+  display-order access, including lazy virtual lists.
+- Typed adapters for existing controls, unified model/state dispatch, and
+  explicit source and storage extension points.
+
+Existing fast, virtual, tree, and data-bound controls retain their specialized
+data sources. Planned work includes simpler grouping configuration, unified
+styling, and shared rendering/hit-testing layout.
+
+The current target remains **.NET Framework 4.6.2** with the existing WinForms
+designer. **.NET 8+ runtime and modern designer support are deferred.**
+
+V3 includes breaking API changes and requires recompiling consumers; it is not
+a drop-in binary replacement. See the [migration guide](docs/v3-migration.md)
+for changed contracts and examples, and the [implementation plan](docs/v3-plan.md)
+for scope, milestones, and compatibility policy.
+
 ## Documentation
 
 The [documentation index](docs/README.md) includes the converted upstream guides, screenshots, recipes, and technical articles. GitHub renders these Markdown files directly; no documentation build is required.

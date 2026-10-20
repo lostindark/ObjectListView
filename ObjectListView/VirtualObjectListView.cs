@@ -137,7 +137,7 @@ namespace BrightIdeasSoftware
         public override bool CanShowGroups {
             get {
                 // Virtual lists need Vista and a grouping strategy to show groups
-                return (ObjectListView.IsVistaOrLater && this.GroupingStrategy != null);
+                return (ObjectListViewBase.IsVistaOrLater && this.GroupingStrategy != null);
             }
         }
 
@@ -302,20 +302,37 @@ namespace BrightIdeasSoftware
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public override IEnumerable Objects {
-            get {
-                IFilterableDataSource filterable = this.VirtualListDataSource as IFilterableDataSource;
-                try {
-                    // If we are filtering, we have to temporarily disable filtering so we get
-                    // the whole collection
-                    if (filterable != null && this.UseFiltering)
-                        filterable.ApplyFilters(null, null);
-                    return this.FilteredObjects;
-                } finally {
-                    if (filterable != null && this.UseFiltering)
-                        filterable.ApplyFilters(this.ModelFilter, this.ListFilter);
-                }
-            }
+            get { return this.GetUnfilteredObjects(); }
             set { base.Objects = value; }
+        }
+
+        /// <inheritdoc/>
+        protected override IEnumerable GetModelObjectsCore() {
+            return ArrayList.ReadOnly(this.GetUnfilteredObjects());
+        }
+
+        private ArrayList GetUnfilteredObjects() {
+            IVirtualListDataSource source = this.VirtualListDataSource;
+            if (source == null)
+                return new ArrayList();
+            IFilterableDataSource filterable = source as IFilterableDataSource;
+            try {
+                if (filterable != null && this.UseFiltering)
+                    filterable.ApplyFilters(null, null);
+                int count = source.GetObjectCount();
+                bool usesLegacyRows = count < 0 && source is VirtualListVersion1DataSource;
+                if (usesLegacyRows)
+                    count = this.VirtualListSize;
+                if (count < 0)
+                    throw new InvalidOperationException("The virtual data source returned a negative object count.");
+                ArrayList snapshot = new ArrayList(count);
+                for (int i = 0; i < count; i++)
+                    snapshot.Add(usesLegacyRows ? this.GetModelObject(i) : source.GetNthObject(i));
+                return snapshot;
+            } finally {
+                if (filterable != null && this.UseFiltering)
+                    filterable.ApplyFilters(this.ModelFilter, this.ListFilter);
+            }
         }
 
         /// <summary>
@@ -338,7 +355,7 @@ namespace BrightIdeasSoftware
         override public bool ShowGroups {
             get {
                 // Pre-Vista, virtual lists cannot show groups
-                return ObjectListView.IsVistaOrLater && this.showGroups;
+                return ObjectListViewBase.IsVistaOrLater && this.showGroups;
             }
             set {
                 this.showGroups = value;
@@ -543,12 +560,12 @@ namespace BrightIdeasSoftware
 
             // Give the world a chance to cancel or change the added objects
             ItemsAddingEventArgs args = new ItemsAddingEventArgs(
-                modelObjects == null ? null : ObjectListView.EnumerableToArray(modelObjects, true));
+                modelObjects == null ? null : ObjectListViewBase.EnumerableToArray(modelObjects, true));
             this.OnItemsAdding(args);
             if (args.Canceled)
                 return;
 
-            ArrayList snapshot = ObjectListView.EnumerableToArray(args.ObjectsToAdd, true);
+            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(args.ObjectsToAdd, true);
             try
             {
                 this.BeginUpdate();
@@ -628,12 +645,12 @@ namespace BrightIdeasSoftware
 
             // Give the world a chance to cancel or change the added objects
             ItemsAddingEventArgs args = new ItemsAddingEventArgs(index,
-                modelObjects == null ? null : ObjectListView.EnumerableToArray(modelObjects, true));
+                modelObjects == null ? null : ObjectListViewBase.EnumerableToArray(modelObjects, true));
             this.OnItemsAdding(args);
             if (args.Canceled)
                 return;
 
-            ArrayList snapshot = ObjectListView.EnumerableToArray(args.ObjectsToAdd, true);
+            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(args.ObjectsToAdd, true);
             try
             {
                 this.BeginUpdate();
@@ -664,9 +681,10 @@ namespace BrightIdeasSoftware
             if (modelObjects == null)
                 throw new ArgumentNullException("modelObjects");
 
-            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(modelObjects, true);
             try {
                 this.BeginUpdate();
+                this.InvalidateModelRows();
                 this.ClearCachedInfo();
                 foreach (object modelObject in snapshot) {
                     int index = this.VirtualListDataSource.GetObjectIndex(modelObject);
@@ -712,12 +730,12 @@ namespace BrightIdeasSoftware
 
             // Give the world a chance to cancel or change the removed objects
             ItemsRemovingEventArgs args = new ItemsRemovingEventArgs(
-                modelObjects == null ? null : ObjectListView.EnumerableToArray(modelObjects, true));
+                modelObjects == null ? null : ObjectListViewBase.EnumerableToArray(modelObjects, true));
             this.OnItemsRemoving(args);
             if (args.Canceled)
                 return;
 
-            ArrayList snapshot = ObjectListView.EnumerableToArray(args.ObjectsToRemove, true);
+            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(args.ObjectsToRemove, true);
             try {
                 this.BeginUpdate();
                 this.VirtualListDataSource.RemoveObjects(snapshot);
@@ -766,7 +784,7 @@ namespace BrightIdeasSoftware
             if (this.VirtualListDataSource == null)
                 return;
 
-            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(modelObjects, true);
             this.SelectedIndices.Clear();
 
             foreach (object modelObject in snapshot) {
@@ -882,6 +900,7 @@ namespace BrightIdeasSoftware
         /// Invalidate any cached information when we rebuild the list.
         /// </remarks>
         public override void BuildList(bool shouldPreserveSelection) {
+            this.InvalidateModelRows();
             this.UpdateVirtualListSize();
             this.ClearCachedInfo();
             if (this.ShowGroups)

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * FilterMenuBuilder - Responsible for creating a Filter menu
  *
  * Author: Phillip Piper
@@ -128,12 +128,12 @@ namespace BrightIdeasSoftware {
         /// <param name="listView"></param>
         /// <param name="column"></param>
         /// <returns>The strip that should be shown to the user</returns>
-        virtual public ToolStripDropDown MakeFilterMenu(ToolStripDropDown strip, ObjectListView listView, OLVColumn column) {
+        virtual public ToolStripDropDown MakeFilterMenu(ToolStripDropDown strip, ObjectListViewBase listView, OLVColumn column) {
             if (strip == null) throw new ArgumentNullException("strip");
             if (listView == null) throw new ArgumentNullException("listView");
             if (column == null) throw new ArgumentNullException("column");
 
-            if (!column.UseFiltering || column.ClusteringStrategy == null || listView.Objects == null)
+            if (!column.UseFiltering || column.ClusteringStrategy == null || listView.ModelObjects == null)
                 return strip;
 
             List<ICluster> clusters = this.Cluster(column.ClusteringStrategy, listView, column);
@@ -152,7 +152,7 @@ namespace BrightIdeasSoftware {
         /// <param name="listView"></param>
         /// <param name="column"></param>
         /// <returns></returns>
-        virtual protected List<ICluster> Cluster(IClusteringStrategy strategy, ObjectListView listView, OLVColumn column) {
+        virtual protected List<ICluster> Cluster(IClusteringStrategy strategy, ObjectListViewBase listView, OLVColumn column) {
             // Build a map that correlates cluster key to clusters
             NullableDictionary<object, ICluster> map = new NullableDictionary<object, ICluster>();
             int count = 0;
@@ -269,7 +269,7 @@ namespace BrightIdeasSoftware {
             if (checkedList == null) return;
             OLVColumn column = checkedList.Tag as OLVColumn;
             if (column == null) return;
-            ObjectListView listView = column.ListView as ObjectListView;
+            ObjectListViewBase listView = column.ListView as ObjectListViewBase;
             if (listView == null) return;
 
             // Deal with the "Select All" item if there is one
@@ -335,7 +335,7 @@ namespace BrightIdeasSoftware {
         /// <param name="column">The column from which filters are to be removed</param>
         virtual protected void ClearAllFilters(OLVColumn column) {
 
-            ObjectListView olv = column.ListView as ObjectListView;
+            ObjectListViewBase olv = column.ListView as ObjectListViewBase;
             if (olv == null || olv.IsDisposed)
                 return;
 
@@ -349,7 +349,7 @@ namespace BrightIdeasSoftware {
         /// <param name="column">The column for which a filter should be generated</param>
         virtual protected void EnactFilter(ToolStripCheckedListBox checkedList, OLVColumn column) {
             
-            ObjectListView olv = column.ListView as ObjectListView;
+            ObjectListViewBase olv = column.ListView as ObjectListViewBase;
             if (olv == null || olv.IsDisposed)
                 return;
 

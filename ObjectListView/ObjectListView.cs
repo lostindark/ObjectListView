@@ -658,14 +658,19 @@ namespace BrightIdeasSoftware
     /// </list>
     /// </remarks>
     [Designer(typeof(BrightIdeasSoftware.Design.ObjectListViewDesigner))]   
-    public partial class ObjectListView : ListView, ISupportInitialize {
+    public abstract partial class ObjectListViewBase : ListView, ISupportInitialize {
+        internal int ModelRowsVersion { get; private set; }
+
+        internal void InvalidateModelRows() {
+            unchecked { this.ModelRowsVersion++; }
+        }
         
         #region Life and death
         
         /// <summary>
         /// Create an ObjectListView
         /// </summary>
-        public ObjectListView() {
+        protected ObjectListViewBase() {
             this.ColumnClick += new ColumnClickEventHandler(this.HandleColumnClick);
             this.Layout += new LayoutEventHandler(this.HandleLayout);
             this.ColumnWidthChanging += new ColumnWidthChangingEventHandler(this.HandleColumnWidthChanging);
@@ -727,9 +732,9 @@ namespace BrightIdeasSoftware
         /// </summary>
         public static bool IsVistaOrLater {
             get {
-                if (!ObjectListView.sIsVistaOrLater.HasValue)
-                    ObjectListView.sIsVistaOrLater = Environment.OSVersion.Version.Major >= 6;
-                return ObjectListView.sIsVistaOrLater.Value;
+                if (!ObjectListViewBase.sIsVistaOrLater.HasValue)
+                    ObjectListViewBase.sIsVistaOrLater = Environment.OSVersion.Version.Major >= 6;
+                return ObjectListViewBase.sIsVistaOrLater.Value;
             }
         }
         private static bool? sIsVistaOrLater;
@@ -739,12 +744,12 @@ namespace BrightIdeasSoftware
         /// </summary>
         public static bool IsWin7OrLater {
             get {
-                if (!ObjectListView.sIsWin7OrLater.HasValue) {
+                if (!ObjectListViewBase.sIsWin7OrLater.HasValue) {
                     // For some reason, Win7 is v6.1, not v7.0
                     Version version = Environment.OSVersion.Version;
-                    ObjectListView.sIsWin7OrLater = version.Major > 6 || (version.Major == 6 && version.Minor > 0);
+                    ObjectListViewBase.sIsWin7OrLater = version.Major > 6 || (version.Major == 6 && version.Minor > 0);
                 }
-                return ObjectListView.sIsWin7OrLater.Value;
+                return ObjectListViewBase.sIsWin7OrLater.Value;
             }
         }
         private static bool? sIsWin7OrLater;
@@ -753,8 +758,8 @@ namespace BrightIdeasSoftware
         /// Gets or sets how what smoothing mode will be applied to graphic operations.
         /// </summary>
         public static System.Drawing.Drawing2D.SmoothingMode SmoothingMode {
-            get { return ObjectListView.sSmoothingMode; }
-            set { ObjectListView.sSmoothingMode = value; }
+            get { return ObjectListViewBase.sSmoothingMode; }
+            set { ObjectListViewBase.sSmoothingMode = value; }
         }
         private static System.Drawing.Drawing2D.SmoothingMode sSmoothingMode =
             System.Drawing.Drawing2D.SmoothingMode.HighQuality;
@@ -763,8 +768,8 @@ namespace BrightIdeasSoftware
         /// Gets or sets how should text be rendered.
         /// </summary>
         public static System.Drawing.Text.TextRenderingHint TextRenderingHint {
-            get { return ObjectListView.sTextRendereringHint; }
-            set { ObjectListView.sTextRendereringHint = value; }
+            get { return ObjectListViewBase.sTextRendereringHint; }
+            set { ObjectListViewBase.sTextRendereringHint = value; }
         }
         private static System.Drawing.Text.TextRenderingHint sTextRendereringHint =
             System.Drawing.Text.TextRenderingHint.SystemDefault;
@@ -774,8 +779,8 @@ namespace BrightIdeasSoftware
         /// Exposed so it can be localized.
         /// </summary>
         public static string GroupTitleDefault {
-            get { return ObjectListView.sGroupTitleDefault; }
-            set { ObjectListView.sGroupTitleDefault = value ?? "{null}"; }
+            get { return ObjectListViewBase.sGroupTitleDefault; }
+            set { ObjectListViewBase.sGroupTitleDefault = value ?? "{null}"; }
         }
         private static string sGroupTitleDefault = "{null}";
 
@@ -1246,13 +1251,13 @@ namespace BrightIdeasSoftware
         /// </summary>
         [Browsable(false),
         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public virtual Object CheckedObject {
+        public virtual Object CheckedModelObject {
             get {
-                IList checkedObjects = this.CheckedObjects;
+                IList checkedObjects = this.CheckedModelObjects;
                 return checkedObjects.Count == 1 ? checkedObjects[0] : null;
             }
             set {
-                this.CheckedObjects = new ArrayList(new Object[] { value });
+                this.CheckedModelObjects = new ArrayList(new Object[] { value });
             }
         }
 
@@ -1282,7 +1287,7 @@ namespace BrightIdeasSoftware
         /// </remarks>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public virtual IList CheckedObjects {
+        public virtual IList CheckedModelObjects {
             get {
                 ArrayList list = new ArrayList();
                 if (this.CheckBoxes) {
@@ -1307,15 +1312,16 @@ namespace BrightIdeasSoftware
             if (!this.CheckBoxes)
                 return;
 
+            ICollection snapshot = modelObjects == null ? null : this.MaterializeModelObjects(modelObjects);
             Hashtable table = new Hashtable(this.GetItemCount());
-            if (modelObjects != null) {
-                foreach (object x in modelObjects)
+            if (snapshot != null) {
+                foreach (object x in snapshot)
                     table[x] = true;
             }
 
             this.BeginUpdate();
             try {
-                foreach (Object x in this.Objects) {
+                foreach (Object x in this.ModelObjects) {
                     this.SetObjectCheckedness(x, table.ContainsKey(x) ? CheckState.Checked : CheckState.Unchecked);
                 }
             }
@@ -1337,10 +1343,10 @@ namespace BrightIdeasSoftware
         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual IEnumerable CheckedObjectsEnumerable {
             get {
-                return this.CheckedObjects;
+                return this.CheckedModelObjects;
             }
             set {
-                this.CheckedObjects = ObjectListView.EnumerableToArray(value, true);
+                this.CheckedModelObjects = ObjectListViewBase.EnumerableToArray(value, true);
             }
         }
 
@@ -1472,7 +1478,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the style that will be applied to disabled items.
         /// </summary>
-        /// <remarks>If this is not set explicitly, <see cref="ObjectListView.DefaultDisabledItemStyle"/>  will be used.</remarks>
+        /// <remarks>If this is not set explicitly, <see cref="DefaultDisabledItemStyle"/> will be used.</remarks>
         [Category("ObjectListView"),
         Description("The style that will be applied to disabled items"),
         DefaultValue(null)]
@@ -1532,7 +1538,7 @@ namespace BrightIdeasSoftware
         {
             if (models == null)
                 return;
-            ArrayList list = ObjectListView.EnumerableToArray(models, false);
+            ArrayList list = ObjectListViewBase.EnumerableToArray(models, false);
             foreach (object model in list)
             {
                 if (model == null) 
@@ -1564,7 +1570,7 @@ namespace BrightIdeasSoftware
         {
             if (models == null)
                 return;
-            ArrayList list = ObjectListView.EnumerableToArray(models, false);
+            ArrayList list = ObjectListViewBase.EnumerableToArray(models, false);
             foreach (object model in list)
             {
                 if (model != null)
@@ -1741,9 +1747,9 @@ namespace BrightIdeasSoftware
         public virtual IEnumerable FilteredObjects {
             get {
                 if (this.UseFiltering)
-                    return this.FilterObjects(this.Objects, this.ModelFilter, this.ListFilter);
+                    return this.FilterObjects(this.ModelObjects, this.ModelFilter, this.ListFilter);
                 
-                return this.Objects;
+                return this.ModelObjects;
             }
         }
 
@@ -1765,7 +1771,7 @@ namespace BrightIdeasSoftware
         /// <remarks>
         /// <para>
         /// Setting an object to be focused does *not* select it. If you want to select and focus a row,
-        /// use <see cref="SelectedObject"/>.
+        /// use <see cref="SelectedModelObject"/>.
         /// </para>
         /// <para>
         /// This property is not generally used and is only useful in specialized situations.
@@ -2141,7 +2147,7 @@ namespace BrightIdeasSoftware
         [Browsable(false),
         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual HotItemStyle HotItemStyleOrDefault {
-            get { return this.HotItemStyle ?? ObjectListView.DefaultHotItemStyle; }
+            get { return this.HotItemStyle ?? ObjectListViewBase.DefaultHotItemStyle; }
         }
 
         /// <summary>
@@ -2554,11 +2560,40 @@ namespace BrightIdeasSoftware
         /// </remarks>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public virtual IEnumerable Objects {
-            get { return this.objects; }
+        public virtual IEnumerable ModelObjects {
+            get { return this.StoredModelObjects; }
             set { this.SetObjects(value, true); }
         }
-        private IEnumerable objects;
+
+        /// <summary>
+        /// The owned model collection. Virtual controls use their data source instead.
+        /// </summary>
+        protected abstract IEnumerable StoredModelObjects { get; }
+
+        /// <summary>
+        /// Materialize and validate model objects before modifying the control.
+        /// </summary>
+        protected abstract ICollection MaterializeModelObjects(IEnumerable collection);
+
+        /// <summary>
+        /// Adopt the private, validated snapshot as the new owned collection.
+        /// </summary>
+        protected abstract void SetStoredModelObjects(IEnumerable collection);
+
+        /// <summary>
+        /// Insert a private, validated snapshot, optionally retaining nulls.
+        /// </summary>
+        protected abstract void InsertStoredModelObjects(int index, IEnumerable collection, bool includeNulls);
+
+        /// <summary>
+        /// Remove the first matching model from the owned collection.
+        /// </summary>
+        protected abstract void RemoveStoredModelObject(object modelObject);
+
+        /// <summary>
+        /// Replace the first matching model, returning whether it was found.
+        /// </summary>
+        protected abstract bool ReplaceStoredModelObject(object oldModel, object newModel);
 
         /// <summary>
         /// Gets the collection of objects that will be considered when creating clusters
@@ -2567,7 +2602,7 @@ namespace BrightIdeasSoftware
         [Browsable(false),
         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual IEnumerable ObjectsForClustering {
-            get { return this.Objects; }
+            get { return this.ModelObjects; }
         }
 
         /// <summary>
@@ -3006,13 +3041,13 @@ namespace BrightIdeasSoftware
         /// </summary>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public virtual Object SelectedObject {
+        public virtual Object SelectedModelObject {
             get {
-                return this.SelectedIndices.Count == 1 ? this.GetModelObject(this.SelectedIndices[0]) : null;
+                return this.SelectedIndices.Count == 1 ? this.GetModelAt(this.SelectedIndices[0]) : null;
             }
             set {
                 // If the given model is already selected, don't do anything else (prevents an flicker)
-                object selectedObject = this.SelectedObject;
+                object selectedObject = this.SelectedModelObject;
                 if (selectedObject != null && selectedObject.Equals(value))
                     return;
 
@@ -3030,11 +3065,11 @@ namespace BrightIdeasSoftware
         /// <see cref="SetSelectedObjects"/> to assign an enumerable sequence.</remarks>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public virtual IList SelectedObjects {
+        public virtual IList SelectedModelObjects {
             get {
                 ArrayList list = new ArrayList();
                 foreach (int index in this.SelectedIndices)
-                  list.Add(this.GetModelObject(index));
+                  list.Add(this.GetModelAt(index));
                 return list;
             }
             set {
@@ -3162,7 +3197,7 @@ namespace BrightIdeasSoftware
         Description("Will the control will show column headers in all views?"),
         DefaultValue(true)]
         public bool ShowHeaderInAllViews {
-            get { return ObjectListView.IsVistaOrLater && showHeaderInAllViews; }
+            get { return ObjectListViewBase.IsVistaOrLater && showHeaderInAllViews; }
             set {
                 if (showHeaderInAllViews == value)
                     return;
@@ -4047,7 +4082,7 @@ namespace BrightIdeasSoftware
                 this.Invoke((MethodInvoker)delegate() { this.AddObjects(modelObjects); });
                 return;
             }
-            this.InsertObjects(ObjectListView.EnumerableCount(this.Objects), modelObjects);
+            this.InsertObjects(ObjectListViewBase.EnumerableCount(this.ModelObjects), modelObjects);
             this.Sort();
         }
 
@@ -4319,6 +4354,7 @@ namespace BrightIdeasSoftware
         /// </para>
         /// </remarks>
         public virtual void BuildList(bool shouldPreserveState) {
+            this.InvalidateModelRows();
             if (this.Frozen)
                 return;
 
@@ -4331,8 +4367,8 @@ namespace BrightIdeasSoftware
 
             IList previousSelection = new ArrayList();
             Object previousFocus = null;
-            if (shouldPreserveState && this.objects != null) {
-                previousSelection = this.SelectedObjects;
+            if (shouldPreserveState && this.StoredModelObjects != null) {
+                previousSelection = this.SelectedModelObjects;
                 OLVListItem focusedItem = this.FocusedItem as OLVListItem;
                 if (focusedItem != null)
                     previousFocus = focusedItem.RowObject;
@@ -4358,7 +4394,7 @@ namespace BrightIdeasSoftware
                     this.Sort();
 
                     if (shouldPreserveState) {
-                        this.SelectedObjects = previousSelection;
+                        this.SelectedModelObjects = previousSelection;
                         this.FocusedItem = this.ModelToItem(previousFocus);
                     }
                 }
@@ -4449,7 +4485,7 @@ namespace BrightIdeasSoftware
         public virtual void ChangeToFilteredColumns(View view) {
             // Store the state
             this.SuspendSelectionEvents();
-            IList previousSelection = this.SelectedObjects;
+            IList previousSelection = this.SelectedModelObjects;
             int previousTopIndex = this.TopItemIndex;
 
             this.Freeze();
@@ -4482,7 +4518,7 @@ namespace BrightIdeasSoftware
             this.Unfreeze();
 
             // Restore the state
-            this.SelectedObjects = previousSelection;
+            this.SelectedModelObjects = previousSelection;
             this.TopItemIndex = previousTopIndex;
             this.ResumeSelectionEvents();
         }
@@ -4512,7 +4548,7 @@ namespace BrightIdeasSoftware
         /// 10,000,000 rows, this method will faithfully try to copy all of them to the clipboard.
         /// From the user's point of view, your program will appear to have hung.</remarks>
         public virtual void CopySelectionToClipboard() {
-            IList selection = this.SelectedObjects;
+            IList selection = this.SelectedModelObjects;
             if (selection.Count == 0)
                 return;
 
@@ -4536,7 +4572,7 @@ namespace BrightIdeasSoftware
             if (objectsToCopy == null)
                 throw new ArgumentNullException("objectsToCopy");
 
-            ArrayList snapshot = ObjectListView.EnumerableToArray(objectsToCopy, true);
+            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(objectsToCopy, true);
             if (snapshot.Count == 0)
                 return;
 
@@ -4711,7 +4747,7 @@ namespace BrightIdeasSoftware
             if (modelObjects == null)
                 return;
 
-            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            ICollection snapshot = this.MaterializeModelObjects(modelObjects);
             this.BeginUpdate();
             try {
                 // Give the world a chance to cancel or change the added objects
@@ -4719,10 +4755,9 @@ namespace BrightIdeasSoftware
                 this.OnItemsAdding(args);
                 if (args.Canceled)
                     return;
-                snapshot = ObjectListView.EnumerableToArray(args.ObjectsToAdd, true);
+                snapshot = this.MaterializeModelObjects(args.ObjectsToAdd);
 
                 this.TakeOwnershipOfObjects();
-                ArrayList ourObjects = ObjectListView.EnumerableToArray(this.Objects, false);
 
                 // If we are filtering the list, there is no way to efficiently
                 // insert the objects, so just put them into our collection and rebuild.
@@ -4730,16 +4765,15 @@ namespace BrightIdeasSoftware
                 // inserted into the Items collection always appear at the end regardless of
                 // their actual insertion index.
                 if (this.IsFiltering || this.View != View.Details) {
-                    index = Math.Max(0, Math.Min(index, ourObjects.Count));
-                    ourObjects.InsertRange(index, snapshot);
+                    this.InsertStoredModelObjects(index, snapshot, true);
                     this.BuildList(true);
                 } else {
                     this.ListViewItemSorter = null;
                     index = Math.Max(0, Math.Min(index, this.GetItemCount()));
+                    this.InsertStoredModelObjects(index, snapshot, false);
                     int i = index;
                     foreach (object modelObject in snapshot) {
                         if (modelObject != null) {
-                            ourObjects.Insert(i, modelObject);
                             OLVListItem lvi = new OLVListItem(modelObject);
                             this.FillInValues(lvi, modelObject);
                             this.Items.Insert(i, lvi);
@@ -4819,19 +4853,19 @@ namespace BrightIdeasSoftware
         /// <param name="index"></param>
         /// <param name="modelObjects"></param>
         public virtual void MoveObjects(int index, ICollection modelObjects) {
+            ICollection snapshot = this.MaterializeModelObjects(modelObjects);
 
             // We are going to remove all the given objects from our list
             // and then insert them at the given location
             this.TakeOwnershipOfObjects();
-            ArrayList ourObjects = ObjectListView.EnumerableToArray(this.Objects, false);
 
             List<int> indicesToRemove = new List<int>();
-            foreach (object modelObject in modelObjects) {
+            foreach (object modelObject in snapshot) {
                 if (modelObject != null) {
                     int i = this.IndexOf(modelObject);
                     if (i >= 0) {
                         indicesToRemove.Add(i);
-                        ourObjects.Remove(modelObject);
+                        this.RemoveStoredModelObject(modelObject);
                         if (i <= index)
                             index--;
                     }
@@ -4847,7 +4881,7 @@ namespace BrightIdeasSoftware
                 foreach (int i in indicesToRemove) {
                     this.Items.RemoveAt(i);
                 }
-                this.InsertObjects(index, modelObjects);
+                this.InsertObjects(index, snapshot);
             } finally {
                 this.EndUpdate();
             }
@@ -5140,7 +5174,7 @@ namespace BrightIdeasSoftware
             if (modelObjects == null)
                 return;
 
-            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            ICollection snapshot = this.MaterializeModelObjects(modelObjects);
             this.BeginUpdate();
             try {
                 // Give the world a chance to cancel or change the added objects
@@ -5148,18 +5182,13 @@ namespace BrightIdeasSoftware
                 this.OnItemsRemoving(args);
                 if (args.Canceled)
                     return;
-                snapshot = ObjectListView.EnumerableToArray(args.ObjectsToRemove, true);
+                snapshot = this.MaterializeModelObjects(args.ObjectsToRemove);
 
                 this.TakeOwnershipOfObjects();
-                ArrayList ourObjects = ObjectListView.EnumerableToArray(this.Objects, false);
                 foreach (object modelObject in snapshot) {
                     if (modelObject != null) {
-// ReSharper disable PossibleMultipleEnumeration
-                        int i = ourObjects.IndexOf(modelObject);
-                        if (i >= 0)
-                            ourObjects.RemoveAt(i);
-// ReSharper restore PossibleMultipleEnumeration
-                        i = this.IndexOf(modelObject);
+                        this.RemoveStoredModelObject(modelObject);
+                        int i = this.IndexOf(modelObject);
                         if (i >= 0)
                             this.Items.RemoveAt(i);
                     }
@@ -5264,21 +5293,18 @@ namespace BrightIdeasSoftware
                 return;
             }
 
+            ICollection snapshot = collection == null ? null : this.MaterializeModelObjects(collection);
+
             // Give the world a chance to cancel or change the assigned collection
-            ItemsChangingEventArgs args = new ItemsChangingEventArgs(this.objects, collection);
+            ItemsChangingEventArgs args = new ItemsChangingEventArgs(this.ModelObjects, snapshot);
             this.OnItemsChanging(args);
             if (args.Canceled)
                 return;
-            collection = args.NewObjects;
-
-            // If we own the current list and they change to another list, we don't own it any more
-            if (this.isOwnerOfObjects && !ReferenceEquals(this.objects, collection))
-                this.isOwnerOfObjects = false;
-            this.objects = collection;
+            this.SetStoredModelObjects(this.MaterializeModelObjects(args.NewObjects));
             this.BuildList(preserveState);
 
             // Tell the world that the list has changed
-            this.UpdateNotificationSubscriptions(this.objects);
+            this.UpdateNotificationSubscriptions(this.ModelObjects);
             this.OnItemsChanged(new ItemsChangedEventArgs());
         }
 
@@ -5320,21 +5346,19 @@ namespace BrightIdeasSoftware
             if (modelObjects == null || modelObjects.Count == 0)
                 return;
 
+            ICollection snapshot = this.MaterializeModelObjects(modelObjects);
             this.BeginUpdate();
             try {
-                this.UnsubscribeNotifications(modelObjects);
+                this.UnsubscribeNotifications(snapshot);
 
                 ArrayList objectsToAdd = new ArrayList();
 
                 this.TakeOwnershipOfObjects();
-                ArrayList ourObjects = ObjectListView.EnumerableToArray(this.Objects, false);
-                foreach (object modelObject in modelObjects) {
+                foreach (object modelObject in snapshot) {
                     if (modelObject != null) {
-                        int i = ourObjects.IndexOf(modelObject);
-                        if (i < 0) 
+                        if (!this.ReplaceStoredModelObject(modelObject, modelObject))
                             objectsToAdd.Add(modelObject);
                         else {
-                            ourObjects[i] = modelObject;
                             OLVListItem olvi = this.ModelToItem(modelObject);
                             if (olvi != null) {
                                 olvi.RowObject = modelObject;
@@ -5348,7 +5372,7 @@ namespace BrightIdeasSoftware
                 this.AddObjects(objectsToAdd);
 
                 // Tell the world that the list has changed
-                this.SubscribeNotifications(modelObjects);
+                this.SubscribeNotifications(snapshot);
                 this.OnItemsChanged(new ItemsChangedEventArgs());
             }
             finally {
@@ -5371,7 +5395,7 @@ namespace BrightIdeasSoftware
             // except that we don't have the previous models at this point.
 
             this.UnsubscribeNotifications(null);
-            this.SubscribeNotifications(collection ?? this.Objects);
+            this.SubscribeNotifications(collection ?? this.ModelObjects);
         }
 
         /// <summary>
@@ -5397,7 +5421,7 @@ namespace BrightIdeasSoftware
                     return;
                 this.useNotifyPropertyChanged = value;
                 if (value)
-                    this.SubscribeNotifications(this.Objects);
+                    this.SubscribeNotifications(this.ModelObjects);
                 else
                     this.UnsubscribeNotifications(null);
             }
@@ -5473,7 +5497,7 @@ namespace BrightIdeasSoftware
         /// </remarks>
         /// <returns>A byte array representing the state of the ObjectListView</returns>
         public virtual byte[] SaveState() {
-            ObjectListViewState olvState = new ObjectListViewState();
+            ObjectListView.ObjectListViewState olvState = new ObjectListView.ObjectListViewState();
             olvState.VersionNumber = 1;
             olvState.NumberOfColumns = this.AllColumns.Count;
             olvState.CurrentView = this.View;
@@ -5514,9 +5538,9 @@ namespace BrightIdeasSoftware
         public virtual bool RestoreState(byte[] state) {
             using (MemoryStream ms = new MemoryStream(state)) {
                 BinaryFormatter deserializer = new BinaryFormatter();
-                ObjectListViewState olvState;
+                ObjectListView.ObjectListViewState olvState;
                 try {
-                    olvState = deserializer.Deserialize(ms) as ObjectListViewState;
+                    olvState = deserializer.Deserialize(ms) as ObjectListView.ObjectListViewState;
                 } catch (System.Runtime.Serialization.SerializationException) {
                     return false;
                 }
@@ -5548,27 +5572,6 @@ namespace BrightIdeasSoftware
             }
 
             return true;
-        }
-
-        /// <summary>
-        /// Instances of this class are used to store the state of an ObjectListView.
-        /// </summary>
-        [Serializable]
-        internal class ObjectListViewState
-        {
-// ReSharper disable NotAccessedField.Global
-            public int VersionNumber = 1;
-// ReSharper restore NotAccessedField.Global
-            public int NumberOfColumns = 1;
-            public View CurrentView;
-            public int SortColumn = -1;
-            public bool IsShowingGroups;
-            public SortOrder LastSortOrder = SortOrder.None;
-// ReSharper disable FieldCanBeMadeReadOnly.Global
-            public ArrayList ColumnIsVisible = new ArrayList();
-            public ArrayList ColumnDisplayIndicies = new ArrayList();
-            public ArrayList ColumnWidths = new ArrayList();
-// ReSharper restore FieldCanBeMadeReadOnly.Global
         }
 
         #endregion
@@ -5641,7 +5644,7 @@ namespace BrightIdeasSoftware
             // KB 813791, but I couldn't find it anywhere. You can follow this thread to see the discussion
             // http://www.ureader.com/msg/1484143.aspx
 
-            if (!ObjectListView.IsVistaOrLater && ObjectListView.IsLeftMouseDown && this.GridLines) {
+            if (!ObjectListViewBase.IsVistaOrLater && ObjectListViewBase.IsLeftMouseDown && this.GridLines) {
                 this.Invalidate();
                 this.Update();
             }
@@ -6404,7 +6407,7 @@ namespace BrightIdeasSoftware
             this.ToggleCheckObject(primaryModel);
             CheckState? state = this.GetCheckState(primaryModel);
             if (state.HasValue) {
-                foreach (Object x in this.SelectedObjects)
+                foreach (Object x in this.SelectedModelObjects)
                     this.SetObjectCheckedness(x, state.Value);
             }
         }
@@ -6473,7 +6476,7 @@ namespace BrightIdeasSoftware
             if (hti.Item.Selected) {
                 CheckState? state = this.GetCheckState(hti.RowObject);
                 if (state.HasValue) {
-                    foreach (Object x in this.SelectedObjects)
+                    foreach (Object x in this.SelectedModelObjects)
                         this.SetObjectCheckedness(x, state.Value);
                 }
             }
@@ -6518,7 +6521,7 @@ namespace BrightIdeasSoftware
                     return true;
             }
 
-            if (ObjectListView.IsVistaOrLater && this.HasCollapsibleGroups)
+            if (ObjectListViewBase.IsVistaOrLater && this.HasCollapsibleGroups)
                 base.DefWndProc(ref m);
 
             return false;
@@ -7274,13 +7277,13 @@ namespace BrightIdeasSoftware
 
             string label = String.Format(this.MenuLabelSortAscending, column.Text);
             if (column.Sortable && !String.IsNullOrEmpty(label)) {
-                strip.Items.Add(label, ObjectListView.SortAscendingImage, (EventHandler)delegate(object sender, EventArgs args) {
+                strip.Items.Add(label, ObjectListViewBase.SortAscendingImage, (EventHandler)delegate(object sender, EventArgs args) {
                     this.Sort(column, SortOrder.Ascending);
                 });
             }
             label = String.Format(this.MenuLabelSortDescending, column.Text);
             if (column.Sortable && !String.IsNullOrEmpty(label)) {
-                strip.Items.Add(label, ObjectListView.SortDescendingImage, (EventHandler)delegate(object sender, EventArgs args) {
+                strip.Items.Add(label, ObjectListViewBase.SortDescendingImage, (EventHandler)delegate(object sender, EventArgs args) {
                     this.Sort(column, SortOrder.Descending);
                 });
             }
@@ -7573,7 +7576,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         public virtual void CheckAll()
         {
-            this.CheckedObjects = EnumerableToArray(this.Objects, false);
+            this.CheckedModelObjects = EnumerableToArray(this.ModelObjects, false);
         }
 
         /// <summary>
@@ -7821,7 +7824,7 @@ namespace BrightIdeasSoftware
             if (!column.CheckBoxes || column.HeaderCheckState == CheckState.Indeterminate)
                 return;
 
-            foreach (object model in this.Objects)
+            foreach (object model in this.ModelObjects)
                 column.PutCheckState(model, column.HeaderCheckState);
             this.BuildList(true);
         }
@@ -7858,7 +7861,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         public virtual void UncheckAll()
         {
-            this.CheckedObjects = null;
+            this.CheckedModelObjects = null;
         }
 
         /// <summary>
@@ -7974,7 +7977,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="index">Index of the model object to be returned</param>
         /// <returns>A model object</returns>
-        public virtual object GetModelObject(int index) {
+        public virtual object GetModelAt(int index) {
             OLVListItem item = this.GetItem(index);
             return item == null ? null : item.RowObject;
         }
@@ -8065,7 +8068,7 @@ namespace BrightIdeasSoftware
         /// <returns>Model object or null</returns>
         [Obsolete("Use SelectedObject property instead of this method")]
         public virtual object GetSelectedObject() {
-            return this.SelectedObject;
+            return this.SelectedModelObject;
         }
 
         /// <summary>
@@ -8074,7 +8077,7 @@ namespace BrightIdeasSoftware
         /// <returns>ArrayList</returns>
         [Obsolete("Use SelectedObjects property instead of this method")]
         public virtual ArrayList GetSelectedObjects() {
-            return ObjectListView.EnumerableToArray(this.SelectedObjects, false);
+            return ObjectListViewBase.EnumerableToArray(this.SelectedModelObjects, false);
         }
 
         /// <summary>
@@ -8085,7 +8088,7 @@ namespace BrightIdeasSoftware
         /// <remarks>Use CheckedObject property instead of this method</remarks>
         [Obsolete("Use CheckedObject property instead of this method")]
         public virtual object GetCheckedObject() {
-            return this.CheckedObject;
+            return this.CheckedModelObject;
         }
 
         /// <summary>
@@ -8094,7 +8097,7 @@ namespace BrightIdeasSoftware
         /// <remarks>Use CheckedObjects property instead of this method</remarks>
         [Obsolete("Use CheckedObjects property instead of this method")]
         public virtual ArrayList GetCheckedObjects() {
-            return ObjectListView.EnumerableToArray(this.CheckedObjects, false);
+            return ObjectListViewBase.EnumerableToArray(this.CheckedModelObjects, false);
         }
 
         /// <summary>
@@ -8104,7 +8107,7 @@ namespace BrightIdeasSoftware
         /// <returns>The index of the object. -1 means the object was not present</returns>
         public virtual int IndexOf(Object modelObject) {
             for (int i = 0; i < this.GetItemCount(); i++) {
-                if (this.GetModelObject(i).Equals(modelObject))
+                if (this.GetModelAt(i).Equals(modelObject))
                     return i;
             }
             return -1;
@@ -8131,7 +8134,7 @@ namespace BrightIdeasSoftware
         /// </para>
         /// <para>
         /// The given object is *not* used as the source of data for the rebuild.
-        /// It is only used to locate the matching model in the <see cref="Objects"/> collection,
+        /// It is only used to locate the matching model in the <see cref="ModelObjects"/> collection,
         /// then that matching model is used as the data source. This distinction is
         /// only important in model classes that have overridden the Equals() method.
         /// </para>
@@ -8161,7 +8164,7 @@ namespace BrightIdeasSoftware
             if (modelObjects == null)
                 throw new ArgumentNullException("modelObjects");
 
-            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            ICollection snapshot = this.MaterializeModelObjects(modelObjects);
             foreach (object modelObject in snapshot) {
                 OLVListItem olvi = this.ModelToItem(modelObject);
                 if (olvi != null) {
@@ -8176,10 +8179,7 @@ namespace BrightIdeasSoftware
                 return;
 
             this.TakeOwnershipOfObjects();
-            ArrayList array = ObjectListView.EnumerableToArray(this.Objects, false);
-            int i = array.IndexOf(olvi.RowObject);
-            if (i >= 0)
-                array[i] = newModel;
+            this.ReplaceStoredModelObject(olvi.RowObject, newModel);
 
             olvi.RowObject = newModel;
         }
@@ -8197,7 +8197,7 @@ namespace BrightIdeasSoftware
         /// Select the row that is displaying the given model object, in addition to any current selection.
         /// </summary>
         /// <param name="modelObject">The object to be selected</param>
-        /// <remarks>Use the <see cref="SelectedObject"/> property to deselect all other rows</remarks>
+        /// <remarks>Use the <see cref="SelectedModelObject"/> property to deselect all other rows</remarks>
         public virtual void SelectObject(object modelObject) {
             this.SelectObject(modelObject, false);
         }
@@ -8207,7 +8207,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="modelObject">The object to be selected</param>
         /// <param name="setFocus">Should the object be focused as well?</param>
-        /// <remarks>Use the <see cref="SelectedObject"/> property to deselect all other rows</remarks>
+        /// <remarks>Use the <see cref="SelectedModelObject"/> property to deselect all other rows</remarks>
         public virtual void SelectObject(object modelObject, bool setFocus) {
             OLVListItem olvi = this.ModelToItem(modelObject);
             if (olvi != null && olvi.Enabled) {
@@ -8232,7 +8232,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="modelObjects">A collection of model objects</param>
         public virtual void SelectObjects(IEnumerable modelObjects) {
-            ArrayList snapshot = ObjectListView.EnumerableToArray(modelObjects, true);
+            ICollection snapshot = this.MaterializeModelObjects(modelObjects);
             this.SelectedIndices.Clear();
 
             foreach (object modelObject in snapshot) {
@@ -8358,7 +8358,7 @@ namespace BrightIdeasSoftware
         /// events on instance creation and disposal.
         /// </summary>
         private class SuspendSelectionDisposable : IDisposable {
-            public SuspendSelectionDisposable(ObjectListView objectListView) {
+            public SuspendSelectionDisposable(ObjectListViewBase objectListView) {
                 this.objectListView = objectListView;
                 this.objectListView.SuspendSelectionEvents();
             }
@@ -8367,7 +8367,7 @@ namespace BrightIdeasSoftware
                 this.objectListView.ResumeSelectionEvents();
             }
 
-            private readonly ObjectListView objectListView;
+            private readonly ObjectListViewBase objectListView;
         }
 
         #endregion
@@ -8503,7 +8503,7 @@ namespace BrightIdeasSoftware
             this.sortDescriptionsInProgress = args.GetActiveSortDescriptions();
             try {
                 // Virtual lists don't preserve selection, so we have to do it specifically
-                IList selection = this.VirtualMode ? this.SelectedObjects : null;
+                IList selection = this.VirtualMode ? this.SelectedModelObjects : null;
                 this.SuspendSelectionEvents();
                 try {
                     this.ClearHotItem();
@@ -8532,7 +8532,7 @@ namespace BrightIdeasSoftware
                         this.ShowSortIndicator(args.ColumnToSort, args.SortOrder);
 
                     if (selection != null && selection.Count > 0)
-                        this.SelectedObjects = selection;
+                        this.SelectedModelObjects = selection;
                 } finally {
                     this.ResumeSelectionEvents();
                 }
@@ -8736,7 +8736,7 @@ namespace BrightIdeasSoftware
             // Should the row be selectable?
             if (!lvi.Enabled) {
                 lvi.UseItemStyleForSubItems = false;
-                ApplyRowStyle(lvi, this.DisabledItemStyle ?? ObjectListView.DefaultDisabledItemStyle);
+                ApplyRowStyle(lvi, this.DisabledItemStyle ?? ObjectListViewBase.DefaultDisabledItemStyle);
             }
 
             // Set the check state of the row, if we are showing check boxes
@@ -8839,7 +8839,7 @@ namespace BrightIdeasSoftware
         /// <returns>A string or null if no tool tip is to be shown</returns>
         public virtual String GetCellToolTip(int columnIndex, int rowIndex) {
             if (this.CellToolTipGetter != null)
-                return this.CellToolTipGetter(this.GetColumn(columnIndex), this.GetModelObject(rowIndex));
+                return this.CellToolTipGetter(this.GetColumn(columnIndex), this.GetModelAt(rowIndex));
 
             // Show the URL in the tooltip if it's different to the text
             if (columnIndex >= 0) {
@@ -8994,25 +8994,12 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Take ownership of the 'objects' collection. This separates our collection from the source.
+        /// Ensure that model mutations operate on an owned collection.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// This method
-        /// separates the 'objects' instance variable from its source, so that any AddObject/RemoveObject
-        /// calls will modify our collection and not the original collection.
-        /// </para>
-        /// <para>
-        /// This method has the intentional side-effect of converting our list of objects to an ArrayList.
-        /// </para>
+        /// Collections are now materialized on assignment. This hook is retained for subclasses.
         /// </remarks>
         protected virtual void TakeOwnershipOfObjects() {
-            if (this.isOwnerOfObjects)
-                return;
-
-            this.isOwnerOfObjects = true;
-
-            this.objects = ObjectListView.EnumerableToArray(this.objects, true);
         }
 
         /// <summary>
@@ -9359,8 +9346,8 @@ namespace BrightIdeasSoftware
             BufferedGraphics buffer = BufferedGraphicsManager.Current.Allocate(e.Graphics, r);
             Graphics g = buffer.Graphics;
 
-            g.TextRenderingHint = ObjectListView.TextRenderingHint;
-            g.SmoothingMode = ObjectListView.SmoothingMode;
+            g.TextRenderingHint = ObjectListViewBase.TextRenderingHint;
+            g.SmoothingMode = ObjectListViewBase.SmoothingMode;
 
             // Finally, give the renderer a chance to draw something
             e.DrawDefault = !renderer.RenderSubItem(e, g, r, rowObject);
@@ -10111,7 +10098,7 @@ namespace BrightIdeasSoftware
 
             // Ask the registry for an instance of the appropriate editor.
             // Use a default editor if the registry can't create one for us.
-            Control editor = ObjectListView.EditorRegistry.GetEditor(item.RowObject, column, value ?? this.GetFirstNonNullValue(column));
+            Control editor = ObjectListViewBase.EditorRegistry.GetEditor(item.RowObject, column, value ?? this.GetFirstNonNullValue(column));
             return editor ?? this.MakeDefaultCellEditor(column);
         }
 
@@ -10123,7 +10110,7 @@ namespace BrightIdeasSoftware
         /// <returns>The first non-null value, or null if no non-null values were found</returns>
         internal object GetFirstNonNullValue(OLVColumn column) {
             for (int i = 0; i < Math.Min(this.GetItemCount(), 1000); i++) {
-                object value = column.GetValue(this.GetModelObject(i));
+                object value = column.GetValue(this.GetModelAt(i));
                 if (value != null)
                     return value;
             }
@@ -10173,7 +10160,7 @@ namespace BrightIdeasSoftware
             Dictionary<string, bool> alreadySeen = new Dictionary<string, bool>();
             List<string> values = new List<string>();
             for (int i = 0; i < maxRows; i++) {
-                string valueAsString = column.GetStringValue(this.GetModelObject(i));
+                string valueAsString = column.GetStringValue(this.GetModelAt(i));
                 if (!String.IsNullOrEmpty(valueAsString) && !alreadySeen.ContainsKey(valueAsString)) {
                     values.Add(valueAsString);
                     alreadySeen[valueAsString] = true;
@@ -10690,8 +10677,8 @@ namespace BrightIdeasSoftware
         /// <param name="g">A Graphics</param>
         /// <param name="itemsThatWereRedrawn">The items that were redrawn and whose decorations should also be redrawn</param>
         protected virtual void DrawAllDecorations(Graphics g, List<OLVListItem> itemsThatWereRedrawn) {
-            g.TextRenderingHint = ObjectListView.TextRenderingHint;
-            g.SmoothingMode = ObjectListView.SmoothingMode;
+            g.TextRenderingHint = ObjectListViewBase.TextRenderingHint;
+            g.SmoothingMode = ObjectListViewBase.SmoothingMode;
 
             Rectangle contentRectangle = this.ContentRectangle;
 
@@ -10834,7 +10821,7 @@ namespace BrightIdeasSoftware
         }
 
         private bool ShouldShowOverlays() {
-            // If we are in design mode, we don’t show the overlays
+            // If we are in design mode, we donï¿½t show the overlays
             if (this.DesignMode)
                 return false;
 
@@ -11060,7 +11047,6 @@ namespace BrightIdeasSoftware
 
         #region Implementation variables
 
-        private bool isOwnerOfObjects; // does this ObjectListView own the Objects collection?
         private bool hasIdleHandler; // has an Idle handler already been installed?
         private bool hasResizeColumnsHandler; // has an idle handler been installed which will handle column resizing?
         private bool isInWmPaintEvent; // is a WmPaint event currently being handled?

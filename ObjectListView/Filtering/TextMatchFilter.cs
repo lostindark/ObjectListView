@@ -1,4 +1,4 @@
-﻿/*
+/*
  * TextMatchFilter - Text based filtering on ObjectListViews
  *
  * Author: Phillip Piper
@@ -71,7 +71,7 @@ namespace BrightIdeasSoftware {
         /// <param name="texts"></param>
         /// <returns></returns>
         /// <remarks>Any string that is not a valid regex expression will be ignored.</remarks>
-        public static TextMatchFilter Regex(ObjectListView olv, params string[] texts) {
+        public static TextMatchFilter Regex(ObjectListViewBase olv, params string[] texts) {
             TextMatchFilter filter = new TextMatchFilter(olv);
             filter.RegexStrings = texts;
             return filter;
@@ -83,7 +83,7 @@ namespace BrightIdeasSoftware {
         /// <param name="olv"></param>
         /// <param name="texts"></param>
         /// <returns></returns>
-        public static TextMatchFilter Prefix(ObjectListView olv, params string[] texts) {
+        public static TextMatchFilter Prefix(ObjectListViewBase olv, params string[] texts) {
             TextMatchFilter filter = new TextMatchFilter(olv);
             filter.PrefixStrings = texts;
             return filter;
@@ -95,7 +95,7 @@ namespace BrightIdeasSoftware {
         /// <param name="olv"></param>
         /// <param name="texts"></param>
         /// <returns></returns>
-        public static TextMatchFilter Contains(ObjectListView olv, params string[] texts) {
+        public static TextMatchFilter Contains(ObjectListViewBase olv, params string[] texts) {
             TextMatchFilter filter = new TextMatchFilter(olv);
             filter.ContainsStrings = texts;
             return filter;
@@ -105,7 +105,7 @@ namespace BrightIdeasSoftware {
         /// Create a TextFilter
         /// </summary>
         /// <param name="olv"></param>
-        public TextMatchFilter(ObjectListView olv) {
+        public TextMatchFilter(ObjectListViewBase olv) {
             this.ListView = olv;
         }
 
@@ -114,7 +114,7 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <param name="olv"></param>
         /// <param name="text"></param>
-        public TextMatchFilter(ObjectListView olv, string text) {
+        public TextMatchFilter(ObjectListViewBase olv, string text) {
             this.ListView = olv;
             this.ContainsStrings = new string[] { text };
         }
@@ -125,7 +125,7 @@ namespace BrightIdeasSoftware {
         /// <param name="olv"></param>
         /// <param name="text"></param>
         /// <param name="comparison"></param>
-        public TextMatchFilter(ObjectListView olv, string text, StringComparison comparison) {
+        public TextMatchFilter(ObjectListViewBase olv, string text, StringComparison comparison) {
             this.ListView = olv;
             this.ContainsStrings = new string[] { text };
             this.StringComparison = comparison;
@@ -189,11 +189,11 @@ namespace BrightIdeasSoftware {
         /// You cannot really rebase a filter after it is created, so do not change this value.
         /// It is included so that it can be set in an object initialiser.
         /// </remarks>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return listView; }
             set { listView = value; }
         }
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Gets or sets the collection of strings that will be used for 

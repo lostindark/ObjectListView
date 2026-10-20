@@ -58,7 +58,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv">The ObjectListView that is being overlaid</param>
         /// <param name="g">The Graphics onto the given OLV</param>
         /// <param name="r">The content area of the OLV</param>
-        void Draw(ObjectListView olv, Graphics g, Rectangle r);
+        void Draw(ObjectListViewBase olv, Graphics g, Rectangle r);
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv">The ObjectListView that is being overlaid</param>
         /// <param name="g">The Graphics onto the given OLV</param>
         /// <param name="r">The content area of the OLV</param>
-        public virtual void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public virtual void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
         }
 
         #endregion
@@ -160,7 +160,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv">The ObjectListView being decorated</param>
         /// <param name="g">The Graphics used for drawing</param>
         /// <param name="r">The bounds of the rendering</param>
-        public virtual void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public virtual void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
             Rectangle insetRect = r;
             insetRect.Inflate(-this.InsetX, -this.InsetY);
 
@@ -238,7 +238,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv">The ObjectListView being decorated</param>
         /// <param name="g">The Graphics used for drawing</param>
         /// <param name="r">The bounds of the rendering</param>
-        public virtual void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public virtual void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
             if (String.IsNullOrEmpty(this.Text))
                 return;
 
@@ -282,7 +282,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv">The ObjectListView being decorated</param>
         /// <param name="g">The Graphics used for drawing</param>
         /// <param name="r">The bounds of the rendering</param>
-        public override void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public override void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
             if (String.IsNullOrEmpty(this.Text))
                 return;
 

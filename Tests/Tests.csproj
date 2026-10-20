@@ -17,6 +17,9 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="System.Design" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\ObjectListView\ObjectListView.csproj" />
   </ItemGroup>
 </Project>

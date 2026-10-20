@@ -42,7 +42,7 @@ namespace BrightIdeasSoftware
         /// Open this form so it will edit the columns that are available in the listview's current view
         /// </summary>
         /// <param name="olv">The ObjectListView whose columns are to be altered</param>
-        public void OpenOn(ObjectListView olv)
+        public void OpenOn(ObjectListViewBase olv)
         {
             this.OpenOn(olv, olv.View);
         }
@@ -53,7 +53,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="olv">The ObjectListView whose columns are to be altered</param>
         /// <param name="view">The view that is to be altered. Must be View.Details or View.Tile</param>
-        public void OpenOn(ObjectListView olv, View view)
+        public void OpenOn(ObjectListViewBase olv, View view)
         {
             if (view != View.Details && view != View.Tile)
                 return;
@@ -68,7 +68,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="olv"></param>
         /// <param name="view"></param>
-        protected void InitializeForm(ObjectListView olv, View view)
+        protected void InitializeForm(ObjectListViewBase olv, View view)
         {
             this.AllColumns = olv.AllColumns;
             this.RearrangableColumns = new List<OLVColumn>(this.AllColumns);
@@ -107,7 +107,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="olv"></param>
         /// <param name="view"></param>
-        protected void Apply(ObjectListView olv, View view)
+        protected void Apply(ObjectListViewBase olv, View view)
         {
             olv.Freeze();
 
@@ -220,7 +220,7 @@ namespace BrightIdeasSoftware
                 this.buttonMoveUp.Enabled = (this.objectListView1.SelectedIndices[0] != 0);
                 this.buttonMoveDown.Enabled = (this.objectListView1.SelectedIndices[0] < (this.objectListView1.GetItemCount() - 1));
 
-                OLVColumn selectedColumn = (OLVColumn)this.objectListView1.SelectedObject;
+                OLVColumn selectedColumn = (OLVColumn)this.objectListView1.SelectedModelObject;
 
                 // Some columns cannot be hidden (and hence cannot be Shown)
                 this.buttonShow.Enabled = !this.MapColumnToVisible[selectedColumn] && selectedColumn.CanBeHidden;

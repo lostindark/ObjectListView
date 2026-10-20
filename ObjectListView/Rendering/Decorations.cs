@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Decorations - Images, text or other things that can be rendered onto an ObjectListView
  *
  * Author: Phillip Piper
@@ -125,7 +125,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv"></param>
         /// <param name="g"></param>
         /// <param name="r"></param>
-        public virtual void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public virtual void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
         }
 
         #endregion
@@ -203,7 +203,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv"></param>
         /// <param name="g"></param>
         /// <param name="r"></param>
-        public override void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public override void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
 
             if (olv.View != System.Windows.Forms.View.Details)
                 return;
@@ -239,7 +239,7 @@ namespace BrightIdeasSoftware
         /// <param name="g"></param>
         /// <param name="r"></param>
         /// <param name="columnBounds"></param>
-        public virtual void DrawDecoration(ObjectListView olv, Graphics g, Rectangle r, Rectangle columnBounds) {
+        public virtual void DrawDecoration(ObjectListViewBase olv, Graphics g, Rectangle r, Rectangle columnBounds) {
             g.DrawRectangle(this.Pen, columnBounds);
         }
 
@@ -300,7 +300,7 @@ namespace BrightIdeasSoftware
 
         #region IOverlay Members
 
-        public override void DrawDecoration(ObjectListView olv, Graphics g, Rectangle r, Rectangle columnBounds) {
+        public override void DrawDecoration(ObjectListViewBase olv, Graphics g, Rectangle r, Rectangle columnBounds) {
             g.FillRectangle(this.tintBrush, columnBounds);
         }
 
@@ -373,7 +373,7 @@ namespace BrightIdeasSoftware
 
         #region IOverlay Members
 
-        public override void DrawDecoration(ObjectListView olv, Graphics g, Rectangle r, Rectangle columnBounds) {
+        public override void DrawDecoration(ObjectListViewBase olv, Graphics g, Rectangle r, Rectangle columnBounds) {
             float left = CalculateEdge(columnBounds);
             g.DrawLine(this.Pen, left, columnBounds.Top, left, columnBounds.Bottom);
             
@@ -503,7 +503,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv"></param>
         /// <param name="g"></param>
         /// <param name="r"></param>
-        public override void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public override void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
             Rectangle bounds = this.CalculateBounds();
             if (!bounds.IsEmpty)
                 this.DrawFilledBorder(g, bounds);
@@ -700,7 +700,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv"></param>
         /// <param name="g"></param>
         /// <param name="r"></param>
-        public override void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public override void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
             if (!olv.IsCellEditing) 
                 return;
 
@@ -754,7 +754,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv"></param>
         /// <param name="g"></param>
         /// <param name="r"></param>
-        public override void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public override void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
             if (!r.Contains(olv.PointToClient(Cursor.Position)))
                 return;
 
@@ -866,7 +866,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv">The ObjectListView being decorated</param>
         /// <param name="g">The Graphics used for drawing</param>
         /// <param name="r">The bounds of the rendering</param>
-        public virtual void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public virtual void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
             this.DrawImage(g, this.CalculateItemBounds(this.ListItem, this.SubItem));
         }
 
@@ -964,7 +964,7 @@ namespace BrightIdeasSoftware
         /// <param name="olv">The ObjectListView being decorated</param>
         /// <param name="g">The Graphics used for drawing</param>
         /// <param name="r">The bounds of the rendering</param>
-        public virtual void Draw(ObjectListView olv, Graphics g, Rectangle r) {
+        public virtual void Draw(ObjectListViewBase olv, Graphics g, Rectangle r) {
             this.DrawText(g, this.CalculateItemBounds(this.ListItem, this.SubItem));
         }
 

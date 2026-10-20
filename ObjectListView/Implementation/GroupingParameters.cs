@@ -1,4 +1,4 @@
-﻿/*
+/*
  * GroupingParameters - All the data that is used to create groups in an ObjectListView
  *
  * Author: Phillip Piper
@@ -49,7 +49,7 @@ namespace BrightIdeasSoftware {
         /// <param name="titleFormat"></param>
         /// <param name="titleSingularFormat"></param>
         /// <param name="sortItemsByPrimaryColumn"></param>
-        public GroupingParameters(ObjectListView olv, OLVColumn groupByColumn, SortOrder groupByOrder,
+        public GroupingParameters(ObjectListViewBase olv, OLVColumn groupByColumn, SortOrder groupByOrder,
             OLVColumn column, SortOrder order, OLVColumn secondaryColumn, SortOrder secondaryOrder,
             string titleFormat, string titleSingularFormat, bool sortItemsByPrimaryColumn)
             : this(olv, groupByColumn, groupByOrder, new SortDescriptionCollection(column, order, secondaryColumn, secondaryOrder),
@@ -59,7 +59,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Create grouping parameters with an ordered collection of sort fields.
         /// </summary>
-        public GroupingParameters(ObjectListView olv, OLVColumn groupByColumn, SortOrder groupByOrder,
+        public GroupingParameters(ObjectListViewBase olv, OLVColumn groupByColumn, SortOrder groupByOrder,
             IEnumerable<OLVSortDescription> sortDescriptions, string titleFormat, string titleSingularFormat, bool sortItemsByPrimaryColumn) {
             this.ListView = olv;
             this.GroupByColumn = groupByColumn;
@@ -73,11 +73,11 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets or sets the ObjectListView being grouped
         /// </summary>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return this.listView; }
             set { this.listView = value; }
         }
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Gets or sets the column used to create groups

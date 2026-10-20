@@ -313,7 +313,7 @@ namespace BrightIdeasSoftware {
         /// <para>
         /// This setting only takes effect when the control is owner drawn.
         /// </para>
-        /// <para><see cref="ObjectListView.CellPadding"/> for more details.</para>
+        /// <para><see cref="ObjectListViewBase.CellPadding"/> for more details.</para>
         /// </remarks>
         [Category("ObjectListView"),
          Description("The number of pixels that renderer will leave empty around the edge of the cell"),
@@ -603,12 +603,12 @@ namespace BrightIdeasSoftware {
         /// </summary>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return objectListView; }
             set { objectListView = value; }
         }
 
-        private ObjectListView objectListView;
+        private ObjectListViewBase objectListView;
 
         /// <summary>
         /// Get the specialized OLVSubItem that this renderer is drawing
@@ -1113,7 +1113,7 @@ namespace BrightIdeasSoftware {
             this.DrawItemEvent = e;
             this.ListItem = (OLVListItem)e.Item;
             this.SubItem = null;
-            this.ListView = (ObjectListView)this.ListItem.ListView;
+            this.ListView = (ObjectListViewBase)this.ListItem.ListView;
             this.Column = this.ListView.GetColumn(0);
             this.RowObject = model;
             this.Bounds = itemBounds;
@@ -1146,7 +1146,7 @@ namespace BrightIdeasSoftware {
             this.Event = e;
             this.ListItem = (OLVListItem)e.Item;
             this.SubItem = (OLVListSubItem)e.SubItem;
-            this.ListView = (ObjectListView)this.ListItem.ListView;
+            this.ListView = (ObjectListViewBase)this.ListItem.ListView;
             this.Column = (OLVColumn)e.Header;
             this.RowObject = model;
             this.Bounds = cellBounds;
@@ -1190,7 +1190,7 @@ namespace BrightIdeasSoftware {
         public override Rectangle GetEditRectangle(Graphics g, Rectangle cellBounds, OLVListItem item, int subItemIndex, Size preferredSize) {
             this.ClearState();
 
-            this.ListView = (ObjectListView) item.ListView;
+            this.ListView = (ObjectListViewBase) item.ListView;
             this.ListItem = item;
             this.SubItem = item.GetSubItem(subItemIndex);
             this.Column = this.ListView.GetColumn(subItemIndex);
@@ -1298,7 +1298,7 @@ namespace BrightIdeasSoftware {
             this.DrawAlignedImageAndText(g, r);
 
             // Show where the bounds of the cell padding are (debugging)
-            if (ObjectListView.ShowCellPaddingBounds)
+            if (ObjectListViewBase.ShowCellPaddingBounds)
                 g.DrawRectangle(Pens.Purple, r);
         }
 
@@ -1576,7 +1576,7 @@ namespace BrightIdeasSoftware {
                 if (!this.ListView.RenderNonEditableCheckboxesAsDisabled)
                     return false;
 
-                return (this.ListView.CellEditActivation == ObjectListView.CellEditActivateMode.None ||
+                return (this.ListView.CellEditActivation == ObjectListViewBase.CellEditActivateMode.None ||
                         (this.Column != null && !this.Column.IsEditable));
             }
         }
@@ -2361,11 +2361,11 @@ namespace BrightIdeasSoftware {
             CheckState state = this.Column.GetCheckState(this.RowObject);
             if (this.IsPrinting) {
                 // Renderers don't work onto printer DCs, so we have to draw the image ourselves
-                string key = ObjectListView.CHECKED_KEY;
+                string key = ObjectListViewBase.CHECKED_KEY;
                 if (state == CheckState.Unchecked)
-                    key = ObjectListView.UNCHECKED_KEY;
+                    key = ObjectListViewBase.UNCHECKED_KEY;
                 if (state == CheckState.Indeterminate)
-                    key = ObjectListView.INDETERMINATE_KEY;
+                    key = ObjectListViewBase.INDETERMINATE_KEY;
                 this.DrawAlignedImage(g, r, this.ImageListOrDefault.Images[key]);
             } else {
                 r = this.CalculateCheckBoxBounds(g, r);
@@ -3911,7 +3911,7 @@ namespace BrightIdeasSoftware {
                 return PushButtonState.Disabled;
 
             if (this.IsButtonHot)
-                return ObjectListView.IsLeftMouseDown ? PushButtonState.Pressed : PushButtonState.Hot;
+                return ObjectListViewBase.IsLeftMouseDown ? PushButtonState.Pressed : PushButtonState.Hot;
 
             return PushButtonState.Normal;
         }

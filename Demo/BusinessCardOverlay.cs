@@ -16,7 +16,7 @@ namespace ObjectListViewDemo {
         }
         #region IOverlay Members
 
-        public override void Draw(ObjectListView olv, Graphics g, Rectangle r)
+        public override void Draw(ObjectListViewBase olv, Graphics g, Rectangle r)
         {
             if (olv.HotRowIndex < 0)
                 return;

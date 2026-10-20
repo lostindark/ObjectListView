@@ -63,7 +63,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the ObjectListView that is the drop sink
         /// </summary>
-        ObjectListView ListView { get; set; }
+        ObjectListViewBase ListView { get; set; }
 
         /// <summary>
         /// Draw any feedback that is appropriate to the current drop state.
@@ -132,11 +132,11 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the ObjectListView that is the drop sink
         /// </summary>
-        public virtual ObjectListView ListView {
+        public virtual ObjectListViewBase ListView {
             get { return listView; }
             set { this.listView = value; }
         }
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Draw any feedback that is appropriate to the current drop state.
@@ -605,7 +605,7 @@ namespace BrightIdeasSoftware
         /// <param name="g">A Graphic for drawing</param>
         /// <param name="bounds">The contents bounds of the ListView (not including any header)</param>
         public override void DrawFeedback(Graphics g, Rectangle bounds) {
-            g.SmoothingMode = ObjectListView.SmoothingMode;
+            g.SmoothingMode = ObjectListViewBase.SmoothingMode;
 
             if (this.EnableFeedback) {
                 switch (this.DropTargetLocation) {
@@ -924,7 +924,7 @@ namespace BrightIdeasSoftware
             this.dropEventArgs.Handled = false;
 
             if (this.dropEventArgs.SourceListView != null) {
-                this.dropEventArgs.TargetModel = this.ListView.GetModelObject(this.dropEventArgs.DropTargetIndex);
+                this.dropEventArgs.TargetModel = this.ListView.GetModelAt(this.dropEventArgs.DropTargetIndex);
                 this.OnModelCanDrop(this.dropEventArgs);
             }
 
@@ -1462,11 +1462,11 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Get the ObjectListView that is being dropped on
         /// </summary>
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return this.listView; }
             internal set { this.listView = value; }
         }
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         /// <summary>
         /// Get the location of the mouse (in target ListView co-ords)
@@ -1524,11 +1524,11 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets the ObjectListView that is the source of the dragged objects.
         /// </summary>
-        public ObjectListView SourceListView {
+        public ObjectListViewBase SourceListView {
             get { return this.sourceListView; }
             internal set { this.sourceListView = value; }
         }
-        private ObjectListView sourceListView;
+        private ObjectListViewBase sourceListView;
 
         /// <summary>
         /// Get the model object that is being dropped upon.

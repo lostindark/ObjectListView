@@ -19,7 +19,7 @@ namespace ObjectListViewDemo {
         {
             // If we're in any other view than Tile, return false to say that we haven't done
             // the rendering and the default process should do it's stuff
-            ObjectListView olv = e.Item.ListView as ObjectListView;
+            ObjectListViewBase olv = e.Item.ListView as ObjectListViewBase;
             if (olv == null || olv.View != View.Tile)
                 return false;
 
@@ -56,7 +56,7 @@ namespace ObjectListViewDemo {
         internal Brush HeaderBackBrush = new SolidBrush(Color.FromArgb(0x33, 0x33, 0x33));
         internal Brush BackBrush = Brushes.LemonChiffon;
 
-        public void DrawBusinessCard(Graphics g, Rectangle itemBounds, object rowObject, ObjectListView olv, OLVListItem item)
+        public void DrawBusinessCard(Graphics g, Rectangle itemBounds, object rowObject, ObjectListViewBase olv, OLVListItem item)
         {
             const int spacing = 8;
 

@@ -123,7 +123,7 @@ namespace BrightIdeasSoftware
         /// data source columns that are not already shown.</para>
         /// <para>If the DataSource is changed, you will have to remove any previously
         /// created columns, since they will be configured for the previous DataSource.
-        /// <see cref="ObjectListView.Reset()"/>.</para>
+        /// <see cref="ObjectListViewBase.Reset()"/>.</para>
         /// </remarks>
         [Category("Data"),
         TypeConverter("System.Windows.Forms.Design.DataSourceConverter, System.Design")]

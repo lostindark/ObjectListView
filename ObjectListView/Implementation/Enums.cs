@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Enums - All enum definitions used in ObjectListView
  *
  * Author: Phillip Piper
@@ -31,7 +31,7 @@ using System.Text;
 
 namespace BrightIdeasSoftware {
 
-    public partial class ObjectListView {
+    public partial class ObjectListViewBase {
         /// <summary>
         /// How does a user indicate that they want to edit cells?
         /// </summary>

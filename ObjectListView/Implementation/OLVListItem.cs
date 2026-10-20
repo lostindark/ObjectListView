@@ -1,4 +1,4 @@
-﻿/*
+/*
  * OLVListItem - A row in an ObjectListView
  *
  * Author: Phillip Piper
@@ -121,9 +121,9 @@ namespace BrightIdeasSoftware {
             set {
                 if (this.Checked != value) {
                     if (value)
-                        ((ObjectListView)this.ListView).CheckObject(this.RowObject);
+                        ((ObjectListViewBase)this.ListView).CheckObject(this.RowObject);
                     else
-                        ((ObjectListView)this.ListView).UncheckObject(this.RowObject);
+                        ((ObjectListViewBase)this.ListView).UncheckObject(this.RowObject);
                 }
             }
         }

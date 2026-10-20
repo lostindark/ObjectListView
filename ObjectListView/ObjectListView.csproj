@@ -34,6 +34,7 @@
     <Compile Update="SubControls\GlassPanelForm.cs" SubType="Form" />
     <Compile Update="SubControls\HeaderControl.cs" SubType="Code" />
     <Compile Update="ObjectListView.cs" SubType="Component" />
+    <Compile Update="ObjectListViewBase.cs" SubType="Component" />
     <Compile Update="Rendering\Renderers.cs" SubType="Component" />
     <Compile Update="Rendering\Styles.cs" SubType="Component" />
     <Compile Update="TreeListView.cs" SubType="Component" />

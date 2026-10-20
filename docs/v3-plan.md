@@ -144,7 +144,7 @@ Do not let drawing and hit testing independently calculate where an interactive 
 
 After the behavioral contracts stabilize:
 
-- Split the large `ObjectListView.cs` into focused partial files without unnecessarily redesigning the inheritance hierarchy.
+- Split the large `ObjectListViewBase.cs` into focused partial files without unnecessarily redesigning the inheritance hierarchy.
 - Remove redundant compatibility APIs. For example, `CheckedObjectsEnumerable` becomes unnecessary once `SetCheckedObjects()` accepts an enumerable.
 - Remove obsolete compatibility paths only where their replacement and support implications are understood.
 - Update demos, designer-generated configuration through the designer, and Markdown examples.

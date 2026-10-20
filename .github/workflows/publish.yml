@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 10
     environment: nuget
     permissions:
-      contents: read
+      contents: write
       actions: read
       id-token: write
     defaults:
@@ -64,6 +64,7 @@ jobs:
           if ($env:PREVIEW -eq 'true') { $version += '-preview' }
           "run-id=$($selected.id)" >> $env:GITHUB_OUTPUT
           "PACKAGE_VERSION=$version" >> $env:GITHUB_ENV
+          "SOURCE_COMMIT=$($selected.head_sha)" >> $env:GITHUB_ENV
           "Publishing CI build $($selected.run_number), commit $($selected.head_sha), as $version."
           "## NuGet publication`nCI build: $($selected.run_number)`n`nCommit: $($selected.head_sha)`n`nVersion: $version" >> $env:GITHUB_STEP_SUMMARY
 
@@ -95,3 +96,28 @@ jobs:
         env:
           NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: dotnet nuget push "artifacts\packages\ObjectListView.WinForms.$env:PACKAGE_VERSION.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$env:NUGET_API_KEY" --skip-duplicate
+
+      - name: Tag published source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $tag = "v$env:PACKAGE_VERSION"
+          $json = gh api "repos/$env:GH_REPO/git/matching-refs/tags/$tag"
+          if ($LASTEXITCODE -ne 0) { throw "Could not check release tag $tag." }
+          $existing = ($json -join "`n") | ConvertFrom-Json | Where-Object { $_.ref -eq "refs/tags/$tag" }
+          if ($existing) {
+            $target = $existing.object
+            while ($target.type -eq 'tag') {
+              $json = gh api "repos/$env:GH_REPO/git/tags/$($target.sha)"
+              if ($LASTEXITCODE -ne 0) { throw "Could not resolve release tag $tag." }
+              $target = (($json -join "`n") | ConvertFrom-Json).object
+            }
+            if ($target.type -ne 'commit' -or $target.sha -ne $env:SOURCE_COMMIT) {
+              throw "Release tag $tag already points to a different object. It will not be moved."
+            }
+            "Release tag $tag already points to $env:SOURCE_COMMIT."
+          } else {
+            gh api --method POST "repos/$env:GH_REPO/git/refs" -f "ref=refs/tags/$tag" -f "sha=$env:SOURCE_COMMIT"
+            if ($LASTEXITCODE -ne 0) { throw "Could not create release tag $tag." }
+          }

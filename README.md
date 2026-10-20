@@ -73,32 +73,8 @@ To run a focused group:
 dotnet test Tests\Tests.csproj --configuration Release --no-build --no-restore --filter "FullyQualifiedName~TestMunger"
 ```
 
-## CI and NuGet releases
-
-GitHub Actions builds and tests the solution on Windows for pushes to `main`,
-pull requests, and manual CI runs. Successful builds upload test results and
-`ObjectListView.WinForms` packages numbered `3.0.<CI run number>`, with matching
-`-preview` packages. Build numbers may have gaps.
-
-Publishing to [nuget.org](https://www.nuget.org/packages/ObjectListView.WinForms)
-is manual: open **Actions > Publish NuGet > Run workflow**, select a branch, and
-optionally enter a CI build number. Leave it empty for the latest successful
-build. **Preview** defaults to enabled; uncheck it to publish `3.0.N` instead of
-`3.0.N-preview`. Publishing reuses CI artifacts; pull request builds are excluded.
-The workflow tags the CI build's commit as `v3.0.N` or `v3.0.N-preview` and prepares
-a draft GitHub Release with generated change notes and the package attached.
-It publishes to NuGet before publishing the GitHub Release; if NuGet fails, the
-release stays a draft. Preview versions become prereleases. Reruns preserve
-existing tags and release notes.
-
-One-time setup for maintainers (OIDC; no permanent API key):
-
-1. Create a GitHub environment named `nuget`, with approval rules as needed.
-2. Set the Actions variable `NUGET_USER` to your nuget.org username.
-3. Add a nuget.org **Trusted Publishing** policy for `lostindark/ObjectListView`,
-   workflow `publish.yml`, environment `nuget`, and package `ObjectListView.WinForms`.
-   Allow publishing new packages and new versions.
-
 ## License
 
 See [LICENSE](LICENSE) for the GNU General Public License, version 3.
+
+[Original ObjectListView website](https://objectlistview.sourceforge.net/cs/index.html)

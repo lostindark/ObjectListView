@@ -29,6 +29,11 @@ jobs:
       run:
         shell: pwsh
     steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
@@ -123,7 +128,8 @@ jobs:
           $isPreview = $env:PACKAGE_VERSION.EndsWith('-preview')
           $json = gh api --paginate --slurp "repos/$env:GH_REPO/releases?per_page=100"
           if ($LASTEXITCODE -ne 0) { throw "Could not check existing GitHub releases." }
-          $existing = ($json -join "`n") | ConvertFrom-Json | ForEach-Object { $_ } | Where-Object { $_.tag_name -eq $tag }
+          $releases = @(($json -join "`n") | ConvertFrom-Json | ForEach-Object { $_ })
+          $existing = $releases | Where-Object { $_.tag_name -eq $tag }
           if ($existing) {
             if ($existing.prerelease -ne $isPreview) {
               throw "Release $tag has a different prerelease setting. It will not be changed."
@@ -135,7 +141,9 @@ jobs:
             "publish=$($existing.draft.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
             "Release $tag is prepared; existing release notes were preserved."
           } else {
-            $arguments = @('release', 'create', $tag, $packagePath, '--draft', '--verify-tag', '--generate-notes', '--title', $tag)
+            $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+            .\.github\scripts\New-ReleaseNotes.ps1 -SourceCommit $env:SOURCE_COMMIT -PackageVersion $env:PACKAGE_VERSION -Repository $env:GH_REPO -BaselineCommit 2153034dbc2de91208e443197ef1114cc39d3d22 -OutputPath $notesPath -Releases $releases
+            $arguments = @('release', 'create', $tag, $packagePath, '--draft', '--verify-tag', '--notes-file', $notesPath, '--title', $tag)
             if ($isPreview) { $arguments += @('--prerelease', '--latest=false') }
             gh @arguments
             if ($LASTEXITCODE -ne 0) { throw "Could not create draft GitHub release $tag." }

@@ -22,9 +22,12 @@ namespace BrightIdeasSoftware {
         /// <summary>The existing control.</summary>
         public ObjectListViewBase ListView { get; private set; }
 
-        /// <summary>A snapshot of all source models.</summary>
+        /// <summary>A snapshot of all source models, or null for an unset/null source.</summary>
         public IEnumerable<T> Objects {
-            get { return Copy(this.ListView.ModelObjects); }
+            get {
+                IEnumerable source = this.ListView.ModelObjects;
+                return source == null ? null : Copy(source);
+            }
             set { this.ListView.ModelObjects = value; }
         }
 

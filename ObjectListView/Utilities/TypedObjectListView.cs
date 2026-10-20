@@ -70,7 +70,7 @@ namespace BrightIdeasSoftware
     /// </example>
     public class TypedObjectListView<T> : ObjectListViewBase where T : class
     {
-        private List<T> objects = new List<T>();
+        private List<T> objects;
         private System.Collections.ObjectModel.ReadOnlyCollection<T> sourceView;
         private ModelRowCollection<T> rows;
         private TypedObjectListViewAdapter<T> typed;
@@ -87,7 +87,7 @@ namespace BrightIdeasSoftware
 
         /// <inheritdoc/>
         protected override void SetStoredModelObjects(IEnumerable collection) {
-            this.objects = collection as List<T> ?? CreateModelList(collection);
+            this.objects = collection == null ? null : collection as List<T> ?? CreateModelList(collection);
             this.sourceView = null;
             this.InvalidateModelRows();
         }
@@ -123,6 +123,8 @@ namespace BrightIdeasSoftware
         }
 
         private int IndexOfStoredModel(T model) {
+            if (this.objects == null)
+                return -1;
             for (int i = 0; i < this.objects.Count; i++) {
                 if (Object.Equals(this.objects[i], model))
                     return i;
@@ -134,7 +136,14 @@ namespace BrightIdeasSoftware
         /// Enumerate the source without exposing mutable storage. Override for a custom source.
         /// </summary>
         protected virtual IEnumerable GetModelObjectsCore() {
-            return this.sourceView ?? (this.sourceView = this.objects.AsReadOnly());
+            return this.objects == null ? null :
+                this.sourceView ?? (this.sourceView = this.objects.AsReadOnly());
+        }
+
+        /// <inheritdoc/>
+        protected override void TakeOwnershipOfObjects() {
+            if (this.objects == null)
+                this.objects = new List<T>();
         }
 
         /// <summary>
@@ -214,8 +223,9 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Get or set the list of all model objects
         /// </summary>
-        /// <remarks>Both accessors use materialized snapshots. An assigned sequence is
-        /// consumed once on the control thread before it replaces the owned List.</remarks>
+        /// <remarks>The getter returns null for an unset/null source, otherwise an independent
+        /// snapshot. An assigned sequence is consumed once on the control thread before it
+        /// replaces the owned List.</remarks>
         [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public IEnumerable<T> Objects {
             get { return this.GetObjectsSnapshot(); }
@@ -224,9 +234,11 @@ namespace BrightIdeasSoftware
 
         /// <summary>
         /// Return an independent snapshot of all source models, not just visible rows.
+        /// Returns null for an unset/null source.
         /// </summary>
         public List<T> GetObjectsSnapshot() {
-            return CreateModelList(this.ModelObjects);
+            IEnumerable source = this.ModelObjects;
+            return source == null ? null : CreateModelList(source);
         }
 
         /// <summary>

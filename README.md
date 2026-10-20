@@ -85,8 +85,11 @@ is manual: open **Actions > Publish NuGet > Run workflow**, select a branch, and
 optionally enter a CI build number. Leave it empty for the latest successful
 build. **Preview** defaults to enabled; uncheck it to publish `3.0.N` instead of
 `3.0.N-preview`. Publishing reuses CI artifacts; pull request builds are excluded.
-After publishing, it tags the CI build's commit as `v3.0.N` or `v3.0.N-preview`.
-Existing tags are never moved.
+The workflow tags the CI build's commit as `v3.0.N` or `v3.0.N-preview` and prepares
+a draft GitHub Release with generated change notes and the package attached.
+It publishes to NuGet before publishing the GitHub Release; if NuGet fails, the
+release stays a draft. Preview versions become prereleases. Reruns preserve
+existing tags and release notes.
 
 One-time setup for maintainers (OIDC; no permanent API key):
 

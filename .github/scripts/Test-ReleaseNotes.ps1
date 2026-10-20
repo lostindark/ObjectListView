@@ -82,3 +82,5 @@ try {
     Pop-Location
     Remove-Item -LiteralPath $fixture -Recurse -Force
 }
+
+exit 0

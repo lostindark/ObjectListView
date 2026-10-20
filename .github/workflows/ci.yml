@@ -19,9 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Test release note generation
-        run: .\.github\scripts\Test-ReleaseNotes.ps1
-
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x

@@ -1,5 +1,8 @@
 # ObjectListView
 
+[![CI](https://github.com/lostindark/ObjectListView/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lostindark/ObjectListView/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/vpre/ObjectListView.WinForms)](https://www.nuget.org/packages/ObjectListView.WinForms)
+
 ObjectListView is a Windows Forms control that presents model objects in a .NET `ListView`, with support for sorting, grouping, filtering, cell editing, and tree views.
 
 ## Version 3 development
@@ -82,6 +85,8 @@ is manual: open **Actions > Publish NuGet > Run workflow**, select a branch, and
 optionally enter a CI build number. Leave it empty for the latest successful
 build. **Preview** defaults to enabled; uncheck it to publish `3.0.N` instead of
 `3.0.N-preview`. Publishing reuses CI artifacts; pull request builds are excluded.
+After publishing, it tags the CI build's commit as `v3.0.N` or `v3.0.N-preview`.
+Existing tags are never moved.
 
 One-time setup for maintainers (OIDC; no permanent API key):
 

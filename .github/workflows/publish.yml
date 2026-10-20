@@ -86,18 +86,7 @@ jobs:
             throw "The selected CI artifact does not contain package version $env:PACKAGE_VERSION."
           }
 
-      - name: Authenticate to NuGet
-        id: login
-        uses: NuGet/login@v1
-        with:
-          user: ${{ vars.NUGET_USER }}
-
-      - name: Publish package
-        env:
-          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
-        run: dotnet nuget push "artifacts\packages\ObjectListView.WinForms.$env:PACKAGE_VERSION.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$env:NUGET_API_KEY" --skip-duplicate
-
-      - name: Tag published source
+      - name: Tag release source
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -121,3 +110,55 @@ jobs:
             gh api --method POST "repos/$env:GH_REPO/git/refs" -f "ref=refs/tags/$tag" -f "sha=$env:SOURCE_COMMIT"
             if ($LASTEXITCODE -ne 0) { throw "Could not create release tag $tag." }
           }
+
+      - name: Prepare GitHub Release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $tag = "v$env:PACKAGE_VERSION"
+          $packageName = "ObjectListView.WinForms.$env:PACKAGE_VERSION.nupkg"
+          $packagePath = "artifacts\packages\$packageName"
+          $isPreview = $env:PACKAGE_VERSION.EndsWith('-preview')
+          $json = gh api --paginate --slurp "repos/$env:GH_REPO/releases?per_page=100"
+          if ($LASTEXITCODE -ne 0) { throw "Could not check existing GitHub releases." }
+          $existing = ($json -join "`n") | ConvertFrom-Json | ForEach-Object { $_ } | Where-Object { $_.tag_name -eq $tag }
+          if ($existing) {
+            if ($existing.prerelease -ne $isPreview) {
+              throw "Release $tag has a different prerelease setting. It will not be changed."
+            }
+            if (!($existing.assets | Where-Object { $_.name -eq $packageName })) {
+              gh release upload $tag $packagePath
+              if ($LASTEXITCODE -ne 0) { throw "Could not attach package to release $tag." }
+            }
+            "publish=$($existing.draft.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+            "Release $tag is prepared; existing release notes were preserved."
+          } else {
+            $arguments = @('release', 'create', $tag, $packagePath, '--draft', '--verify-tag', '--generate-notes', '--title', $tag)
+            if ($isPreview) { $arguments += @('--prerelease', '--latest=false') }
+            gh @arguments
+            if ($LASTEXITCODE -ne 0) { throw "Could not create draft GitHub release $tag." }
+            "publish=true" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Authenticate to NuGet
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Publish package
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push "artifacts\packages\ObjectListView.WinForms.$env:PACKAGE_VERSION.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$env:NUGET_API_KEY" --skip-duplicate
+
+      - name: Publish GitHub Release
+        if: ${{ success() && steps.release.outputs.publish == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $tag = "v$env:PACKAGE_VERSION"
+          gh release edit $tag --draft=false
+          if ($LASTEXITCODE -ne 0) { throw "Could not publish draft release $tag." }

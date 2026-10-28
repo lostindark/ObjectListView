@@ -99,8 +99,12 @@ namespace BrightIdeasSoftware
         /// DataSource refers to a list, since <see cref="DataMember"/> can
         /// also be used to navigate relations between lists.</para>
         /// </remarks>
-        [Category("Data"),
-        TypeConverter("System.Windows.Forms.Design.DataSourceConverter, System.Design")]
+        [Category("Data"), DefaultValue(null)]
+#if NETFRAMEWORK
+        [TypeConverter("System.Windows.Forms.Design.DataSourceConverter, System.Design")]
+#else
+        [AttributeProvider(typeof(IListSource))]
+#endif
         public virtual Object DataSource {
             get { return this.Adapter.DataSource; }
             set { this.Adapter.DataSource = value; }

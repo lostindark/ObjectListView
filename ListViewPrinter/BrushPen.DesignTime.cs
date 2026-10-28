@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+#if NETFRAMEWORK
 using System.Windows.Forms.Design;
+#endif
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -10,6 +12,7 @@ using System.ComponentModel.Design.Serialization;
 
 namespace BrightIdeasSoftware
 {
+#if NETFRAMEWORK
     /// <summary>
     /// Editor for use within the IDE when changing BrushFactory values
     /// </summary>
@@ -112,6 +115,8 @@ namespace BrightIdeasSoftware
             }
         }
     }
+
+#endif
 
     /// <summary>
     /// Instances of this class handle converting BrushFactories to and from various other forms.

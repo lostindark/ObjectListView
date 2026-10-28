@@ -125,8 +125,12 @@ namespace BrightIdeasSoftware
         /// created columns, since they will be configured for the previous DataSource.
         /// <see cref="ObjectListViewBase.Reset()"/>.</para>
         /// </remarks>
-        [Category("Data"),
-        TypeConverter("System.Windows.Forms.Design.DataSourceConverter, System.Design")]
+        [Category("Data"), DefaultValue(null)]
+#if NETFRAMEWORK
+        [TypeConverter("System.Windows.Forms.Design.DataSourceConverter, System.Design")]
+#else
+        [AttributeProvider(typeof(IListSource))]
+#endif
         public virtual Object DataSource
         {
             get { return this.Adapter.DataSource; }

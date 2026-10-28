@@ -14,8 +14,12 @@ namespace BrightIdeasSoftware
     /// <remarks>Pens cannot be edited directly within the IDE (is this VCS EE only?)
     /// These objects allow pen characters to be edited within the IDE and then real
     /// Pen objects created.</remarks>
-    [Editor(typeof(PenDataEditor), typeof(UITypeEditor)),
-    TypeConverter(typeof(PenDataConverter))]
+#if NETFRAMEWORK
+    [Editor(typeof(PenDataEditor), typeof(UITypeEditor))]
+#else
+    [Editor("PenDataEditor", typeof(UITypeEditor))]
+#endif
+    [TypeConverter(typeof(PenDataConverter))]
     public class PenData
     {
         public PenData() : this(new SolidBrushData())
@@ -93,8 +97,12 @@ namespace BrightIdeasSoftware
         private float width = 1.0f;
     }
 
-    [Editor(typeof(BrushDataEditor), typeof(UITypeEditor)),
-    TypeConverter(typeof(BrushDataConverter))]
+#if NETFRAMEWORK
+    [Editor(typeof(BrushDataEditor), typeof(UITypeEditor))]
+#else
+    [Editor("BrushDataEditor", typeof(UITypeEditor))]
+#endif
+    [TypeConverter(typeof(BrushDataConverter))]
     public interface IBrushData
     {
         Brush GetBrush();

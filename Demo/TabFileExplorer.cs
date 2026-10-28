@@ -267,8 +267,8 @@ namespace ObjectListViewDemo {
         private byte[] fileListViewState;
 
         private void buttonRestoreState_Click(object sender, EventArgs e) {
-            // Restore the state is just a single call
-            this.olvFiles.RestoreState(this.fileListViewState);
+            if (!this.olvFiles.RestoreState(this.fileListViewState))
+                MessageBox.Show(this, "The saved layout is incompatible. Save a new layout.", "Restore layout");
         }
 
         private void buttonColumns_Click(object sender, EventArgs e) {

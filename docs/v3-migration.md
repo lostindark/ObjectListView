@@ -2,9 +2,89 @@
 
 [Documentation index](README.md) | [Implementation plan](v3-plan.md)
 
-This guide covers the **enumerable collection API and generic-control milestones**, not a completed v3
+This guide covers the **enumerable collection API, generic-control, and platform migration milestones**, not a completed v3
 release. Grouping, styling, renderer/layout changes, and release versioning remain
-separate milestones. The target remains .NET Framework 4.6.2.
+separate milestones. Runtime targets are .NET Framework 4.6.2 and .NET 10 for Windows.
+
+## Runtime targets, designers, and saved layouts
+
+The six runtime/test projects multi-target `net462;net10.0-windows`.
+The .NET 10 runtime assemblies do not depend on System.Design or Designer SDK
+assemblies. Existing Framework designer types remain available in the Framework
+assembly. Modern designer integration is packaged separately as a preview; it
+must pass interactive Visual Studio acceptance checks before full parity is claimed.
+The modern designer uses a Framework 4.7.2 client, a .NET 10 server, and a shared
+protocol. This does not raise the Framework runtime requirement for applications.
+Use the NuGet package for modern designer evaluation; a plain DLL reference does
+not include the client/server design assets.
+
+The modern column editor uses the Designer SDK's collection-editor bridge.
+Printer brush/pen editors reuse the existing solid/gradient/hatch editing UI in
+a modal client-side dialog, editing a copy so Cancel does not mutate the source.
+Custom or texture brush editors are not added by this migration.
+
+Applications using ListViewPrinter must reference its matching runtime assembly
+from their normal build/deployment location. Do not reference DLLs inside the
+NuGet package's `Design\WinForms` directories: Visual Studio deduplicates designer
+discovery by package root, so a runtime reference into that directory can prevent
+the package's designer assets from being discovered.
+
+The modern printer runtime is not shipped as a server designer plugin. Loading
+it once as an application assembly and again as a designer plugin creates distinct
+`PenData`/brush type identities, causing apparently identical-type conversion
+errors when accepting an editor value. The Framework printer copy used by the
+Visual Studio client is a separate, intentional dependency.
+
+Packaged-consumer acceptance now covers standard/concrete typed toolbox creation,
+column editing across the eight control families, printer Cancel/Undo/Redo and
+supported brush styles, BindingSource/DataSet references and DataMember selection,
+image resources, localization, and generated-code rebuilds. Modern DataSource
+metadata uses the standard `AttributeProvider(typeof(IListSource))` design binding
+mechanism, rather than a Framework-only converter string.
+
+**Known preview limitation:** native header-divider dragging still fails modern
+designer acceptance, so its physical-resize Undo/Redo check remains blocked.
+Use the Columns editor or Properties to set widths. The smart-tag Columns action
+has been exercised; a complete smart-tag View round trip remains unverified.
+Visible-runtime checks exercised focus, cell editing, RTL geometry, keyboard
+input, and actual OLE drag/drop at 96 and 144 DPI on both targets. These checks do
+not claim ARM64 or every Windows/Visual Studio/monitor configuration.
+
+`SaveState()` still returns `byte[]`; `RestoreState(byte[])` still returns `bool`.
+Both runtimes now write the same explicit **OLVS schema 1** layout format.
+Old BinaryFormatter layouts are deliberately unsupported: discard the stored
+bytes and save a new layout. No BinaryFormatter compatibility switch is needed.
+
+All integers are signed little-endian Int32 values. Booleans are single bytes
+containing 0 or 1. The record is:
+
+| Offset | Field |
+| --- | --- |
+| 0 | Four ASCII bytes `OLVS` |
+| 4 | Schema version: 1 |
+| 8 | Column count |
+| 12 | WinForms View value |
+| 16 | Primary sort column's AllColumns index, or -1 |
+| 20 | WinForms SortOrder value |
+| 24 | ShowGroups boolean |
+| 25 onward | For each AllColumns entry: width (Int32), remembered display index (Int32), visible (boolean) |
+
+The exact length is `25 + 9 * columnCount`. Columns are matched by AllColumns
+position, as before; selection and scroll position are not stored. Hidden/new
+columns may have -1 or duplicate remembered display indexes. These are relative
+ordering keys, not current native indexes: after column removal a hidden column
+may retain a nonnegative key beyond the current column count. Widths retain the
+WinForms -1/-2 autosizing sentinels. Unsupported versions, invalid/truncated data,
+legacy layouts, and column-count mismatches return false without applying the
+layout. Null remains an argument error. Operational errors applying a valid
+layout propagate rather than being reported as success.
+
+```csharp
+if (!list.RestoreState(savedLayout)) {
+    // Inform the user that the saved layout cannot be restored.
+    // Keep the current layout and save a replacement when appropriate.
+}
+```
 
 ## Generic control hierarchy
 
@@ -52,6 +132,7 @@ removed columns are not retained by the cache.
 
 For designer use, declare a concrete, non-generic subclass such as
 `public class PersonListView : TypedObjectListView<Person> { }`.
+For toolbox insertion, place that concrete subclass in a named namespace.
 Typed controls are not subclasses of `ObjectListView`. Custom renderers,
 overlays, drag/drop implementations, and other integrations that previously
 accepted `ObjectListView` now accept `ObjectListViewBase`; update overrides and

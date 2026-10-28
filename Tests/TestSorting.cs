@@ -585,18 +585,20 @@ namespace BrightIdeasSoftware.Tests
                         int labelWidth = TextRenderer.MeasureText(graphics, label, priorityFont, Size.Empty, flags).Width;
                         Rectangle bounds = header.GetHeaderDrawRect(i);
                         Rectangle labelBounds = new Rectangle(bounds.Right - labelWidth - 16, bounds.Top, labelWidth, bounds.Height);
+                        Rectangle visibleLabelBounds = Rectangle.Intersect(labelBounds, new Rectangle(Point.Empty, bitmap.Size));
+                        int inkPixels = 0;
+                        for (int x = visibleLabelBounds.Left; x < visibleLabelBounds.Right; x++)
+                            for (int y = visibleLabelBounds.Top; y < visibleLabelBounds.Bottom; y++)
+                                if (bitmap.GetPixel(x, y) != withoutIndicators.GetPixel(x, y))
+                                    inkPixels++;
                         if (fieldCount > 1) {
                             using (Graphics expectedGraphics = Graphics.FromImage(withoutIndicators))
                                 TextRenderer.DrawText(expectedGraphics, label, priorityFont, labelBounds, SystemColors.GrayText,
                                     flags | TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.PreserveGraphicsClipping);
                         }
-                        Rectangle visibleLabelBounds = Rectangle.Intersect(labelBounds, new Rectangle(Point.Empty, bitmap.Size));
-                        int inkPixels = 0;
                         for (int x = visibleLabelBounds.Left; x < visibleLabelBounds.Right; x++)
                             for (int y = visibleLabelBounds.Top; y < visibleLabelBounds.Bottom; y++) {
                                 Assert.AreEqual(withoutIndicators.GetPixel(x, y), bitmap.GetPixel(x, y));
-                                if (bitmap.GetPixel(x, y).ToArgb() == SystemColors.GrayText.ToArgb())
-                                    inkPixels++;
                             }
                         if (fieldCount > 1)
                             Assert.IsGreaterThan(0, inkPixels);

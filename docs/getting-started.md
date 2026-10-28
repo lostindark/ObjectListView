@@ -22,7 +22,13 @@ The `ObjectListView` was designed to take away all these repetitive tasks and so
 
 There are two ways to use an `ObjectListView` in your project:
 
-To build this source tree, open *ObjectListView.sln* in Visual Studio with the .NET Framework 4.6.2 targeting pack and a compatible .NET SDK installed. All six projects use SDK-style project files and target .NET Framework 4.6.2. The solution contains the library, demos, printing components, and tests; older version-specific solution and project files are no longer maintained.
+To build this source tree, open *ObjectListView.sln* in Visual Studio 2026 with
+the .NET desktop development workload, .NET Framework 4.6.2 and 4.7.2 targeting
+packs, and the .NET 10 SDK. All six runtime/test projects target
+`net462;net10.0-windows`. The three additional designer projects provide the
+modern designer's Framework 4.7.2 client, .NET 10 server, and protocol.
+Applications using the Framework runtime still require only Framework 4.6.2.
+Modern designer integration is a preview until interactive acceptance is complete.
 
 The tests use MSTest.TestFramework 4.5.1, MSTest.TestAdapter, and Microsoft.NET.Test.Sdk, declared as package references in *Tests\Tests.csproj*. NuGet restores dependencies into its global cache, not a repository-local *packages* directory. The .NET 10 SDK requires MSBuild 18 or later (Visual Studio 2026). Restore and build from a Visual Studio Developer Command Prompt with:
 
@@ -34,10 +40,24 @@ Build and run the tests on Windows with:
 
 ```powershell
 msbuild Tests\Tests.csproj /restore /p:Configuration=Release
-dotnet test Tests\Tests.csproj --configuration Release --no-build --no-restore
+dotnet test Tests\Tests.csproj --configuration Release --framework net462 --no-build --no-restore
+dotnet test Tests\Tests.csproj --configuration Release --framework net10.0-windows --no-build --no-restore
 ```
 
-Full-framework MSBuild restores dependencies and builds the test project and library, including the existing non-string WinForms resources. This preserves the production assemblies' existing runtime dependencies; the `dotnet` build host cannot compile these resources directly without an additional resource-reader package. The second command runs the compiled suite without rebuilding it. Tests also appear in Visual Studio Test Explorer. WinForms tests run serially on an STA thread with a fresh, visually invisible form that does not activate or appear in the taskbar and is disposed after each test. They still require a Windows UI-capable environment. Build outputs are under each project's *bin\\Configuration\\net462* directory. Legacy MSBuild-based NuGet restore scripts and ReSharper/NCrunch settings are not required.
+Full-framework MSBuild preserves the existing Framework WinForms resource path.
+Modern targets use preserialized resources supported by .NET 10 without enabling
+BinaryFormatter. The test commands run one target at a time; do not run clipboard
+tests concurrently across target frameworks. Tests also appear in Visual Studio
+Test Explorer. WinForms tests execute serially on STA threads with fresh, invisible,
+non-activating forms and still require a Windows UI-capable environment.
+Outputs are under *bin\\Configuration\\TargetFramework*.
+
+Build the whole solution before packing the core project, since the NuGet package
+also includes isolated modern designer assets. Use the package for modern
+designer evaluation; a plain DLL reference does not install its client/server
+assets. Runtime deployment requires neither Visual Studio nor Designer SDK
+assemblies. See the [migration guide](v3-migration.md#runtime-targets-designers-and-saved-layouts)
+for the new cross-runtime saved-layout format and recreation of old layouts.
 
 1.  **Use the ObjectListView project**
 

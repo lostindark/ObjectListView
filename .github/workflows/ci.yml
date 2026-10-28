@@ -35,17 +35,27 @@ jobs:
           "PACKAGE_VERSION=3.0.$env:RUN_NUMBER" >> $env:GITHUB_ENV
 
       - name: Restore and build solution
-        run: msbuild ObjectListView.sln -restore -m -p:Configuration=Release "-p:Platform=Any CPU" "-p:PackageVersion=$env:PACKAGE_VERSION" -verbosity:minimal -nologo
+        run: |
+          foreach ($configuration in @('Debug', 'Release')) {
+            msbuild ObjectListView.sln -restore -m "-p:Configuration=$configuration" "-p:Platform=Any CPU" "-p:PackageVersion=$env:PACKAGE_VERSION" -verbosity:minimal -nologo
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: Run tests
-        run: dotnet test Tests\Tests.csproj --configuration Release --no-build --no-restore --logger trx --results-directory artifacts\TestResults
+        run: |
+          foreach ($configuration in @('Debug', 'Release')) {
+            foreach ($framework in @('net462', 'net10.0-windows')) {
+              dotnet test Tests\Tests.csproj --configuration $configuration --framework $framework --no-build --no-restore --blame-hang --blame-hang-timeout 60s --blame-hang-dump-type none --logger "trx;LogFileName=$configuration-$framework.trx" --results-directory "artifacts\TestResults\$configuration"
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+          }
 
       - name: Upload test results
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
         with:
           name: test-results
-          path: artifacts\TestResults\*.trx
+          path: artifacts\TestResults\**\*.trx
           if-no-files-found: ignore
 
       - name: Build NuGet packages
@@ -54,6 +64,9 @@ jobs:
             dotnet pack ObjectListView\ObjectListView.csproj --configuration Release --no-build --no-restore "-p:PackageVersion=$version" --output artifacts\packages
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
+
+      - name: Verify package assets and cross-target consumers
+        run: .\.github\scripts\Test-Package.ps1 -PackageDirectory artifacts\packages -PackageVersion "$env:PACKAGE_VERSION-preview"
 
       - name: Upload NuGet package
         uses: actions/upload-artifact@v7

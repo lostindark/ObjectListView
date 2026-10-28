@@ -43,11 +43,14 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
+#if NETFRAMEWORK
 using System.Windows.Forms.Design;
+#endif
 
 namespace BrightIdeasSoftware.Design
 {
 
+#if NETFRAMEWORK
     /// <summary>
     /// Designer for <see cref="ObjectListView"/> and its subclasses.
     /// </summary>
@@ -522,6 +525,8 @@ namespace BrightIdeasSoftware.Design
             return String.Format("{0} ({1})", base.GetDisplayText(value), col.AspectName);
         }
     }
+
+#endif
 
     /// <summary>
     /// Control how the overlay is presented in the IDE

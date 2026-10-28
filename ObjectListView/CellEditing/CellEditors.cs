@@ -194,6 +194,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the value shown by this editor
         /// </summary>
+        [DefaultValue(0)]
         public new int Value {
             get { return Decimal.ToInt32(base.Value); }
             set { base.Value = new Decimal(value); }
@@ -215,6 +216,7 @@ namespace BrightIdeasSoftware
             this.Maximum = 9999999;
         }
 
+        [DefaultValue(typeof(uint), "0")]
         public new uint Value {
             get { return Decimal.ToUInt32(base.Value); }
             set { base.Value = new Decimal(value); }
@@ -251,6 +253,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the value shown by this editor
         /// </summary>
+        [DefaultValue(false)]
         public bool? Value {
             get {
                 switch (this.CheckState) {
@@ -271,6 +274,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets how the checkbox will be aligned
         /// </summary>
+        [DefaultValue(HorizontalAlignment.Left)]
         public new HorizontalAlignment TextAlign {
             get {
                 switch (this.CheckAlign) {
@@ -317,6 +321,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the value shown by this editor
         /// </summary>
+        [DefaultValue(0.0)]
         public new double Value {
             get { return Convert.ToDouble(base.Value); }
             set { base.Value = Convert.ToDecimal(value); }

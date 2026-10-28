@@ -70,6 +70,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets or sets whether an item should be checked when it is clicked
         /// </summary>
+        [System.ComponentModel.DefaultValue(true)]
         public bool CheckedOnClick {
             get {
                 return this.CheckedListBoxControl.CheckOnClick;

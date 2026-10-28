@@ -64,8 +64,13 @@ namespace BrightIdeasSoftware.Tests
                     throw new InvalidOperationException("Cannot fetch this row.");
                 return "first";
             };
-            Assert.ThrowsExactly<InvalidOperationException>(() => list.AutoResizeColumnToContents(0));
-            Assert.AreEqual(123, column.Width);
+            try {
+                Assert.ThrowsExactly<InvalidOperationException>(() => list.AutoResizeColumnToContents(0));
+                Assert.AreEqual(123, column.Width);
+            }
+            finally {
+                column.AspectGetter = null;
+            }
         }
 
         [TestMethod]

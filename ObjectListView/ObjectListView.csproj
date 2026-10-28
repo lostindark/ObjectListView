@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFrameworks>net462;net10.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>BrightIdeasSoftware</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -9,7 +9,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>olv-keyfile.snk</AssemblyOriginatorKeyFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <GenerateResourceUsePreserializedResources>false</GenerateResourceUsePreserializedResources>
+    <GenerateResourceUsePreserializedResources Condition="'$(TargetFramework)' == 'net462'">false</GenerateResourceUsePreserializedResources>
     <PackageId>ObjectListView.WinForms</PackageId>
     <Version>3.0.0-dev</Version>
     <Title>ObjectListView for Windows Forms</Title>
@@ -22,11 +22,12 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageTags>WinForms;ListView;ObjectListView;Controls</PackageTags>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeModernDesigners</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <WarningLevel>1</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="Accessibility" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Design" />
@@ -55,6 +56,21 @@
     <EmbeddedResource Update="Properties\Resources.resx" Generator="ResXFileCodeGenerator" LastGenOutput="Resources.Designer.cs" SubType="Designer" />
     <EmbeddedResource Update="Utilities\ColumnSelectionForm.resx" DependentUpon="ColumnSelectionForm.cs" />
     <None Include="..\LICENSE" Pack="true" PackagePath="\" />
-    <None Update="README.md" Pack="true" PackagePath="\" />
+    <None Remove="README.md" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
+  <Target Name="IncludeModernDesigners" Condition="'$(TargetFramework)' == 'net10.0-windows'">
+    <ItemGroup>
+      <_DesignerFile Include="..\ObjectListView.Design.Client\bin\$(Configuration)\net472\ObjectListView.Design.Client.dll" TargetPath="Design\WinForms\ObjectListView.Design.Client.dll" />
+      <_DesignerFile Include="..\ObjectListView.Design.Protocol\bin\$(Configuration)\net472\ObjectListView.Design.Protocol.dll" TargetPath="Design\WinForms\ObjectListView.Design.Protocol.dll" />
+      <_DesignerFile Include="..\ListViewPrinter\bin\$(Configuration)\net462\ListViewPrinter.dll" TargetPath="Design\WinForms\ListViewPrinter.dll" />
+      <_DesignerFile Include="bin\$(Configuration)\net462\ObjectListView.dll" TargetPath="Design\WinForms\ObjectListView.dll" />
+      <_DesignerFile Include="..\ObjectListView.Design.Server\bin\$(Configuration)\net10.0-windows\ObjectListView.Design.Server.dll" TargetPath="Design\WinForms\Server\ObjectListView.Design.Server.dll" />
+      <_DesignerFile Include="..\ObjectListView.Design.Protocol\bin\$(Configuration)\net10.0-windows\ObjectListView.Design.Protocol.dll" TargetPath="Design\WinForms\Server\ObjectListView.Design.Protocol.dll" />
+    </ItemGroup>
+    <Error Condition="!Exists('%(_DesignerFile.Identity)')" Text="Missing designer asset %(_DesignerFile.Identity). Build ObjectListView.sln before packing." />
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(_DesignerFile)" />
+    </ItemGroup>
+  </Target>
 </Project>

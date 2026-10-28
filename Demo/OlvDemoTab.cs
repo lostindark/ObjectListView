@@ -25,6 +25,7 @@ namespace ObjectListViewDemo {
 
         protected virtual void InitializeTab() { }
 
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public ObjectListView ListView {
             get { return this.listView; }
             protected set { this.listView = value; }

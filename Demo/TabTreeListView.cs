@@ -221,7 +221,8 @@ namespace ObjectListViewDemo
 
         private void buttonRestoreState_Click(object sender, EventArgs e)
         {
-            this.treeListView.RestoreState(this.treeListViewViewState);
+            if (!this.treeListView.RestoreState(this.treeListViewViewState))
+                MessageBox.Show(this, "The saved layout is incompatible. Save a new layout.", "Restore layout");
         }
 
         private void buttonColumns_Click(object sender, EventArgs e)

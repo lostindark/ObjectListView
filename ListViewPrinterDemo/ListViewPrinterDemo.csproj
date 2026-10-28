@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFrameworks>net462;net10.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <OutputType>WinExe</OutputType>
     <RootNamespace>ListViewPrinterDemo</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <Prefer32Bit>false</Prefer32Bit>
-    <GenerateResourceUsePreserializedResources>false</GenerateResourceUsePreserializedResources>
+    <GenerateResourceUsePreserializedResources Condition="'$(TargetFramework)' == 'net462'">false</GenerateResourceUsePreserializedResources>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System.Deployment" />
+    <Compile Remove="Properties\Settings.Designer.cs" Condition="'$(TargetFramework)' != 'net462'" />
     <ProjectReference Include="..\ListViewPrinter\ListViewPrinter.csproj" />
     <ProjectReference Include="..\ObjectListView\ObjectListView.csproj" />
   </ItemGroup>

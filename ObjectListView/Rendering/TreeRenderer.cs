@@ -11,6 +11,7 @@
  */
 
 using System;
+using System.ComponentModel;
 using System.Collections.Generic;
 using System.Text;
 using System.Drawing;
@@ -39,6 +40,7 @@ namespace BrightIdeasSoftware {
             /// Should the renderer draw glyphs at the expansion points?
             /// </summary>
             /// <remarks>The expansion points will still function to expand/collapse even if this is false.</remarks>
+            [DefaultValue(true)]
             public bool IsShowGlyphs
             {
                 get { return isShowGlyphs; }
@@ -49,6 +51,7 @@ namespace BrightIdeasSoftware {
             /// <summary>
             /// Should the renderer draw lines connecting siblings?
             /// </summary>
+            [DefaultValue(true)]
             public bool IsShowLines
             {
                 get { return isShowLines; }
@@ -59,6 +62,7 @@ namespace BrightIdeasSoftware {
             /// <summary>
             /// Return the pen that will be used to draw the lines between branches
             /// </summary>
+            [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
             public Pen LinePen
             {
                 get { return linePen; }
@@ -72,6 +76,7 @@ namespace BrightIdeasSoftware {
             /// <remarks>
             /// This looks best with ShowLines = false
             /// </remarks>
+            [DefaultValue(false)]
             public bool UseTriangles
             {
                 get { return useTriangles; }

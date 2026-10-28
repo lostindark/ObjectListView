@@ -60,18 +60,5 @@ namespace BrightIdeasSoftware {
             this.CheckedObjects = value == null ? null : value as IList ?? CreateModelList(value);
         }
 
-        // Keep the serialized type name so previously saved layouts can still be restored.
-        [Serializable]
-        internal class ObjectListViewState {
-            public int VersionNumber = 1;
-            public int NumberOfColumns = 1;
-            public View CurrentView;
-            public int SortColumn = -1;
-            public bool IsShowingGroups;
-            public SortOrder LastSortOrder = SortOrder.None;
-            public ArrayList ColumnIsVisible = new ArrayList();
-            public ArrayList ColumnDisplayIndicies = new ArrayList();
-            public ArrayList ColumnWidths = new ArrayList();
-        }
     }
 }

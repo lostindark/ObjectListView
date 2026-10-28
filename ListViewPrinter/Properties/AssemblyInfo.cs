@@ -2,6 +2,12 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+[assembly: InternalsVisibleTo("ObjectListView.Design.Client")]
+
+#if NET
+[assembly: System.Runtime.Versioning.SupportedOSPlatform("windows7.0")]
+#endif
+
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.

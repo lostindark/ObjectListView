@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFrameworks>net462;net10.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <IsTestProject>true</IsTestProject>
     <IsPackable>false</IsPackable>
@@ -16,10 +16,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="System.Design" />
+    <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="Program.cs" Condition="'$(TargetFramework)' == 'net10.0-windows'" />
     <ProjectReference Include="..\ObjectListView\ObjectListView.csproj" />
+    <ProjectReference Include="..\ListViewPrinter\ListViewPrinter.csproj" />
+    <Compile Include="..\ObjectListView.Design.Protocol\PrinterEditorState.cs" Link="PrinterEditorState.cs" />
   </ItemGroup>
 </Project>

@@ -18,7 +18,7 @@ ObjectListView is a C# wrapper around a .NET ListView. It makes the ListView muc
 | History | [What's new](whats-new.md), [change log](changelog.md), [technical blog](blog.md) |
 | Historical Python documentation | [ListCtrlPrinter](list-ctrl-printer.md) |
 
-These guides were converted from the upstream Sphinx documentation by Phillip Piper and Bright Ideas Software. Their version history, examples, and illustrations are preserved. The current fork targets **.NET Framework 4.6.2**; see [Getting started](getting-started.md#first-steps) for current build instructions. Older operating-system references, toolchain advice, and the wxPython guide are historical.
+These guides were converted from the upstream Sphinx documentation by Phillip Piper and Bright Ideas Software. Their version history, examples, and illustrations are preserved. The current fork targets **.NET Framework 4.6.2 and .NET 10 for Windows**; see [Getting started](getting-started.md#first-steps) for current build instructions. Older operating-system references, toolchain advice, and the wxPython guide are historical.
 
 The original [documentation website](https://objectlistview.sourceforge.net/cs/index.html) remains available. Local Markdown pages can be read directly on GitHub without Sphinx. Named anchors preserve the original cross-references; archived Flash demonstrations are download links rather than unsupported embeds.
 

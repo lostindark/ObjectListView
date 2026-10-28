@@ -566,6 +566,7 @@ namespace BrightIdeasSoftware.Tests {
             }
         }
 
+#if NETFRAMEWORK
         [TestMethod]
         public void Test_ConcreteTypedControl_CanBeHostedByDesigner() {
             using (var surface = new DesignSurface(typeof(Form))) {
@@ -579,6 +580,18 @@ namespace BrightIdeasSoftware.Tests {
                 }
                 list.Columns.Add(new OLVColumn("Name", "Name"));
                 Assert.AreEqual(1, list.Columns.Count);
+            }
+        }
+#endif
+
+        [TestMethod]
+        public void Test_ConcreteTypedControl_ModelPropertiesAreNotSerialized() {
+            using (var list = new PersonListView()) {
+                foreach (string name in new[] { "Objects", "Rows", "Typed", "ModelObjects" }) {
+                    PropertyDescriptor property = TypeDescriptor.GetProperties(list)[name];
+                    Assert.IsFalse(property.IsBrowsable, name);
+                    Assert.AreEqual(DesignerSerializationVisibility.Hidden, property.SerializationVisibility, name);
+                }
             }
         }
 
@@ -706,6 +719,7 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         private sealed class ProjectedPersonListView : TypedObjectListView<Person> {
+            [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
             public Person Projection { get; set; }
             public override Person GetModelObject(int index) {
                 return this.Projection ?? base.GetModelObject(index);
@@ -713,6 +727,7 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         private sealed class TypedStateGuardListView : TypedObjectListView<Person> {
+            [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
             public bool RejectChanges { get; set; }
             public override Person SelectedObject {
                 get { return base.SelectedObject; }
@@ -733,6 +748,7 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         private sealed class CountingVirtualListView : VirtualObjectListView {
+            [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
             public int ReadCount { get; set; }
             public override object GetModelObject(int index) {
                 this.ReadCount++;
@@ -784,6 +800,7 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         private sealed class PropertyGuardListView : ObjectListView {
+            [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
             public bool RejectPropertyChanges { get; set; }
 
             public override IList SelectedObjects {

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFrameworks>net462;net10.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>BrightIdeasSoftware</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -8,7 +8,7 @@
     <Deterministic>false</Deterministic>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System.Design" />
+    <Reference Include="System.Design" Condition="'$(TargetFramework)' == 'net462'" />
     <ProjectReference Include="..\ObjectListView\ObjectListView.csproj" />
   </ItemGroup>
   <ItemGroup>

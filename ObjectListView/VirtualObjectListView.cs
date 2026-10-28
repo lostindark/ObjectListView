@@ -77,6 +77,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
+using MethodInvoker = System.Windows.Forms.MethodInvoker;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using System.Runtime.InteropServices;
@@ -241,6 +242,7 @@ namespace BrightIdeasSoftware
         /// <remarks>
         /// This property is an implementation detail and should not be altered.
         /// </remarks>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         protected internal bool CheckedObjectsMustStillExistInList {
             get { return checkedObjectsMustStillExistInList; }
             set { checkedObjectsMustStillExistInList = value; }
@@ -405,6 +407,7 @@ namespace BrightIdeasSoftware
                 if (value == this.VirtualListSize || value < 0)
                     return;
 
+#if NETFRAMEWORK
                 // Get around the 'private' marker on 'virtualListSize' field using reflection
                 if (virtualListSizeFieldInfo == null) {
                     virtualListSizeFieldInfo = typeof(ListView).GetField("virtualListSize", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -417,9 +420,15 @@ namespace BrightIdeasSoftware
                 // Send a raw message to change the virtual list size *without* changing the scroll position
                 if (this.IsHandleCreated && !this.DesignMode)
                     NativeMethods.SetItemCount(this, value);
+#else
+                // Modern WinForms preserves the top item in its public setter.
+                base.VirtualListSize = value;
+#endif
             }
         }
+#if NETFRAMEWORK
         static private FieldInfo virtualListSizeFieldInfo;
+#endif
 
         #endregion
 
@@ -1193,6 +1202,7 @@ namespace BrightIdeasSoftware
                 // Ignore any failures
             }
 
+#if NETFRAMEWORK
             // In strange cases, this can throw the exceptions too. The best we can do is ignore them :(
             try {
                 this.VirtualListSize = newSize;
@@ -1203,6 +1213,9 @@ namespace BrightIdeasSoftware
             catch (NullReferenceException) {
                 // pass
             }
+#else
+            this.VirtualListSize = newSize;
+#endif
 
             // Tell the world that the size of the list has changed
             this.OnItemsChanged(new ItemsChangedEventArgs(oldSize, this.VirtualListSize));

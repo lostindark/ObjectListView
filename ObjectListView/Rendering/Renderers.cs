@@ -3754,6 +3754,7 @@ namespace BrightIdeasSoftware {
         /// </summary>
         [Category("ObjectListView"),
         Description("The extra space that surrounds the cell when the SizingMode is TextBounds")]
+        [DefaultValue(typeof(Size), "10, 10")]
         public Size? ButtonPadding
         {
             get { return this.buttonPadding; }

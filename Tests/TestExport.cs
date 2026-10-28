@@ -84,7 +84,14 @@ namespace BrightIdeasSoftware.Tests
 
         [TestMethod]
         public void Test_CopyObjectsToClipboard_SingleUseQuery() {
-            IDataObject previous = Clipboard.GetDataObject();
+            IDataObject clipboard = Clipboard.GetDataObject();
+            DataObject previous = null;
+            if (clipboard != null) {
+                previous = new DataObject();
+                // Materialize before replacing the OLE clipboard; its IDataObject is not a snapshot.
+                foreach (string format in clipboard.GetFormats(false))
+                    previous.SetData(format, false, clipboard.GetData(format, false));
+            }
             try {
                 this.olv.SetObjects(PersonDb.All);
                 this.olv.CopyObjectsToClipboard(new SingleUseEnumerable<Person>(PersonDb.All.Take(2)));

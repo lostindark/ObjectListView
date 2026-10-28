@@ -53,13 +53,14 @@
 
 using System;
 using System.Drawing;
-using System.Runtime.Remoting.Messaging;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Windows.Forms.VisualStyles;
 using System.Drawing.Drawing2D;
 using BrightIdeasSoftware.Properties;
+#if NETFRAMEWORK
 using System.Security.Permissions;
+#endif
 
 namespace BrightIdeasSoftware {
 
@@ -395,7 +396,9 @@ namespace BrightIdeasSoftware {
         /// Override the basic message pump
         /// </summary>
         /// <param name="m"></param>
+#if NETFRAMEWORK
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
+#endif
         protected override void WndProc(ref Message m) {
             const int WM_DESTROY = 2;
             const int WM_SETCURSOR = 0x20;

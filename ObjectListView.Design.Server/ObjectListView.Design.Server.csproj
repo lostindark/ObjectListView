@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WinForms.Designer.SDK" Version="1.6.0" PrivateAssets="all" />
+    <ProjectReference Include="..\ObjectListView\ObjectListView.csproj" />
+    <ProjectReference Include="..\ObjectListView.Design.Protocol\ObjectListView.Design.Protocol.csproj" />
+    <ProjectReference Include="..\ListViewPrinter\ListViewPrinter.csproj" />
+    <Compile Include="..\ObjectListView.Design.Protocol\PrinterEditorState.cs" Link="PrinterEditorState.cs" />
+  </ItemGroup>
+</Project>

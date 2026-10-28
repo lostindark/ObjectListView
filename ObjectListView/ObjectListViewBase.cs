@@ -597,11 +597,10 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using MethodInvoker = System.Windows.Forms.MethodInvoker;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
-using System.Runtime.Serialization.Formatters;
 using System.Threading;
 
 namespace BrightIdeasSoftware
@@ -657,7 +656,11 @@ namespace BrightIdeasSoftware
     /// <item><description>System.Windows.Forms (obviously)</description></item>
     /// </list>
     /// </remarks>
-    [Designer(typeof(BrightIdeasSoftware.Design.ObjectListViewDesigner))]   
+#if NETFRAMEWORK
+    [Designer(typeof(BrightIdeasSoftware.Design.ObjectListViewDesigner))]
+#else
+    [Designer("ObjectListViewDesigner")]
+#endif
     public abstract partial class ObjectListViewBase : ListView, ISupportInitialize {
         internal int ModelRowsVersion { get; private set; }
 
@@ -1216,6 +1219,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Should this list show checkboxes?
         /// </summary>
+        [DefaultValue(false)]
         public new bool CheckBoxes {
             get { return base.CheckBoxes; }
             set {
@@ -1356,7 +1360,11 @@ namespace BrightIdeasSoftware
         /// Gets Columns for this list. We hide the original so we can associate
         /// a specialised editor with it.
         /// </summary>
+#if NETFRAMEWORK
         [Editor("BrightIdeasSoftware.Design.OLVColumnCollectionEditor", "System.Drawing.Design.UITypeEditor")]
+#else
+        [Editor("OLVColumnCollectionEditor", "System.Drawing.Design.UITypeEditor")]
+#endif
         public new ListView.ColumnHeaderCollection Columns {
             get {
                 return base.Columns;
@@ -3236,6 +3244,7 @@ namespace BrightIdeasSoftware
         /// as this will work:
         /// <code>listView1.SmallImageList = listView1.SmallImageList;</code></para>
         /// </remarks>
+        [DefaultValue(null)]
         public new ImageList SmallImageList {
             get { return this.shadowedImageList; }
             set {
@@ -5494,40 +5503,35 @@ namespace BrightIdeasSoftware
         /// </list>
         /// </para>
         /// <para>
-        /// It does not include selection or the scroll position.
+        /// It does not include selection or the scroll position. Layouts use the versioned OLVS
+        /// format shared by .NET Framework and modern .NET, not BinaryFormatter serialization.
         /// </para>
         /// </remarks>
         /// <returns>A byte array representing the state of the ObjectListView</returns>
         public virtual byte[] SaveState() {
-            ObjectListView.ObjectListViewState olvState = new ObjectListView.ObjectListViewState();
-            olvState.VersionNumber = 1;
-            olvState.NumberOfColumns = this.AllColumns.Count;
-            olvState.CurrentView = this.View;
-
-            // If we have a sort column, it is possible that it is not currently being shown, in which
-            // case, it's Index will be -1. So we calculate its index directly. Technically, the sort
-            // column does not even have to a member of AllColumns, in which case IndexOf will return -1,
-            // which is works fine since we have no way of restoring such a column anyway.
-            if (this.PrimarySortColumn != null)
-                olvState.SortColumn = this.AllColumns.IndexOf(this.PrimarySortColumn);
-            olvState.LastSortOrder = this.PrimarySortOrder;
-            olvState.IsShowingGroups = this.ShowGroups;
-
             if (this.AllColumns.Count > 0 && this.AllColumns[0].LastDisplayIndex == -1)
                 this.RememberDisplayIndicies();
 
             foreach (OLVColumn column in this.AllColumns) {
-                olvState.ColumnIsVisible.Add(column.IsVisible);
-                olvState.ColumnDisplayIndicies.Add(column.LastDisplayIndex);
-                olvState.ColumnWidths.Add(column.Width);
+                if (column.Index >= 0)
+                    column.LastDisplayIndex = column.DisplayIndex;
             }
 
-            // Now that we have stored our state, convert it to a byte array
-            using (MemoryStream ms = new MemoryStream()) {
-                BinaryFormatter serializer = new BinaryFormatter();
-                serializer.AssemblyFormat = FormatterAssemblyStyle.Simple;
-                serializer.Serialize(ms, olvState);
-                return ms.ToArray();
+            using (MemoryStream stream = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(stream)) {
+                writer.Write(0x53564C4F); // "OLVS", little endian.
+                writer.Write(1);
+                writer.Write(this.AllColumns.Count);
+                writer.Write((int)this.View);
+                writer.Write(this.PrimarySortColumn == null ? -1 : this.AllColumns.IndexOf(this.PrimarySortColumn));
+                writer.Write((int)this.PrimarySortOrder);
+                writer.Write(this.ShowGroups);
+                foreach (OLVColumn column in this.AllColumns) {
+                    writer.Write(column.Width);
+                    writer.Write(column.LastDisplayIndex);
+                    writer.Write(column.IsVisible);
+                }
+                return stream.ToArray();
             }
         }
 
@@ -5536,41 +5540,58 @@ namespace BrightIdeasSoftware
         /// produced by SaveState()
         /// </summary>
         /// <param name="state">A byte array returned from SaveState()</param>
-        /// <returns>Returns true if the state was restored</returns>
+        /// <returns>Returns true if the state was restored. Invalid, incompatible, and legacy
+        /// BinaryFormatter layouts return false without changing the control.</returns>
         public virtual bool RestoreState(byte[] state) {
-            using (MemoryStream ms = new MemoryStream(state)) {
-                BinaryFormatter deserializer = new BinaryFormatter();
-                ObjectListView.ObjectListViewState olvState;
-                try {
-                    olvState = deserializer.Deserialize(ms) as ObjectListView.ObjectListViewState;
-                } catch (System.Runtime.Serialization.SerializationException) {
+            if (state == null)
+                throw new ArgumentNullException("state");
+
+            // Validate length before allocating or reading. Each column has two Int32s and one byte.
+            if (state.LongLength != 25L + 9L * this.AllColumns.Count)
+                return false;
+
+            using (BinaryReader reader = new BinaryReader(new MemoryStream(state, false))) {
+                if (reader.ReadInt32() != 0x53564C4F || reader.ReadInt32() != 1 ||
+                    reader.ReadInt32() != this.AllColumns.Count)
                     return false;
-                }
-                // The number of columns has changed. We have no way to match old
-                // columns to the new ones, so we just give up.
-                if (olvState == null || olvState.NumberOfColumns != this.AllColumns.Count)
+
+                int view = reader.ReadInt32();
+                int sortColumn = reader.ReadInt32();
+                int sortOrder = reader.ReadInt32();
+                byte showGroups = reader.ReadByte();
+                if (view < (int)View.LargeIcon || view > (int)View.Tile ||
+                    sortColumn < -1 || sortColumn >= this.AllColumns.Count ||
+                    sortOrder < (int)SortOrder.None || sortOrder > (int)SortOrder.Descending ||
+                    showGroups > 1)
                     return false;
-                if (olvState.SortColumn == -1) {
-                    this.PrimarySortColumn = null;
-                    this.PrimarySortOrder = SortOrder.None;
-                } else {
-                    this.PrimarySortColumn = this.AllColumns[olvState.SortColumn];
-                    this.PrimarySortOrder = olvState.LastSortOrder;
+
+                int[] widths = new int[this.AllColumns.Count];
+                int[] displayIndices = new int[this.AllColumns.Count];
+                bool[] visible = new bool[this.AllColumns.Count];
+                for (int i = 0; i < this.AllColumns.Count; i++) {
+                    widths[i] = reader.ReadInt32();
+                    displayIndices[i] = reader.ReadInt32();
+                    byte isVisible = reader.ReadByte();
+                    // Hidden columns can retain ordering keys beyond the current count after removals.
+                    if (widths[i] < -2 || displayIndices[i] < -1 || isVisible > 1)
+                        return false;
+                    visible[i] = isVisible == 1;
                 }
-                for (int i = 0; i < olvState.NumberOfColumns; i++) {
+
+                this.PrimarySortColumn = sortColumn == -1 ? null : this.AllColumns[sortColumn];
+                this.PrimarySortOrder = sortColumn == -1 ? SortOrder.None : (SortOrder)sortOrder;
+                for (int i = 0; i < this.AllColumns.Count; i++) {
                     OLVColumn column = this.AllColumns[i];
-                    column.Width = (int)olvState.ColumnWidths[i];
-                    column.IsVisible = (bool)olvState.ColumnIsVisible[i];
-                    column.LastDisplayIndex = (int)olvState.ColumnDisplayIndicies[i];
+                    column.Width = widths[i];
+                    column.IsVisible = visible[i];
+                    column.LastDisplayIndex = displayIndices[i];
                 }
-// ReSharper disable RedundantCheckBeforeAssignment
-                if (olvState.IsShowingGroups != this.ShowGroups)
-// ReSharper restore RedundantCheckBeforeAssignment
-                    this.ShowGroups = olvState.IsShowingGroups;
-                if (this.View == olvState.CurrentView)
+                if ((showGroups == 1) != this.ShowGroups)
+                    this.ShowGroups = showGroups == 1;
+                if (this.View == (View)view)
                     this.RebuildColumns();
                 else
-                    this.View = olvState.CurrentView;
+                    this.View = (View)view;
             }
 
             return true;
@@ -7387,7 +7408,7 @@ namespace BrightIdeasSoftware
 
             // Sort columns by display order
             List<OLVColumn> columns = new List<OLVColumn>(this.AllColumns);
-            columns.Sort(delegate(OLVColumn x, OLVColumn y) { return (x.LastDisplayIndex - y.LastDisplayIndex); });
+            columns.Sort(delegate(OLVColumn x, OLVColumn y) { return x.LastDisplayIndex.CompareTo(y.LastDisplayIndex); });
 
             // Build menu from sorted columns
             foreach (OLVColumn col in columns) {

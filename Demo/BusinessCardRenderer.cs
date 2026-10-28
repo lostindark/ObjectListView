@@ -15,6 +15,35 @@ namespace ObjectListViewDemo {
     /// but it is obvious</remarks>
     public class BusinessCardRenderer : AbstractRenderer
     {
+        private const int Spacing = 8;
+        private const int BorderInset = 2;
+        private const float TitleFontSize = 11;
+        private const float DetailFontSize = 8;
+
+        internal static Size ScaleSize(Graphics graphics, Size size) {
+            return Size.Ceiling(new SizeF(size.Width * graphics.DpiX / 96f, size.Height * graphics.DpiY / 96f));
+        }
+
+        internal static Size MeasureCardSize(Graphics graphics, ObjectListViewBase list, int width) {
+            Size size = ScaleSize(graphics, new Size(width, 120));
+            Size spacing = ScaleSize(graphics, new Size(Spacing, Spacing));
+            Size inset = ScaleSize(graphics, new Size(BorderInset, BorderInset));
+            int rows = 0;
+            foreach (OLVColumn column in list.Columns) {
+                if (column.IsTileViewColumn)
+                    rows++;
+            }
+            using (var titleFont = new Font("Tahoma", TitleFontSize))
+            using (var detailFont = new Font("Tahoma", DetailFontSize))
+            using (var format = new StringFormat(StringFormatFlags.NoWrap)) {
+                float titleHeight = graphics.MeasureString("Wj", titleFont, size.Width, format).Height;
+                float rowHeight = graphics.MeasureString("Wj", detailFont, size.Width, format).Height;
+                int contentHeight = (int)Math.Ceiling(inset.Height * 2 + spacing.Height * 3 +
+                    titleHeight + rows * rowHeight);
+                return new Size(size.Width, Math.Max(size.Height, contentHeight));
+            }
+        }
+
         public override bool RenderItem(DrawListViewItemEventArgs e, Graphics g, Rectangle itemBounds, object rowObject)
         {
             // If we're in any other view than Tile, return false to say that we haven't done
@@ -58,13 +87,14 @@ namespace ObjectListViewDemo {
 
         public void DrawBusinessCard(Graphics g, Rectangle itemBounds, object rowObject, ObjectListViewBase olv, OLVListItem item)
         {
-            const int spacing = 8;
+            Size spacing = ScaleSize(g, new Size(Spacing, Spacing));
+            Size inset = ScaleSize(g, new Size(BorderInset, BorderInset));
 
             // Allow a border around the card
-            itemBounds.Inflate(-2, -2);
+            itemBounds.Inflate(-inset.Width, -inset.Height);
 
             // Draw card background
-            const int rounding = 20;
+            int rounding = ScaleSize(g, new Size(20, 20)).Width;
             GraphicsPath path = this.GetRoundedRect(itemBounds, rounding);
             g.FillPath(this.BackBrush, path);
             g.DrawPath(this.BorderPen, path);
@@ -73,20 +103,18 @@ namespace ObjectListViewDemo {
 
             // Draw the photo
             Rectangle photoRect = itemBounds;
-            photoRect.Inflate(-spacing, -spacing);
+            photoRect.Inflate(-spacing.Width, -spacing.Height);
             Person person = rowObject as Person;
             if (person != null)
             {
-                photoRect.Width = 80;
+                photoRect.Width = ScaleSize(g, new Size(80, 0)).Width;
                 string photoFile = String.Format(@".\Photos\{0}.png", person.Photo);
                 if (File.Exists(photoFile))
                 {
-                    Image photo = Image.FromFile(photoFile);
-                    if (photo.Width > photoRect.Width)
-                        photoRect.Height = (int)(photo.Height * ((float)photoRect.Width / photo.Width));
-                    else
-                        photoRect.Height = photo.Height;
-                    g.DrawImage(photo, photoRect);
+                    using (Image photo = Image.FromFile(photoFile)) {
+                        photoRect.Height = (int)Math.Round(photo.Height * ((float)photoRect.Width / photo.Width));
+                        g.DrawImage(photo, photoRect);
+                    }
                 }
                 else
                 {
@@ -96,8 +124,8 @@ namespace ObjectListViewDemo {
 
             // Now draw the text portion
             RectangleF textBoxRect = photoRect;
-            textBoxRect.X += (photoRect.Width + spacing);
-            textBoxRect.Width = itemBounds.Right - textBoxRect.X - spacing;
+            textBoxRect.X += (photoRect.Width + spacing.Width);
+            textBoxRect.Width = itemBounds.Right - textBoxRect.X - spacing.Width;
 
             StringFormat fmt = new StringFormat(StringFormatFlags.NoWrap);
             fmt.Trimming = StringTrimming.EllipsisCharacter;
@@ -105,21 +133,21 @@ namespace ObjectListViewDemo {
             fmt.LineAlignment = StringAlignment.Near;
             String txt = item.Text;
 
-            using (Font font = new Font("Tahoma", 11))
+            using (Font font = new Font("Tahoma", TitleFontSize))
             {
                 // Measure the height of the title
                 SizeF size = g.MeasureString(txt, font, (int)textBoxRect.Width, fmt);
                 // Draw the title
                 RectangleF r3 = textBoxRect;
                 r3.Height = size.Height;
-                path = this.GetRoundedRect(r3, 15);
+                path = this.GetRoundedRect(r3, ScaleSize(g, new Size(15, 15)).Width);
                 g.FillPath(this.HeaderBackBrush, path);
                 g.DrawString(txt, font, this.HeaderTextBrush, textBoxRect, fmt);
-                textBoxRect.Y += size.Height + spacing;
+                textBoxRect.Y += size.Height + spacing.Height;
             }
 
             // Draw the other bits of information
-            using (Font font = new Font("Tahoma", 8))
+            using (Font font = new Font("Tahoma", DetailFontSize))
             {
                 SizeF size = g.MeasureString("Wj", font, itemBounds.Width, fmt);
                 textBoxRect.Height = size.Height;

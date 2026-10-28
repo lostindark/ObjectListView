@@ -116,19 +116,19 @@
             // splitContainer1.Panel1
             // 
             this.splitContainer1.Panel1.Controls.Add(this.groupBox1);
+            this.splitContainer1.Panel1.Padding = new System.Windows.Forms.Padding(6, 1, 5, 1);
             // 
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.groupBox3);
+            this.splitContainer1.Panel2.Padding = new System.Windows.Forms.Padding(6, 4, 5, 4);
             this.splitContainer1.Size = new System.Drawing.Size(810, 450);
             this.splitContainer1.SplitterDistance = 154;
             this.splitContainer1.TabIndex = 21;
             // 
             // groupBox1
             // 
-            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox1.Controls.Add(this.dataGridView1);
             this.groupBox1.Controls.Add(this.buttonResetData);
             this.groupBox1.Location = new System.Drawing.Point(6, 1);
@@ -143,6 +143,7 @@
             this.dataGridView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.dataGridView1.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView1.Location = new System.Drawing.Point(6, 19);
             this.dataGridView1.Name = "dataGridView1";
@@ -163,9 +164,7 @@
             // 
             // groupBox3
             // 
-            this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox3.Controls.Add(this.label22);
             this.groupBox3.Controls.Add(this.comboBoxEditable);
             this.groupBox3.Controls.Add(this.checkBoxPause);
@@ -186,7 +185,6 @@
             // label22
             // 
             this.label22.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.label22.AutoSize = true;
             this.label22.Location = new System.Drawing.Point(689, 131);
             this.label22.Name = "label22";
             this.label22.Size = new System.Drawing.Size(48, 13);
@@ -249,7 +247,6 @@
             // label11
             // 
             this.label11.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.label11.AutoSize = true;
             this.label11.Location = new System.Drawing.Point(689, 172);
             this.label11.Name = "label11";
             this.label11.Size = new System.Drawing.Size(66, 13);
@@ -259,7 +256,6 @@
             // label8
             // 
             this.label8.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.label8.AutoSize = true;
             this.label8.Location = new System.Drawing.Point(689, 89);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(33, 13);
@@ -328,7 +324,7 @@
             this.olvData.ShowGroups = false;
             this.olvData.ShowImagesOnSubItems = true;
             this.olvData.ShowItemToolTips = true;
-            this.olvData.Size = new System.Drawing.Size(677, 259);
+            this.olvData.Size = new System.Drawing.Size(667, 259);
             this.olvData.SmallImageList = this.imageListSmall;
             this.olvData.TabIndex = 0;
             this.olvData.UseCellFormatEvents = true;
@@ -513,8 +509,7 @@
             // 
             // TabDataSet
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.groupBox13);
             this.Controls.Add(this.label3);

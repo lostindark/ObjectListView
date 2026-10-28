@@ -37,7 +37,10 @@ namespace ObjectListViewDemo
             // Setup some configuration of the ObjectListView itself
             // There is also the standard configuration in OlvDemoTab.SetupGeneralListViewEvents()
 
-            this.olvComplex.TileSize = new Size(250, 120);
+            this.UpdateBusinessCardSize();
+#if !NETFRAMEWORK
+            this.olvComplex.DpiChangedAfterParent += delegate { this.UpdateBusinessCardSize(); };
+#endif
 
             // Do some fancy editing
             this.columnCookingSkill.CellEditUseWholeCell = true;
@@ -113,7 +116,14 @@ namespace ObjectListViewDemo
             // non-details view. This code installs a custom renderer that draws
             // something that looks like a BusinessCard when the OLV is in Tile view
             this.olvComplex.ItemRenderer = new BusinessCardRenderer();
-            this.olvComplex.TileSize = new Size(230, 120);
+        }
+
+        private void UpdateBusinessCardSize() {
+            using (Graphics graphics = this.olvComplex.CreateGraphics()) {
+                Size size = BusinessCardRenderer.MeasureCardSize(graphics, this.olvComplex, 250);
+                if (this.olvComplex.TileSize != size)
+                    this.olvComplex.TileSize = size;
+            }
         }
 
         private void SetupColumns() {
@@ -504,6 +514,7 @@ namespace ObjectListViewDemo
 
         private void comboBoxView_SelectedIndexChanged(object sender, EventArgs e) {
             Coordinator.ChangeView(this.ListView, (ComboBox) sender);
+            this.UpdateBusinessCardSize();
 
             // Make the hot item show an overlay when it changes
             if (this.olvComplex.UseTranslucentHotItem)

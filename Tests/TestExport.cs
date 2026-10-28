@@ -67,7 +67,11 @@ namespace BrightIdeasSoftware.Tests
             source.Clear();
             data.CreateTextFormats();
             Assert.AreEqual(2, data.ModelObjects.Count);
+#if NETFRAMEWORK
             string text = (string)data.GetData(typeof(string));
+#else
+            Assert.IsTrue(data.TryGetData<string>(out string text));
+#endif
             Assert.Contains("name\toccupation\t300", text);
             Assert.Contains("name2\toccupation\t200", text);
             Assert.DoesNotContain("name4\t", text);

@@ -86,6 +86,25 @@ if (!list.RestoreState(savedLayout)) {
 }
 ```
 
+## DPI-aware hosts and column widths
+
+The host application chooses its DPI awareness. The demos use system awareness
+on `net462` and `PerMonitorV2` on .NET 10; ObjectListView does not set process DPI
+policy.
+
+Initial column widths and minimum/maximum widths use a 96-DPI design baseline.
+At runtime they scale to the native window DPI after component initialization,
+including hidden and fixed-width columns. On .NET 10, subsequent DPI changes
+rescale current widths rather than restoring defaults, preserving user sizing.
+Handle recreation at the same DPI does not apply the scale again.
+
+Remove duplicate manual startup scaling of these initial values. Explicit widths
+assigned after initialization and native handle creation, and widths in saved
+layouts, remain current device-pixel values; OLVS is not a DPI-independent layout
+format. Framework 4.6.2
+system-aware windows can still be bitmap-scaled when moved between monitors with
+different DPI.
+
 ## Generic control hierarchy
 
 `TypedObjectListView<T>` is now a Windows Forms control with owned `List<T>`

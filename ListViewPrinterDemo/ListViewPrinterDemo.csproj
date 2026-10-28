@@ -9,6 +9,9 @@
     <GenerateResourceUsePreserializedResources Condition="'$(TargetFramework)' == 'net462'">false</GenerateResourceUsePreserializedResources>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net462'">
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Properties\Settings.Designer.cs" Condition="'$(TargetFramework)' != 'net462'" />
     <ProjectReference Include="..\ListViewPrinter\ListViewPrinter.csproj" />

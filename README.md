@@ -65,6 +65,18 @@ packing fails explicitly if required designer outputs are missing. Modern design
 assets are isolated under the package's `Design\WinForms` directories and are not
 runtime dependencies. A plain DLL reference does not install these assets.
 
+Both demos use system-DPI awareness on .NET Framework 4.6.2 and per-monitor V2
+awareness on .NET 10, retaining their existing font defaults. Framework windows
+can still be bitmap-scaled when moved to a monitor with a different DPI.
+The main demo's tabs inherit the form's scaling without separate
+`AutoScaleDimensions`, avoiding premature scaling of anchored child controls.
+Applications consuming ObjectListView configure their own process DPI awareness;
+the control library does not change it.
+Runtime column widths and their minimum/maximum limits scale from 96-DPI design
+values to the window's DPI, including hidden and fixed-width columns. .NET 10
+also rescales current user widths on DPI changes. Do not pre-scale the same
+initial column values a second time; see the [DPI migration notes](docs/v3-migration.md#dpi-aware-hosts-and-column-widths).
+
 ## Tests
 
 On Windows, build the MSTest 4.5.1 suite with full-framework MSBuild, then run it with `dotnet test`:

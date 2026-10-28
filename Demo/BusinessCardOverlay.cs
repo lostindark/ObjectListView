@@ -28,9 +28,11 @@ namespace ObjectListViewDemo {
             if (item == null)
                 return;
 
-            Size cardSize = new Size(250, 120);
+            Size cardSize = BusinessCardRenderer.MeasureCardSize(g, olv, 250);
+            Size margin = BusinessCardRenderer.ScaleSize(g, new Size(8, 8));
             Rectangle cardBounds = new Rectangle(
-                r.Right - cardSize.Width - 8, r.Bottom - cardSize.Height - 8, cardSize.Width, cardSize.Height);
+                r.Right - cardSize.Width - margin.Width, r.Bottom - cardSize.Height - margin.Height,
+                cardSize.Width, cardSize.Height);
             this.businessCardRenderer.DrawBusinessCard(g, cardBounds, item.RowObject, olv, item);
         }
 

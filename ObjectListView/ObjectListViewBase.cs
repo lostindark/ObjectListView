@@ -5578,6 +5578,9 @@ namespace BrightIdeasSoftware
                     visible[i] = isVisible == 1;
                 }
 
+                // Establish DPI-scaled limits before restoring device-pixel widths.
+                if (!this.IsHandleCreated)
+                    this.CreateHandle();
                 this.PrimarySortColumn = sortColumn == -1 ? null : this.AllColumns[sortColumn];
                 this.PrimarySortOrder = sortColumn == -1 ? SortOrder.None : (SortOrder)sortOrder;
                 for (int i = 0; i < this.AllColumns.Count; i++) {
@@ -9112,7 +9115,10 @@ namespace BrightIdeasSoftware
 
         #region ISupportInitialize Members
 
+        private bool initializingColumns;
+
         void ISupportInitialize.BeginInit() {
+            this.initializingColumns = true;
             this.Frozen = true;
         }
 
@@ -9126,6 +9132,9 @@ namespace BrightIdeasSoftware
             if (this.UseSubItemCheckBoxes || (this.VirtualMode && this.CheckBoxes))
                 this.SetupSubItemCheckBoxes();
 
+            this.initializingColumns = false;
+            if (this.IsHandleCreated)
+                this.RescaleColumnWidthsForDpi(this.GetWindowDpi());
             this.Frozen = false;
         }
 
@@ -9634,12 +9643,66 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
+        /// Rescale known column widths and limits when the control's DPI changes.
+        /// </summary>
+        protected virtual void RescaleColumnWidthsForDpi(int dpi) {
+            if (dpi <= 0)
+                throw new ArgumentOutOfRangeException(nameof(dpi));
+            if (this.initializingColumns || this.IsDesignMode || dpi == this.columnDpi)
+                return;
+
+            var columns = new HashSet<OLVColumn>(this.AllColumns);
+            foreach (OLVColumn column in this.Columns)
+                columns.Add(column);
+            foreach (OLVColumn column in columns) {
+                int width = ScaleColumnDimension(column.Width, dpi, this.columnDpi);
+                int minimum = ScaleColumnDimension(column.MinimumWidth, dpi, this.columnDpi);
+                int maximum = ScaleColumnDimension(column.MaximumWidth, dpi, this.columnDpi);
+                // Clear both limits so fixed-width columns can change size.
+                column.MinimumWidth = -1;
+                column.MaximumWidth = -1;
+                column.MinimumWidth = minimum;
+                column.MaximumWidth = maximum;
+                if (width < 0)
+                    ((ColumnHeader)column).Width = width;
+                else
+                    column.Width = width;
+            }
+            this.columnDpi = dpi;
+            this.ResizeFreeSpaceFillingColumns();
+        }
+        private int columnDpi = 96;
+
+        private static int ScaleColumnDimension(int value, int dpi, int oldDpi) {
+            return value < 0 ? value : (int)Math.Min(int.MaxValue,
+                Math.Round(value * (double)dpi / oldDpi));
+        }
+
+        private int GetWindowDpi() {
+#if NETFRAMEWORK
+            using (Graphics graphics = Graphics.FromHwnd(this.Handle))
+                return (int)Math.Round(graphics.DpiX);
+#else
+            return (int)NativeMethods.GetDpiForWindow(this.Handle);
+#endif
+        }
+
+#if !NETFRAMEWORK
+        protected override void RescaleConstantsForDpi(int deviceDpiOld, int deviceDpiNew) {
+            base.RescaleConstantsForDpi(deviceDpiOld, deviceDpiNew);
+            if (this.IsHandleCreated)
+                this.RescaleColumnWidthsForDpi(deviceDpiNew);
+        }
+#endif
+
+        /// <summary>
         /// Called when the handle of the underlying control is created
         /// </summary>
         /// <param name="e"></param>
         protected override void OnHandleCreated(EventArgs e) {
             //Debug.WriteLine("OnHandleCreated");
             base.OnHandleCreated(e);
+            this.RescaleColumnWidthsForDpi(this.GetWindowDpi());
 
             this.Invoke((MethodInvoker)this.OnControlCreated);
         }

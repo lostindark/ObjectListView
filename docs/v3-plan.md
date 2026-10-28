@@ -48,7 +48,7 @@ unrelated grouping/styling phases below.
 | Framework compatibility | Existing Framework designer types and resource build path are retained. The actual Framework designer's column editor, serialization, rebuild, and reopening were exercised. |
 | Modern designer implementation | SDK 1.6.0 client/server/protocol projects, custom column editor, filtering, smart-tag properties, and copied-value modal printer editors are packaged separately from runtime assets. |
 | Packaging and CI | Both configurations/targets are built and tested; package contents and fresh consumers are checked, including actual two-way layout interchange. The publishing workflow still consumes a successful CI artifact rather than rebuilding. |
-| Desktop acceptance | Most packaged-consumer checks below passed. Native header-divider dragging remains a failed check, blocking physical-resize Undo/Redo and a complete-support claim. |
+| Desktop acceptance | Public-API header resizing passes designer input-dispatcher checks, including Undo/Redo. Physical mouse dragging, the complete smart-tag View workflow, and project-reference-only designer discovery remain open gates. |
 | Review follow-up | The reproduced layout-restoration finding is fixed with focused regressions. Security review reported no vulnerabilities in the reviewed changes. The final unfiltered four-way test matrix and package checks passed. |
 
 ### Verified behavior and important fixes
@@ -98,26 +98,110 @@ unrelated grouping/styling phases below.
   preserved. LTR/RTL cases passed on both runtimes at 96-DPI virtualization and
   actual 144-DPI per-monitor mode. A modern x86 package-consumer smoke check also
   passed; ARM64 and other Windows/Visual Studio/monitor combinations are not claimed.
+- DPI follow-up: both demo hosts now use a system-aware manifest for `net462`
+  and `PerMonitorV2` startup for .NET 10, without changing font defaults. The main
+  demo's tabs inherit parent scaling and omit independent `AutoScaleDimensions`;
+  otherwise early scaling shrank anchored settings and command panels. All eight
+  Debug/Release demo executables reported the expected native DPI context at
+  144 DPI. Focused layout checks passed at native 144 and virtualized 96 DPI on
+  both runtimes. Framework windows can still blur when moved between monitors
+  with different DPI; the runtime library does not set application DPI policy.
+- Column-DPI follow-up fixes the cramped text introduced by DPI-aware startup.
+  Existing widths and their limits now scale to the native window DPI, including
+  hidden/fixed columns, with initialization deferral and no repeated scaling on
+  handle recreation. .NET 10 DPI callbacks preserve current user sizing.
+  Actual Simple/Complex/Printer demo checks passed at native 144 and virtualized
+  96 DPI on both runtimes; the Complex Example's 150-pixel column becomes 225
+  pixels at 150% scaling. Restoring saved physical widths before first handle
+  creation also establishes scaled limits before applying the payload, avoiding
+  double scaling or premature clamping. The local `3.0.0-designer-dpi2` package
+  passed runtime consumer and two-way layout checks.
+- [Column-DPI regressions](../Tests/TestColumn.cs) add eight shared cases and one
+  modern callback case; focused runs pass on both targets. Current unfiltered
+  evidence covers 636 cases per target before the final restore-order guard,
+  but those four-way reruns are
+  **not fully green**: the existing clipboard-access case fails in each run.
+  Modern Debug also had one transient ImageList allocation failure; its isolated
+  rerun and the DPI cases passed together. Keep these environment failures
+  visible rather than excluding cases or claiming complete regression success.
+  After the restore-order guard, combined state/DPI selections passed 19 Framework
+  and 20 modern cases in both configurations; actual pre-handle restore checks
+  passed at native 144 and virtualized 96 DPI on both runtimes.
+- DataListView demo layout follow-up: the apparent empty view still had all
+  88 source/model/native rows, but both groups inside its split container had
+  collapsed to zero size during DPI autoscaling. They now fill padded split
+  panels instead of using four-edge anchors. Fixed label sizing and a wider
+  gap keep the settings clear of the list. Visible rows, live data edits, and
+  resizing passed on both runtimes/configurations at native 144 and virtualized
+  96 DPI. A selected-tab visible-content bounds audit also passed for all ten
+  demo tabs on both runtimes at both DPI levels. Row counts alone are not proof
+  that a demo's content is actually visible.
+- Both source DataGridViews now use `AutoSizeColumnsMode.AllCells` to fit their
+  headers and data rather than runtime-dependent default pixel widths. Preferred
+  content/header widths passed in both configurations/targets at native 144 and
+  virtualized 96 DPI, including growth after editing a longer value and shrinkage
+  after restoring it.
+- Custom-drawing follow-up: the Complex Example business-card overlay and Tile
+  view share DPI-scaled geometry sized to all detail lines, rather than a fixed
+  250-by-120-pixel box. Pretty Tasks buttons now size to text, with measured
+  minimum column widths and DPI-scaled padding/row heights. Eight graphics runs
+  passed across configurations/targets and native 144/virtualized 96 DPI; bitmap
+  checks also verify the final detail line at 192 DPI and with extra fields.
+  Button label bounds and button hit targets passed. No native tooltip changes
+  were needed; this report concerned the business-card overlay.
 - The smart-tag Columns action opened the custom editor in action-list context.
   A complete smart-tag View round trip is not yet verified.
+- Header resizing now uses the public SDK `Adorner`, `Glyph`, and `Behavior`
+  APIs, with one change transaction per gesture. Live preview is bounded by the
+  column limits; capture loss cancels and restores the original width. Fixed and
+  free-space-filling columns are not resize targets. No private SDK hooks or
+  runtime Designer SDK dependencies were added.
+- Four new [resize transaction cases](../Tests/TestDesignerColumnResize.cs)
+  cover bounded commit, explicit/disposal cancellation, and change-notification
+  failure rollback. The full Debug/Release matrix passed 629 Framework and
+  628 modern cases, zero skipped. After the final free-space-column hit-test
+  guard, both solution configurations rebuilt and the focused cases passed on
+  both targets.
+- The final local candidate, `3.0.0-designer-behavior3`, passed package asset and
+  runtime-dependency checks, fresh consumers on both runtimes, and two-way layout
+  interchange. In Visual Studio at 144 DPI, targeted native messages to the
+  designer client's input dispatcher verified exact 160-to-220 resizing, RTL,
+  minimum/maximum bounds, capture-loss rollback, and single-operation Undo/Redo.
+  Saving, closing, and reopening preserved width 220. All eight control families
+  still loaded custom designer filtering, and regenerated consumer code rebuilt.
+  These are actual designer integration checks, **not physical-input passes**.
+- Properties-based SmallIcon-to-Details transitions and subsequent dispatcher
+  resizing passed. This does not substitute for the smart-tag dropdown workflow.
+  Physical mouse attempts were refused because the owned Visual Studio did not
+  have foreground access; do not inject input into another application to bypass
+  that safety check.
 
 ### Open acceptance gates, in priority order
 
-1. Make native header-divider dragging work in the modern designer, then verify
-   serialization and one-operation Undo/Redo after an actual drag. Width editing
-   through Columns/Properties is the current workaround.
+1. Verify the new public-API resize path using an actual mouse, including
+   serialization and one-operation Undo/Redo. Dispatcher-driven equivalents pass,
+   but physical acceptance requires an available desktop. Width editing through
+   Columns/Properties remains the verified user workaround.
 2. Verify a complete smart-tag View change and return, including native header
    interaction after returning to Details view.
 3. Establish modern designer asset discovery for a consumer using project
-   references only. Package-consumer acceptance does not prove that workflow.
+   references only. A fresh isolated source-reference consumer built and rendered
+   the basic control, but custom filtering and column editing did not load.
+   The inspected client/server asset discovery path uses NuGet. An opt-in local,
+   design-only NuGet bridge has not been implemented or approved; it would not be
+   strictly project-reference-only support. Package-consumer acceptance does not
+   prove this workflow.
 4. Repeat the affected packaged-consumer checks after each designer fix; retain
    the Framework designer and runtime-only deployment checks.
 
-The header investigation compared the built-in designer's native child handling
-and end-track notifications with the custom designer. `HookChildHandles` is not
-accessible through the pinned stable SDK reference API. Unsupported/untested
-experiments were reverted; do not silently restore private-reflection workarounds
-or label a passing build as proof of native interaction.
+The earlier header investigation compared the built-in designer's native child
+handling and end-track notifications with the custom designer. `HookChildHandles`
+is not accessible through the pinned stable SDK reference API. The new adorner
+path avoids that hook; do not restore private-reflection workarounds or label a
+passing build as proof of physical interaction. Test helpers must identify the
+owned Visual Studio shell rather than trusting `Process.MainWindowHandle`, and
+must not send pointer-bearing header messages into another process using a local
+buffer.
 
 ### Continuing an iteration
 

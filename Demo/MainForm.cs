@@ -24,6 +24,10 @@ namespace ObjectListViewDemo {
 
         [STAThread]
         public static void Main(string[] args) {
+#if !NETFRAMEWORK
+            if (!Application.SetHighDpiMode(HighDpiMode.PerMonitorV2))
+                throw new InvalidOperationException("The demo must configure DPI awareness before initializing Windows Forms.");
+#endif
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());

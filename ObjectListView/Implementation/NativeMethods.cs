@@ -587,6 +587,11 @@ namespace BrightIdeasSoftware
         [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
         public static extern bool GetClientRect(IntPtr hWnd, ref Rectangle r);
 
+#if !NETFRAMEWORK
+        [DllImport("user32.dll", ExactSpelling = true)]
+        public static extern uint GetDpiForWindow(IntPtr hWnd);
+#endif
+
         [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
         public static extern bool GetScrollInfo(IntPtr hWnd, int fnBar, SCROLLINFO scrollInfo);
 

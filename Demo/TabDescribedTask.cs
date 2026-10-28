@@ -18,9 +18,6 @@ namespace ObjectListViewDemo
             this.SetupColumns();
             this.SetupColumnWithButton();
 
-            // How much space do we want to give each row? Obviously, this should be at least
-            // the height of the images used by the renderer
-            this.olvTasks.RowHeight = 54;
             this.olvTasks.SmallImageList = imageListSmall;
             this.olvTasks.EmptyListMsg = "No tasks match the filter";
             this.olvTasks.UseAlternatingBackColors = false;
@@ -29,6 +26,10 @@ namespace ObjectListViewDemo
             // Make and display a list of tasks
             List<ServiceTask> tasks = CreateTasks();
             this.olvTasks.SetObjects(tasks);
+            this.UpdateDpiDimensions();
+#if !NETFRAMEWORK
+            this.olvTasks.DpiChangedAfterParent += delegate { this.UpdateDpiDimensions(); };
+#endif
         }
 
         private void SetupColumnWithButton() {
@@ -42,8 +43,7 @@ namespace ObjectListViewDemo
             //   - FixedBounds. Each button is ButtonSize in size
             //   - CellBounds. Each button is as wide as the cell, inset by CellPadding
             //   - TextBounds. Each button resizes to match the width of the text plus ButtonPadding
-            this.olvColumnAction.ButtonSizing = OLVColumn.ButtonSizingMode.FixedBounds;
-            this.olvColumnAction.ButtonSize = new Size(80, 26);
+            this.olvColumnAction.ButtonSizing = OLVColumn.ButtonSizingMode.TextBounds;
 
             // Make the buttons clickable even if the row itself is disabled
             this.olvColumnAction.EnableButtonWhenItemIsDisabled = true;
@@ -66,6 +66,29 @@ namespace ObjectListViewDemo
 
                 this.olvTasks.RefreshObject(e.Model);
             };
+        }
+
+        private void UpdateDpiDimensions() {
+            int rowHeight;
+            int minimumWidth;
+            Size padding;
+            using (Graphics graphics = this.olvTasks.CreateGraphics()) {
+                rowHeight = (int)Math.Ceiling(54 * graphics.DpiY / 96f);
+                padding = Size.Ceiling(
+                    new SizeF(10 * graphics.DpiX / 96f, 4 * graphics.DpiY / 96f));
+                minimumWidth = TextRenderer.MeasureText(graphics, this.olvColumnAction.Text, this.olvTasks.Font).Width;
+                foreach (OLVListItem item in this.olvTasks.Items) {
+                    string label = this.olvColumnAction.GetStringValue(item.RowObject);
+                    Size size = TextRenderer.MeasureText(graphics, label, this.olvTasks.Font, Size.Empty,
+                        TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix);
+                    minimumWidth = Math.Max(minimumWidth, size.Width + padding.Width * 2);
+                }
+            }
+            this.olvColumnAction.ButtonPadding = padding;
+            // TextBounds sizes the button, but its column must also fit the label.
+            this.olvColumnAction.MinimumWidth = minimumWidth;
+            if (this.olvTasks.RowHeight != rowHeight)
+                this.olvTasks.RowHeight = rowHeight;
         }
 
         private void SetupDescibedTaskColumn() {

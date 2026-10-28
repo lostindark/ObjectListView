@@ -11,6 +11,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -18,6 +19,165 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests
 {
+    [STATestClass]
+    public class TestColumnDpiScaling
+    {
+        [TestMethod]
+        public void Test_DpiScaling_IncludesHiddenColumnsAndScalesSharedColumnsOnce() {
+            using (var list = new DpiList()) {
+                var visible = new OLVColumn { Width = 140, MinimumWidth = 100, MaximumWidth = 200 };
+                var hidden = new OLVColumn { Width = 80, IsVisible = false };
+                var visibleOnly = new OLVColumn { Width = 60 };
+                list.AllColumns.Add(visible);
+                list.AllColumns.Add(hidden);
+                list.Columns.AddRange(new[] { visible, visibleOnly });
+
+                list.ApplyDpi(144);
+                list.ApplyDpi(144);
+
+                Assert.AreEqual(210, visible.Width);
+                Assert.AreEqual(150, visible.MinimumWidth);
+                Assert.AreEqual(300, visible.MaximumWidth);
+                Assert.AreEqual(120, hidden.Width);
+                Assert.AreEqual(-1, hidden.MinimumWidth);
+                Assert.AreEqual(-1, hidden.MaximumWidth);
+                Assert.AreEqual(90, visibleOnly.Width);
+            }
+        }
+
+        [TestMethod]
+        public void Test_DpiRoundTrip_PreservesUserResizingAndFixedColumnLimits() {
+            using (var list = new DpiList()) {
+                var resized = new OLVColumn { Width = 140, MinimumWidth = 100, MaximumWidth = 200 };
+                var fixedColumn = new OLVColumn { Width = 80, MinimumWidth = 80, MaximumWidth = 80 };
+                list.AllColumns.AddRange(new[] { resized, fixedColumn });
+                list.Columns.AddRange(new[] { resized, fixedColumn });
+
+                list.ApplyDpi(144);
+                resized.Width = 240;
+                list.ApplyDpi(96);
+
+                Assert.AreEqual(160, resized.Width);
+                Assert.AreEqual(100, resized.MinimumWidth);
+                Assert.AreEqual(200, resized.MaximumWidth);
+                Assert.AreEqual(80, fixedColumn.Width);
+                Assert.IsTrue(fixedColumn.IsFixedWidth);
+                list.ApplyDpi(144);
+                Assert.AreEqual(240, resized.Width);
+                Assert.AreEqual(120, fixedColumn.Width);
+                Assert.AreEqual(120, fixedColumn.MinimumWidth);
+                Assert.AreEqual(120, fixedColumn.MaximumWidth);
+            }
+        }
+
+        [TestMethod]
+        [DataRow(-1)]
+        [DataRow(-2)]
+        public void Test_DpiScaling_PreservesAutosizeSentinelsAndZeroWidths(int sentinel) {
+            using (var list = new DpiList()) {
+                var auto = new OLVColumn();
+                ((ColumnHeader)auto).Width = sentinel;
+                var zero = new OLVColumn { Width = 0 };
+                list.AllColumns.AddRange(new[] { auto, zero });
+                list.ApplyDpi(144);
+                Assert.AreEqual(sentinel, auto.Width);
+                Assert.AreEqual(0, zero.Width);
+            }
+        }
+
+        [TestMethod]
+        public void Test_RecreatingHandle_DoesNotRescaleUserWidthsAgain() {
+            using (var list = new DpiList()) {
+                var column = new OLVColumn { Width = 140 };
+                list.AllColumns.Add(column);
+                list.Columns.Add(column);
+                list.CreateControl();
+                column.Width = 233;
+                list.RecreateNativeHandle();
+                Assert.AreEqual(233, column.Width);
+            }
+        }
+
+        [TestMethod]
+        public void Test_DpiScaling_RecalculatesFreeSpaceWithScaledLimits() {
+            using (var list = new DpiList { Size = new Size(600, 200) }) {
+                var fixedColumn = new OLVColumn { Width = 100 };
+                var fill = new OLVColumn { Width = 50, MinimumWidth = 50, MaximumWidth = 500, FillsFreeSpace = true };
+                list.AllColumns.AddRange(new[] { fixedColumn, fill });
+                list.Columns.AddRange(new[] { fixedColumn, fill });
+                list.ApplyDpi(144);
+                Assert.AreEqual(150, fixedColumn.Width);
+                Assert.AreEqual(75, fill.MinimumWidth);
+                Assert.AreEqual(750, fill.MaximumWidth);
+                Assert.AreEqual(list.ClientSize.Width - fixedColumn.Width, fill.Width);
+            }
+        }
+
+        [TestMethod]
+        public void Test_DpiScaling_WaitsForColumnInitialization() {
+            using (var list = new DpiList()) {
+                var column = new OLVColumn { Width = 100 };
+                list.AllColumns.Add(column);
+                ((ISupportInitialize)list).BeginInit();
+                list.ApplyDpi(144);
+                Assert.AreEqual(100, column.Width);
+                ((ISupportInitialize)list).EndInit();
+                list.ApplyDpi(144);
+                Assert.AreEqual(150, column.Width);
+            }
+        }
+
+        [TestMethod]
+        public void Test_RestoreState_InitializesDpiBeforeApplyingSavedPixelWidths() {
+            using (var source = new DpiList())
+            using (var target = new DpiList()) {
+                var savedColumn = new OLVColumn { Width = 180 };
+                source.AllColumns.Add(savedColumn);
+                source.Columns.Add(savedColumn);
+                byte[] state = source.SaveState();
+                var targetColumn = new OLVColumn { Width = 100, MaximumWidth = 200 };
+                target.AllColumns.Add(targetColumn);
+                target.Columns.Add(targetColumn);
+                int? widthAtCreation = null;
+                target.HandleCreated += delegate { widthAtCreation = targetColumn.Width; };
+
+                Assert.IsTrue(target.RestoreState(state));
+                Assert.AreEqual(100, widthAtCreation);
+                Assert.AreEqual(180, targetColumn.Width);
+            }
+        }
+
+#if !NETFRAMEWORK
+        [TestMethod]
+        public void Test_DpiCallback_RescalesCurrentUserWidthOnce() {
+            using (var list = new DpiList()) {
+                var column = new OLVColumn { Width = 100 };
+                list.AllColumns.Add(column);
+                list.Columns.Add(column);
+                list.CreateControl();
+                list.ApplyDpi(96);
+                list.ApplyDpiCallback(96, 144);
+                Assert.AreEqual(150, column.Width);
+                column.Width = 240;
+                list.ApplyDpiCallback(144, 192);
+                list.ApplyDpiCallback(192, 192);
+                Assert.AreEqual(320, column.Width);
+            }
+        }
+#endif
+
+        private sealed class DpiList : ObjectListView
+        {
+            public void ApplyDpi(int dpi) { this.RescaleColumnWidthsForDpi(dpi); }
+            public void RecreateNativeHandle() { this.RecreateHandle(); }
+#if !NETFRAMEWORK
+            public void ApplyDpiCallback(int oldDpi, int newDpi) {
+                this.RescaleConstantsForDpi(oldDpi, newDpi);
+            }
+#endif
+        }
+    }
+
     [STATestClass]
     public class TestVirtualColumnSizing : WinFormsTestFixture
     {

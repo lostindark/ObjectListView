@@ -25,5 +25,6 @@
     <ProjectReference Include="..\ObjectListView\ObjectListView.csproj" />
     <ProjectReference Include="..\ListViewPrinter\ListViewPrinter.csproj" />
     <Compile Include="..\ObjectListView.Design.Protocol\PrinterEditorState.cs" Link="PrinterEditorState.cs" />
+    <Compile Include="..\ObjectListView.Design.Server\ColumnResizeTransaction.cs" Link="ColumnResizeTransaction.cs" />
   </ItemGroup>
 </Project>

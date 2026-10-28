@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using BrightIdeasSoftware;
 using Microsoft.DotNet.DesignTools.Designers;
 using Microsoft.DotNet.DesignTools.Designers.Actions;
+using Microsoft.DotNet.DesignTools.Designers.Behaviors;
 using Microsoft.DotNet.DesignTools.TypeRouting;
 
 namespace BrightIdeasSoftware.Design
@@ -15,29 +16,30 @@ namespace BrightIdeasSoftware.Design
     public sealed class ObjectListViewDesigner : ControlDesigner
     {
         private ObjectListViewBase ListView { get { return (ObjectListViewBase)this.Control; } }
+        private BehaviorService behaviorService;
+        private Adorner headerAdorner;
+        private HeaderResizeGlyph headerResize;
 
         public override void Initialize(IComponent component) {
             base.Initialize(component);
-            this.ListView.ColumnWidthChanging += this.HandleColumnWidthChanging;
-            this.ListView.ColumnWidthChanged += this.HandleColumnWidthChanged;
+            this.behaviorService = (BehaviorService)this.GetService(typeof(BehaviorService));
+            var host = (IDesignerHost)this.GetService(typeof(IDesignerHost));
+            var changes = (IComponentChangeService)this.GetService(typeof(IComponentChangeService));
+            if (this.behaviorService == null || host == null || changes == null)
+                throw new InvalidOperationException("ObjectListView requires the WinForms designer behavior and change services.");
+            this.headerResize = new HeaderResizeGlyph(this.ListView, this.behaviorService, host, changes);
+            this.headerAdorner = new Adorner();
+            this.headerAdorner.Glyphs.Add(this.headerResize);
+            this.behaviorService.Adorners.Add(this.headerAdorner);
         }
 
         protected override void Dispose(bool disposing) {
             if (disposing) {
-                this.ListView.ColumnWidthChanging -= this.HandleColumnWidthChanging;
-                this.ListView.ColumnWidthChanged -= this.HandleColumnWidthChanged;
+                this.headerResize?.Cancel();
+                if (this.headerAdorner != null)
+                    this.behaviorService.Adorners.Remove(this.headerAdorner);
             }
             base.Dispose(disposing);
-        }
-
-        protected override bool GetHitTest(Point point) {
-            Point client = this.ListView.PointToClient(point);
-            for (int i = 0; i < this.ListView.Columns.Count; i++) {
-                Rectangle bounds = this.ListView.HeaderControl.GetItemRect(i);
-                if (client.Y >= bounds.Top && client.Y < bounds.Bottom && Math.Abs(client.X - bounds.Right) <= 3)
-                    return true;
-            }
-            return false;
         }
 
         public override System.Collections.Generic.IReadOnlyCollection<IComponent> AssociatedComponents {
@@ -118,17 +120,6 @@ namespace BrightIdeasSoftware.Design
             }
         }
 
-        private void HandleColumnWidthChanged(object sender, ColumnWidthChangedEventArgs args) {
-            var service = (IComponentChangeService)this.GetService(typeof(IComponentChangeService));
-            OLVColumn column = this.ListView.GetColumn(args.ColumnIndex);
-            service?.OnComponentChanged(column, TypeDescriptor.GetProperties(column)["Width"], null, column.Width);
-        }
-
-        private void HandleColumnWidthChanging(object sender, ColumnWidthChangingEventArgs args) {
-            var service = (IComponentChangeService)this.GetService(typeof(IComponentChangeService));
-            OLVColumn column = this.ListView.GetColumn(args.ColumnIndex);
-            service?.OnComponentChanging(column, TypeDescriptor.GetProperties(column)["Width"]);
-        }
     }
 
     [ExportTypeRoutingDefinitionProvider]

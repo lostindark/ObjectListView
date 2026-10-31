@@ -280,7 +280,8 @@ namespace BrightIdeasSoftware.Tests
 
         [TestMethod]
         public void Test_ThemeMenu_ReloadsTheActualDemoAndPreservesWindowAndTab() {
-            string diagnosticPath = Path.Combine(this.originalDirectory, "artifacts", "TestResults", "theme-reload.log");
+            string diagnosticPath = Path.Combine(Environment.GetEnvironmentVariable("GITHUB_WORKSPACE") ?? this.originalDirectory,
+                "artifacts", "TestResults", "theme-reload.log");
             Directory.CreateDirectory(Path.GetDirectoryName(diagnosticPath));
             object diagnosticLock = new object();
             Action<string> log = message => {

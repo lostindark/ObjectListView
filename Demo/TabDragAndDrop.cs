@@ -10,6 +10,11 @@ namespace ObjectListViewDemo
         public TabDragAndDrop()
         {
             InitializeComponent();
+            DemoTheme.ApplyInformationBanner(this.label30);
+            if (DemoTheme.IsDarkMode) {
+                this.label34.ForeColor = ObjectListViewTheme.LinkColor;
+                this.label35.ForeColor = ObjectListViewTheme.LinkColor;
+            }
         }
 
         protected override void InitializeTab() {

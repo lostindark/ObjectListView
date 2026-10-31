@@ -35,3 +35,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyVersion("2.9.0.*")]
 [assembly: AssemblyFileVersionAttribute("2.9.0")]
 [assembly: System.CLSCompliant(true)]
+[assembly: InternalsVisibleTo("Tests")]

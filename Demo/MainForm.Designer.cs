@@ -34,7 +34,11 @@ namespace ObjectListViewDemo
 		{
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel3 = new System.Windows.Forms.ToolStripStatusLabel();
+#if NETFRAMEWORK
+            this.tabControl1 = new ObjectListViewDemo.ThemedTabControl();
+#else
             this.tabControl1 = new System.Windows.Forms.TabControl();
+#endif
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tabSimple = new ObjectListViewDemo.TabSimpleExample();
             this.tabPage2 = new System.Windows.Forms.TabPage();

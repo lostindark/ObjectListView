@@ -31,7 +31,11 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TabFileExplorer));
             this.label37 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxHotItemStyle = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxHotItemStyle = new System.Windows.Forms.ComboBox();
+#endif
             this.checkBoxTooltips = new System.Windows.Forms.CheckBox();
             this.buttonSaveState = new System.Windows.Forms.Button();
             this.buttonRestoreState = new System.Windows.Forms.Button();
@@ -41,7 +45,11 @@
             this.textBoxFolderPath = new System.Windows.Forms.TextBox();
             this.label10 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxView = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxView = new System.Windows.Forms.ComboBox();
+#endif
             this.checkBoxGroups = new System.Windows.Forms.CheckBox();
             this.label5 = new System.Windows.Forms.Label();
             this.olvFiles = new BrightIdeasSoftware.ObjectListView();
@@ -57,7 +65,11 @@
             this.whichOnlyAppearsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.whenYouClickOnColumn0ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.imageList1 = new System.Windows.Forms.ImageList(this.components);
+#if NETFRAMEWORK
+            this.comboBoxNagLevel = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxNagLevel = new System.Windows.Forms.ComboBox();
+#endif
             this.label36 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.olvFiles)).BeginInit();
             this.contextMenuStrip2.SuspendLayout();

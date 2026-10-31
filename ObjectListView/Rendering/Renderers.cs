@@ -962,7 +962,7 @@ namespace BrightIdeasSoftware {
         /// <returns>The background color of the subitem</returns>
         public virtual Color GetBackgroundColor() {
             if (!this.ListView.Enabled)
-                return SystemColors.Control;
+                return ObjectListViewTheme.ControlColor;
 
             if (this.IsItemSelected && !this.ListView.UseTranslucentSelection && this.ListView.FullRowSelect)
                 return this.GetSelectedBackgroundColor();
@@ -1518,7 +1518,7 @@ namespace BrightIdeasSoftware {
             }
 
             CheckBoxState boxState = this.GetCheckBoxState(this.ListItem.CheckState);
-            CheckBoxRenderer.DrawCheckBox(g, checkBoxLocation, boxState);
+            ThemedRendering.DrawCheckBox(g, checkBoxLocation, boxState);
             return checkBoxSize.Width;
         }
 
@@ -2369,7 +2369,7 @@ namespace BrightIdeasSoftware {
                 this.DrawAlignedImage(g, r, this.ImageListOrDefault.Images[key]);
             } else {
                 r = this.CalculateCheckBoxBounds(g, r);
-                CheckBoxRenderer.DrawCheckBox(g, r.Location, this.GetCheckBoxState(state));
+                ThemedRendering.DrawCheckBox(g, r.Location, this.GetCheckBoxState(state));
             }
         }
 
@@ -3533,10 +3533,9 @@ namespace BrightIdeasSoftware {
                     return this.SubItem.ForeColor;
                 if (this.IsItemSelected && !this.ListView.UseTranslucentSelection)
                     return this.GetForegroundColor();
-                return this.DescriptionColor.IsEmpty ? defaultDescriptionColor : this.DescriptionColor;
+                return this.DescriptionColor.IsEmpty ? ObjectListViewTheme.GetDescriptionColor(this.IsPrinting) : this.DescriptionColor;
             }
         }
-        private static Color defaultDescriptionColor = Color.FromArgb(45, 46, 49);
 
         /// <summary>
         /// Gets or sets the number of pixels that will be left between the image and the text
@@ -3852,9 +3851,16 @@ namespace BrightIdeasSoftware {
             string buttonText = GetText();
             Image image = this.GetImage();
             PushButtonState state = CalculatePushButtonState();
+            bool darkMode = ObjectListViewTheme.IsDarkMode && !this.IsPrinting;
             if (image == null) {
-                if (!String.IsNullOrEmpty(buttonText))
-                    ButtonRenderer.DrawButton(g, r, buttonText, this.Font, textFormatFlags, false, state);
+                if (!String.IsNullOrEmpty(buttonText)) {
+                    if (darkMode) {
+                        ThemedRendering.DrawDarkButtonBackground(g, r, state);
+                        TextRenderer.DrawText(g, buttonText, this.Font, r,
+                            state == PushButtonState.Disabled ? ObjectListViewTheme.ButtonDisabledTextColor : ObjectListViewTheme.ButtonTextColor, textFormatFlags);
+                    } else
+                        ButtonRenderer.DrawButton(g, r, buttonText, this.Font, textFormatFlags, false, state);
+                }
                 return;
             }
 
@@ -3863,7 +3869,10 @@ namespace BrightIdeasSoftware {
             int verticalPadding = Math.Min(this.ButtonPaddingOrDefault.Height, Math.Max(0, (r.Height - image.Height) / 2));
             contentBounds.Inflate(-horizontalPadding, -verticalPadding);
             if (contentBounds.Width <= 0 || contentBounds.Height <= 0) {
-                ButtonRenderer.DrawButton(g, r, false, state);
+                if (darkMode)
+                    ThemedRendering.DrawDarkButtonBackground(g, r, state);
+                else
+                    ButtonRenderer.DrawButton(g, r, false, state);
                 return;
             }
 
@@ -3877,14 +3886,20 @@ namespace BrightIdeasSoftware {
                 this.ListView.RightToLeftLayout ? contentBounds.Right - imageSize.Width : contentBounds.Left,
                 contentBounds.Top + (contentBounds.Height - imageSize.Height) / 2,
                 imageSize.Width, imageSize.Height);
-            ButtonRenderer.DrawButton(g, r, image, imageBounds, false, state);
+            if (darkMode) {
+                ThemedRendering.DrawDarkButtonBackground(g, r, state);
+                g.DrawImage(image, imageBounds);
+            } else
+                ButtonRenderer.DrawButton(g, r, image, imageBounds, false, state);
 
             int imageAndSpacing = imageSize.Width + (String.IsNullOrEmpty(buttonText) ? 0 : this.Spacing);
             if (!this.ListView.RightToLeftLayout)
                 contentBounds.X += imageAndSpacing;
             contentBounds.Width -= imageAndSpacing;
             if (!String.IsNullOrEmpty(buttonText) && contentBounds.Width > 0) {
-                Color textColor = state == PushButtonState.Disabled ? SystemColors.GrayText : SystemColors.ControlText;
+                Color textColor = state == PushButtonState.Disabled ?
+                    (darkMode ? ObjectListViewTheme.ButtonDisabledTextColor : SystemColors.GrayText) :
+                    darkMode ? ObjectListViewTheme.ButtonTextColor : SystemColors.ControlText;
                 TextRenderer.DrawText(g, buttonText, this.Font, contentBounds, textColor, textFormatFlags);
             }
         }

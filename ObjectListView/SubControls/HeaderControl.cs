@@ -628,7 +628,7 @@ namespace BrightIdeasSoftware {
             switch (nmcustomdraw.dwDrawStage) {
                 case CDDS_PREPAINT:
                     this.cachedNeedsCustomDraw = this.NeedsCustomDraw();
-                    m.Result = (IntPtr) CDRF_NOTIFYITEMDRAW;
+                    m.Result = (IntPtr) (CDRF_NOTIFYITEMDRAW | (ObjectListViewTheme.IsDarkMode ? CDRF_NOTIFYPOSTPAINT : 0));
                     return true;
 
                 case CDDS_ITEMPREPAINT:
@@ -667,6 +667,20 @@ namespace BrightIdeasSoftware {
                     if (this.fontHandle != IntPtr.Zero) {
                         NativeMethods.DeleteObject(this.fontHandle);
                         this.fontHandle = IntPtr.Zero;
+                    }
+                    break;
+
+                case CDDS_POSTPAINT:
+                    if (ObjectListViewTheme.IsDarkMode) {
+                        Rectangle bounds = this.ClientRectangle;
+                        int right = bounds.Left;
+                        for (int i = 0; i < this.ListView.Columns.Count; i++)
+                            right = Math.Max(right, this.GetItemRect(i).Right);
+                        if (right < bounds.Right) {
+                            using (Graphics graphics = Graphics.FromHdc(nmcustomdraw.hdc))
+                            using (Brush brush = new SolidBrush(ObjectListViewTheme.ControlColor))
+                                graphics.FillRectangle(brush, right, bounds.Top, bounds.Right - right, bounds.Height);
+                        }
                     }
                     break;
             }
@@ -737,6 +751,8 @@ namespace BrightIdeasSoftware {
         /// <remarks>Word wrapping and colored text require custom drawing. Funnily enough, we
         /// can change the font natively.</remarks>
         protected bool NeedsCustomDraw() {
+            if (ObjectListViewTheme.UsesCustomHeaderColors)
+                return true;
             if (this.WordWrap || (this.ListView.ShowSortIndicators && this.ListView.SortDescriptions.Count > 0))
                 return true;
             
@@ -817,8 +833,8 @@ namespace BrightIdeasSoftware {
 
             // Draw the background
             if (this.ListView.HeaderUsesThemes &&
-                VisualStyleRenderer.IsSupported &&
-                VisualStyleRenderer.IsElementDefined(VisualStyleElement.Header.Item.Normal))
+                (ObjectListViewTheme.IsDarkMode || (VisualStyleRenderer.IsSupported &&
+                VisualStyleRenderer.IsElementDefined(VisualStyleElement.Header.Item.Normal))))
                 this.DrawThemedBackground(g, fullCellBounds, columnIndex, isPressed, isHot);
             else
                 this.DrawUnthemedBackground(g, fullCellBounds, columnIndex, isPressed, isHot, stateStyle);
@@ -840,7 +856,7 @@ namespace BrightIdeasSoftware {
                     if (this.ListView.SortDescriptions.Count > 1) {
                         indicatorBounds.Width -= 16;
                         using (Font priorityFont = CreateSortPriorityFont(font))
-                            TextRenderer.DrawText(g, label, priorityFont, indicatorBounds, SystemColors.GrayText,
+                            TextRenderer.DrawText(g, label, priorityFont, indicatorBounds, ObjectListViewTheme.GrayTextColor,
                                 TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine |
                                 TextFormatFlags.NoPrefix | TextFormatFlags.PreserveGraphicsClipping);
                     }
@@ -881,7 +897,7 @@ namespace BrightIdeasSoftware {
             bool isPressed) {
             CheckBoxState checkBoxState = this.GetCheckBoxState(checkState, isDisabled, isHot, isPressed);
             Rectangle checkBoxBounds = this.CalculateCheckBoxBounds(g, r);
-            CheckBoxRenderer.DrawCheckBox(g, checkBoxBounds.Location, checkBoxState);
+            ThemedRendering.DrawCheckBox(g, checkBoxBounds.Location, checkBoxState);
 
             // Move the left edge without changing the right edge
             int newX = checkBoxBounds.Right + 3;
@@ -960,11 +976,15 @@ namespace BrightIdeasSoftware {
             if (stateStyle.BackColor.IsEmpty)
                 // I know we're supposed to be drawing the unthemed background, but let's just see if we
                 // can draw something more interesting than the dull raised block
-                if (VisualStyleRenderer.IsSupported &&
-                    VisualStyleRenderer.IsElementDefined(VisualStyleElement.Header.Item.Normal))
+                if (ObjectListViewTheme.IsDarkMode || (VisualStyleRenderer.IsSupported &&
+                    VisualStyleRenderer.IsElementDefined(VisualStyleElement.Header.Item.Normal)))
                     this.DrawThemedBackground(g, r, columnIndex, isPressed, isHot);
-                else
+                else {
+                    if (ObjectListViewTheme.UsesCustomHeaderColors)
+                        using (Brush brush = new SolidBrush(ObjectListViewTheme.ControlColor))
+                            g.FillRectangle(brush, r);
                     ControlPaint.DrawBorder3D(g, r, Border3DStyle.RaisedInner);
+                }
             else {
                 using (Brush b = new SolidBrush(stateStyle.BackColor))
                     g.FillRectangle(b, r);
@@ -988,6 +1008,16 @@ namespace BrightIdeasSoftware {
         /// <param name="isPressed"></param>
         /// <param name="isHot"></param>
         protected void DrawThemedBackground(Graphics g, Rectangle r, int columnIndex, bool isPressed, bool isHot) {
+            // VisualStyleRenderer("HEADER") opens the classic theme, not the header window's dark theme.
+            if (ObjectListViewTheme.IsDarkMode) {
+                Color backColor = ObjectListViewTheme.GetHeaderBackColor(isPressed, isHot);
+                using (Brush brush = new SolidBrush(backColor))
+                    g.FillRectangle(brush, r);
+                using (Pen pen = new Pen(ObjectListViewTheme.ControlDarkColor))
+                    g.DrawLine(pen, r.Right - 1, r.Top, r.Right - 1, r.Bottom - 1);
+                return;
+            }
+
             int part = 1; // normal item
             if (columnIndex == 0 &&
                 VisualStyleRenderer.IsElementDefined(VisualStyleElement.Header.ItemLeft.Normal))
@@ -1108,9 +1138,10 @@ namespace BrightIdeasSoftware {
                 flags |= TextFormatFlags.Right;
 
             Font f = this.ListView.HeaderUsesThemes ? this.ListView.Font : stateStyle.Font ?? this.ListView.Font;
-            Color color = this.ListView.HeaderUsesThemes ? Color.Black : stateStyle.ForeColor;
+            Color defaultColor = ObjectListViewTheme.HeaderTextColor;
+            Color color = this.ListView.HeaderUsesThemes ? defaultColor : stateStyle.ForeColor;
             if (color.IsEmpty)
-                color = Color.Black;
+                color = defaultColor;
 
             const int imageTextGap = 3;
 

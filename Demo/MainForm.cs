@@ -30,7 +30,35 @@ namespace ObjectListViewDemo {
 #endif
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            RunDemo();
+        }
+
+        internal static void RunDemo() {
+            ObjectListViewColorMode colorMode = ObjectListViewColorMode.System;
+            Rectangle? windowBounds = null;
+            FormWindowState windowState = FormWindowState.Normal;
+            int selectedTab = 0;
+            while (true) {
+                DemoTheme.SetColorMode(colorMode);
+                using (var form = new MainForm()) {
+                    if (windowBounds.HasValue) {
+                        form.StartPosition = FormStartPosition.Manual;
+                        form.Bounds = windowBounds.Value;
+                        form.WindowState = windowState;
+                        form.tabControl1.SelectedIndex = selectedTab;
+                    }
+                    form.FormClosing += delegate {
+                        windowState = form.WindowState;
+                        windowBounds = windowState == FormWindowState.Normal ? form.Bounds : form.RestoreBounds;
+                        selectedTab = form.tabControl1.SelectedIndex;
+                    };
+                    Application.Run(form);
+                    ObjectListViewColorMode? requestedMode = form.requestedColorMode;
+                    if (!requestedMode.HasValue)
+                        break;
+                    colorMode = requestedMode.Value;
+                }
+            }
         }
 
         /// <summary>
@@ -41,7 +69,43 @@ namespace ObjectListViewDemo {
             // The InitializeComponent() call is required for Windows Forms designer support.
             //
             InitializeComponent();
+            DemoTheme.Apply(this);
             InitializeExamples();
+            InitializeThemeMenu();
+        }
+
+        private ObjectListViewColorMode? requestedColorMode;
+
+        private void InitializeThemeMenu() {
+            if (this.DesignMode)
+                return;
+
+            var themeMenu = new ToolStripDropDownButton("Theme") {
+                Name = "themeMenu",
+                ToolTipText = "Changing theme reloads the demo and resets example edits."
+            };
+            AddThemeMenuItem(themeMenu, "Follow system", ObjectListViewColorMode.System);
+            AddThemeMenuItem(themeMenu, "Light", ObjectListViewColorMode.Light);
+            AddThemeMenuItem(themeMenu, "Dark", ObjectListViewColorMode.Dark);
+            this.statusStrip1.Items.Insert(0, themeMenu);
+            themeMenu.DropDown.Renderer = this.statusStrip1.Renderer;
+        }
+
+        private void AddThemeMenuItem(ToolStripDropDownButton menu, string text, ObjectListViewColorMode mode) {
+            var item = new ToolStripMenuItem(text) {
+                Checked = ObjectListViewTheme.ColorMode == mode,
+                ForeColor = ObjectListViewTheme.TextColor,
+                ToolTipText = "Reload the demo using this theme; example edits will be reset."
+            };
+            item.Click += delegate {
+                if (ObjectListViewTheme.ColorMode == mode)
+                    return;
+                this.requestedColorMode = mode;
+                this.Close();
+            };
+            menu.DropDownItems.Add(item);
+            if (item.Checked)
+                menu.Text = "Theme: " + text;
         }
 
         void InitializeExamples() {

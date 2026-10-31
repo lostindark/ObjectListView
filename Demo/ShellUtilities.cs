@@ -9,6 +9,7 @@
  */
 
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -124,11 +125,14 @@ namespace ObjectListViewDemo
             if (this.SmallImageCollection.ContainsKey(path))
                 return this.SmallImageCollection.IndexOfKey(path);
 
-            try {
-                this.AddImageToCollection(path, this.SmallImageList, ShellUtilities.GetFileIcon(path, true, true));
-                this.AddImageToCollection(path, this.LargeImageList, ShellUtilities.GetFileIcon(path, false, true));
-            } catch (ArgumentNullException) {
-                return -1;
+            using (Icon smallIcon = ShellUtilities.GetFileIcon(path, true, true))
+            using (Icon largeIcon = this.LargeImageList == null ? null : ShellUtilities.GetFileIcon(path, false, true)) {
+                if (smallIcon == null || (this.LargeImageList != null && largeIcon == null)) {
+                    Trace.TraceWarning("The Windows shell could not supply an icon for '{0}'.", path);
+                    return -1;
+                }
+                this.AddImageToCollection(path, this.SmallImageList, smallIcon);
+                this.AddImageToCollection(path, this.LargeImageList, largeIcon);
             }
 
             return this.SmallImageCollection.IndexOfKey(path);
@@ -138,19 +142,22 @@ namespace ObjectListViewDemo
             if (imageList == null)
                 return;
 
+            // Materialize the native list before disposing the source image.
+            IntPtr handle = imageList.Handle;
             if (imageList.ImageSize == image.Size) {
                 imageList.Images.Add(key, image);
                 return;
             }
 
-            using (Bitmap imageAsBitmap = image.ToBitmap()) {
-                Bitmap bm = new Bitmap(imageList.ImageSize.Width, imageList.ImageSize.Height);
-                Graphics g = Graphics.FromImage(bm);
-                g.Clear(imageList.TransparentColor);
-                Size size = imageAsBitmap.Size;
-                int x = Math.Max(0, (bm.Size.Width - size.Width) / 2);
-                int y = Math.Max(0, (bm.Size.Height - size.Height) / 2);
-                g.DrawImage(imageAsBitmap, x, y, size.Width, size.Height);
+            using (Bitmap imageAsBitmap = image.ToBitmap())
+            using (Bitmap bm = new Bitmap(imageList.ImageSize.Width, imageList.ImageSize.Height)) {
+                using (Graphics g = Graphics.FromImage(bm)) {
+                    g.Clear(imageList.TransparentColor);
+                    Size size = imageAsBitmap.Size;
+                    int x = Math.Max(0, (bm.Size.Width - size.Width) / 2);
+                    int y = Math.Max(0, (bm.Size.Height - size.Height) / 2);
+                    g.DrawImage(imageAsBitmap, x, y, size.Width, size.Height);
+                }
                 imageList.Images.Add(key, bm);
             }
         }
@@ -227,10 +234,14 @@ namespace ObjectListViewDemo
 
             SHFILEINFO shfi = new SHFILEINFO();
             IntPtr result = ShellUtilities.SHGetFileInfo(path, fileAttributes, out shfi, Marshal.SizeOf(shfi), flags);
-            if (result.ToInt32() == 0)
+            if (result == IntPtr.Zero)
                 return null;
-            else
-                return Icon.FromHandle(shfi.hIcon);
+            try {
+                using (Icon shellIcon = Icon.FromHandle(shfi.hIcon))
+                    return (Icon)shellIcon.Clone();
+            } finally {
+                DestroyIcon(shfi.hIcon);
+            }
         }
 
         /// <summary>
@@ -299,6 +310,10 @@ namespace ObjectListViewDemo
         [DllImport("shell32.dll", CharSet = CharSet.Auto)]
         private static extern IntPtr SHGetFileInfo(string pszPath, int dwFileAttributes,
             out SHFILEINFO psfi, int cbFileInfo, int uFlags);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool DestroyIcon(IntPtr icon);
 
         #endregion
     }

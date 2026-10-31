@@ -50,9 +50,17 @@
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.buttonDisable = new System.Windows.Forms.Button();
             this.label37 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxHotItemStyle = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxHotItemStyle = new System.Windows.Forms.ComboBox();
+#endif
             this.label1 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxExpanders = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxExpanders = new System.Windows.Forms.ComboBox();
+#endif
             this.groupBox12.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.treeListView)).BeginInit();
             this.SuspendLayout();

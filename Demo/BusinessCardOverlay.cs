@@ -10,8 +10,9 @@ namespace ObjectListViewDemo {
     {
         public BusinessCardOverlay()
         {
-            this.businessCardRenderer.HeaderBackBrush = Brushes.DarkBlue;
-            this.businessCardRenderer.BorderPen = new Pen(Color.DarkBlue, 2);
+            this.businessCardRenderer.HeaderBackColor = DemoTheme.IsDarkMode ? ObjectListViewTheme.ControlLightColor : Color.DarkBlue;
+            this.businessCardRenderer.BorderColor = DemoTheme.IsDarkMode ? ObjectListViewTheme.ControlDarkColor : Color.DarkBlue;
+            this.businessCardRenderer.BorderWidth = 2;
             this.Transparency = 255;
         }
         #region IOverlay Members

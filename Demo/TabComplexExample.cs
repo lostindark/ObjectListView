@@ -13,6 +13,9 @@ namespace ObjectListViewDemo
 
         public TabComplexExample() {
             InitializeComponent();
+            DemoTheme.ApplyInformationBanner(this.label2);
+            if (DemoTheme.IsDarkMode)
+                this.olvComplex.AlternateRowBackColor = ObjectListViewTheme.ControlColor;
             this.ListView = this.olvComplex;
         }
 
@@ -415,7 +418,7 @@ namespace ObjectListViewDemo
                 TextDecoration decoration = new TextDecoration("Missing!", 255);
                 decoration.Alignment = ContentAlignment.MiddleCenter;
                 decoration.Font = new Font(this.Font.Name, this.Font.SizeInPoints + 2);
-                decoration.TextColor = Color.Firebrick;
+                decoration.TextColor = DemoTheme.IsDarkMode ? Color.LightCoral : Color.Firebrick;
                 decoration.Rotation = -20;
                 e.SubItem.Decoration = decoration;
                 CellBorderDecoration cbd = new CellBorderDecoration();

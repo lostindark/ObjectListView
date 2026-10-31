@@ -56,9 +56,17 @@
             this.olvColumn59 = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.olvColumn60 = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.label33 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxCoolFroodsView = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxCoolFroodsView = new System.Windows.Forms.ComboBox();
+#endif
             this.label31 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxGeeksAndTweebsView = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxGeeksAndTweebsView = new System.Windows.Forms.ComboBox();
+#endif
             this.label30 = new System.Windows.Forms.Label();
             this.tableLayoutPanel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.olvGeeks)).BeginInit();

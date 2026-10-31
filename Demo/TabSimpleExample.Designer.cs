@@ -35,7 +35,11 @@
             this.label21 = new System.Windows.Forms.Label();
             this.checkBoxGroups = new System.Windows.Forms.CheckBox();
             this.checkBoxHotItem = new System.Windows.Forms.CheckBox();
+#if NETFRAMEWORK
+            this.comboBoxEditable = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxEditable = new System.Windows.Forms.ComboBox();
+#endif
             this.checkBoxItemCount = new System.Windows.Forms.CheckBox();
             this.groupBox7 = new System.Windows.Forms.GroupBox();
             this.buttonAdd = new System.Windows.Forms.Button();
@@ -66,7 +70,7 @@
             // 
             this.groupBox9.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox9.Controls.Add(this.textBoxFilterSimple);
-            this.groupBox9.Location = new System.Drawing.Point(683, 6);
+            this.groupBox9.Location = new System.Drawing.Point(679, 6);
             this.groupBox9.Name = "groupBox9";
             this.groupBox9.Size = new System.Drawing.Size(117, 44);
             this.groupBox9.TabIndex = 35;
@@ -108,7 +112,7 @@
             // 
             // checkBoxGroups
             // 
-            this.checkBoxGroups.Location = new System.Drawing.Point(6, 19);
+            this.checkBoxGroups.Location = new System.Drawing.Point(6, 20);
             this.checkBoxGroups.Name = "checkBoxGroups";
             this.checkBoxGroups.Size = new System.Drawing.Size(62, 24);
             this.checkBoxGroups.TabIndex = 1;

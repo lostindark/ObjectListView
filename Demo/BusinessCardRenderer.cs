@@ -53,115 +53,99 @@ namespace ObjectListViewDemo {
                 return false;
 
             // Use buffered graphics to kill flickers
-            BufferedGraphics buffered = BufferedGraphicsManager.Current.Allocate(g, itemBounds);
-            g = buffered.Graphics;
-            g.Clear(olv.BackColor);
-            g.SmoothingMode = ObjectListView.SmoothingMode;
-            g.TextRenderingHint = ObjectListView.TextRenderingHint;
-
-            if (e.Item.Selected)
-            {
-                this.BorderPen = Pens.Blue;
-                this.HeaderBackBrush = new SolidBrush(olv.SelectedBackColorOrDefault);
+            using (BufferedGraphics buffered = BufferedGraphicsManager.Current.Allocate(g, itemBounds)) {
+                Graphics graphics = buffered.Graphics;
+                graphics.Clear(olv.BackColor);
+                graphics.SmoothingMode = ObjectListView.SmoothingMode;
+                graphics.TextRenderingHint = ObjectListView.TextRenderingHint;
+                Color borderColor = e.Item.Selected ? Color.Blue : this.BorderColor;
+                Color headerBackColor = e.Item.Selected ? olv.SelectedBackColorOrDefault : this.HeaderBackColor;
+                this.DrawBusinessCard(graphics, itemBounds, rowObject, olv, (OLVListItem)e.Item, borderColor, headerBackColor);
+                buffered.Render();
             }
-            else
-            {
-                this.BorderPen = new Pen(Color.FromArgb(0x33, 0x33, 0x33));
-                this.HeaderBackBrush = new SolidBrush(Color.FromArgb(0x33, 0x33, 0x33));
-            }
-            DrawBusinessCard(g, itemBounds, rowObject, olv, (OLVListItem)e.Item);
-
-            // Finally render the buffered graphics
-            buffered.Render();
-            buffered.Dispose();
 
             // Return true to say that we've handled the drawing
             return true;
         }
 
-        internal Pen BorderPen = new Pen(Color.FromArgb(0x33, 0x33, 0x33));
-        internal Brush TextBrush = new SolidBrush(Color.FromArgb(0x22, 0x22, 0x22));
-        internal Brush HeaderTextBrush = Brushes.AliceBlue;
-        internal Brush HeaderBackBrush = new SolidBrush(Color.FromArgb(0x33, 0x33, 0x33));
-        internal Brush BackBrush = Brushes.LemonChiffon;
+        internal Color BorderColor = Color.FromArgb(0x33, 0x33, 0x33);
+        internal float BorderWidth = 1;
+        internal Color TextColor = DemoTheme.IsDarkMode ? ObjectListViewTheme.TextColor : Color.FromArgb(0x22, 0x22, 0x22);
+        internal Color HeaderTextColor = Color.AliceBlue;
+        internal Color HeaderBackColor = DemoTheme.IsDarkMode ? ObjectListViewTheme.ControlLightColor : Color.FromArgb(0x33, 0x33, 0x33);
+        internal Color BackColor = DemoTheme.IsDarkMode ? ObjectListViewTheme.ControlColor : Color.LemonChiffon;
 
         public void DrawBusinessCard(Graphics g, Rectangle itemBounds, object rowObject, ObjectListViewBase olv, OLVListItem item)
         {
-            Size spacing = ScaleSize(g, new Size(Spacing, Spacing));
-            Size inset = ScaleSize(g, new Size(BorderInset, BorderInset));
+            this.DrawBusinessCard(g, itemBounds, rowObject, olv, item, this.BorderColor, this.HeaderBackColor);
+        }
 
-            // Allow a border around the card
-            itemBounds.Inflate(-inset.Width, -inset.Height);
+        private void DrawBusinessCard(Graphics g, Rectangle itemBounds, object rowObject, ObjectListViewBase olv,
+            OLVListItem item, Color borderColor, Color headerBackColor)
+        {
+            GraphicsState state = g.Save();
+            try {
+                using (var borderPen = new Pen(borderColor, this.BorderWidth))
+                using (var backBrush = new SolidBrush(this.BackColor))
+                using (var textBrush = new SolidBrush(this.TextColor))
+                using (var headerTextBrush = new SolidBrush(this.HeaderTextColor))
+                using (var headerBackBrush = new SolidBrush(headerBackColor))
+                using (var format = new StringFormat(StringFormatFlags.NoWrap) {
+                    Trimming = StringTrimming.EllipsisCharacter,
+                    Alignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Near
+                }) {
+                    Size spacing = ScaleSize(g, new Size(Spacing, Spacing));
+                    Size inset = ScaleSize(g, new Size(BorderInset, BorderInset));
+                    itemBounds.Inflate(-inset.Width, -inset.Height);
+                    using (GraphicsPath path = this.GetRoundedRect(itemBounds, ScaleSize(g, new Size(20, 20)).Width)) {
+                        g.FillPath(backBrush, path);
+                        g.DrawPath(borderPen, path);
+                    }
+                    g.SetClip(itemBounds, CombineMode.Intersect);
 
-            // Draw card background
-            int rounding = ScaleSize(g, new Size(20, 20)).Width;
-            GraphicsPath path = this.GetRoundedRect(itemBounds, rounding);
-            g.FillPath(this.BackBrush, path);
-            g.DrawPath(this.BorderPen, path);
+                    Rectangle photoRect = itemBounds;
+                    photoRect.Inflate(-spacing.Width, -spacing.Height);
+                    Person person = rowObject as Person;
+                    if (person != null) {
+                        photoRect.Width = ScaleSize(g, new Size(80, 0)).Width;
+                        string photoFile = String.Format(@".\Photos\{0}.png", person.Photo);
+                        if (File.Exists(photoFile)) {
+                            using (Image photo = Image.FromFile(photoFile)) {
+                                photoRect.Height = (int)Math.Round(photo.Height * ((float)photoRect.Width / photo.Width));
+                                g.DrawImage(photo, photoRect);
+                            }
+                        } else {
+                            g.DrawRectangle(Pens.DarkGray, photoRect);
+                        }
+                    }
 
-            g.Clip = new Region(itemBounds);
+                    RectangleF textBounds = photoRect;
+                    textBounds.X += photoRect.Width + spacing.Width;
+                    textBounds.Width = itemBounds.Right - textBounds.X - spacing.Width;
+                    using (Font font = new Font("Tahoma", TitleFontSize)) {
+                        SizeF size = g.MeasureString(item.Text, font, (int)textBounds.Width, format);
+                        RectangleF titleBounds = textBounds;
+                        titleBounds.Height = size.Height;
+                        using (GraphicsPath path = this.GetRoundedRect(titleBounds, ScaleSize(g, new Size(15, 15)).Width))
+                            g.FillPath(headerBackBrush, path);
+                        g.DrawString(item.Text, font, headerTextBrush, textBounds, format);
+                        textBounds.Y += size.Height + spacing.Height;
+                    }
 
-            // Draw the photo
-            Rectangle photoRect = itemBounds;
-            photoRect.Inflate(-spacing.Width, -spacing.Height);
-            Person person = rowObject as Person;
-            if (person != null)
-            {
-                photoRect.Width = ScaleSize(g, new Size(80, 0)).Width;
-                string photoFile = String.Format(@".\Photos\{0}.png", person.Photo);
-                if (File.Exists(photoFile))
-                {
-                    using (Image photo = Image.FromFile(photoFile)) {
-                        photoRect.Height = (int)Math.Round(photo.Height * ((float)photoRect.Width / photo.Width));
-                        g.DrawImage(photo, photoRect);
+                    using (Font font = new Font("Tahoma", DetailFontSize)) {
+                        textBounds.Height = g.MeasureString("Wj", font, itemBounds.Width, format).Height;
+                        format.Alignment = StringAlignment.Near;
+                        foreach (OLVColumn column in olv.Columns) {
+                            if (column.IsTileViewColumn) {
+                                g.DrawString(column.GetStringValue(rowObject), font, textBrush, textBounds, format);
+                                textBounds.Y += textBounds.Height;
+                            }
+                        }
                     }
                 }
-                else
-                {
-                    g.DrawRectangle(Pens.DarkGray, photoRect);
-                }
-            }
-
-            // Now draw the text portion
-            RectangleF textBoxRect = photoRect;
-            textBoxRect.X += (photoRect.Width + spacing.Width);
-            textBoxRect.Width = itemBounds.Right - textBoxRect.X - spacing.Width;
-
-            StringFormat fmt = new StringFormat(StringFormatFlags.NoWrap);
-            fmt.Trimming = StringTrimming.EllipsisCharacter;
-            fmt.Alignment = StringAlignment.Center;
-            fmt.LineAlignment = StringAlignment.Near;
-            String txt = item.Text;
-
-            using (Font font = new Font("Tahoma", TitleFontSize))
-            {
-                // Measure the height of the title
-                SizeF size = g.MeasureString(txt, font, (int)textBoxRect.Width, fmt);
-                // Draw the title
-                RectangleF r3 = textBoxRect;
-                r3.Height = size.Height;
-                path = this.GetRoundedRect(r3, ScaleSize(g, new Size(15, 15)).Width);
-                g.FillPath(this.HeaderBackBrush, path);
-                g.DrawString(txt, font, this.HeaderTextBrush, textBoxRect, fmt);
-                textBoxRect.Y += size.Height + spacing.Height;
-            }
-
-            // Draw the other bits of information
-            using (Font font = new Font("Tahoma", DetailFontSize))
-            {
-                SizeF size = g.MeasureString("Wj", font, itemBounds.Width, fmt);
-                textBoxRect.Height = size.Height;
-                fmt.Alignment = StringAlignment.Near;
-                for (int i = 0; i < olv.Columns.Count; i++)
-                {
-                    OLVColumn column = olv.GetColumn(i);
-                    if (column.IsTileViewColumn)
-                    {
-                        txt = column.GetStringValue(rowObject);
-                        g.DrawString(txt, font, this.TextBrush, textBoxRect, fmt);
-                        textBoxRect.Y += size.Height;
-                    }
-                }
+            } finally {
+                g.Restore(state);
             }
         }
 

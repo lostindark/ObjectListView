@@ -11,6 +11,12 @@ namespace ObjectListViewDemo {
 
         public TabSimpleExample() {
             InitializeComponent();
+            DemoTheme.ApplyInformationBanner(this.label1);
+            if (DemoTheme.IsDarkMode) {
+                this.olvSimpleCookingColumn.HeaderForeColor = Color.LightGreen;
+                this.columnHeader14.HeaderForeColor = ObjectListViewTheme.TextColor;
+                this.olvColumn34.HeaderForeColor = Color.LightCoral;
+            }
             this.ListView = this.olvSimple;
 
             // If you wanted the lists checkboxes to behave like radio buttons, you could do something like this:

@@ -9,6 +9,7 @@ namespace ObjectListViewDemo
     public partial class TabPrinting : OlvDemoTab {
         public TabPrinting() {
             InitializeComponent();
+            DemoTheme.ApplyInformationBanner(this.label12);
         }
 
         // Public fields (yuck) to avoid the baggage of wrapping a private field.

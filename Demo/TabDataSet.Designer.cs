@@ -39,12 +39,20 @@
             this.buttonResetData = new System.Windows.Forms.Button();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.label22 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxEditable = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxEditable = new System.Windows.Forms.ComboBox();
+#endif
             this.checkBoxPause = new System.Windows.Forms.CheckBox();
             this.rowHeightUpDown = new System.Windows.Forms.NumericUpDown();
             this.label11 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxView = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxView = new System.Windows.Forms.ComboBox();
+#endif
             this.olvData = new BrightIdeasSoftware.DataListView();
             this.olvColumn1 = ((BrightIdeasSoftware.OLVColumn)(new BrightIdeasSoftware.OLVColumn()));
             this.highlightTextRenderer1 = new BrightIdeasSoftware.HighlightTextRenderer();

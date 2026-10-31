@@ -209,11 +209,11 @@ namespace BrightIdeasSoftware
         /// </summary>
         public HyperlinkStyle() {
             this.Normal = new CellStyle();
-            this.Normal.ForeColor = Color.Blue;
+            this.Normal.ForeColor = ObjectListViewTheme.HyperlinkTextColor;
             this.Over = new CellStyle();
             this.Over.FontStyle = FontStyle.Underline;
             this.Visited = new CellStyle();
-            this.Visited.ForeColor = Color.Purple;
+            this.Visited.ForeColor = ObjectListViewTheme.VisitedLinkTextColor;
             this.OverCursor = Cursors.Hand;
         }
 

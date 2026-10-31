@@ -31,14 +31,26 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TabComplexExample));
             this.label38 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxHotItemStyle = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxHotItemStyle = new System.Windows.Forms.ComboBox();
+#endif
             this.groupBox10 = new System.Windows.Forms.GroupBox();
             this.textBoxFilterComplex = new System.Windows.Forms.TextBox();
             this.buttonAdd = new System.Windows.Forms.Button();
             this.buttonRemove = new System.Windows.Forms.Button();
+#if NETFRAMEWORK
+            this.comboBoxEditable = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxEditable = new System.Windows.Forms.ComboBox();
+#endif
             this.label6 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxView = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxView = new System.Windows.Forms.ComboBox();
+#endif
             this.buttonDisable = new System.Windows.Forms.Button();
             this.buttonRebuild = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();

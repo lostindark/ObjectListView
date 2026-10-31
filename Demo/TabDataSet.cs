@@ -11,6 +11,7 @@ namespace ObjectListViewDemo
 
         public TabDataSet() {
             InitializeComponent();
+            DemoTheme.ApplyInformationBanner(this.label3);
             this.ListView = this.olvData;
         }
 
@@ -41,10 +42,12 @@ namespace ObjectListViewDemo
                 string text = e.SubItem.Text.ToLowerInvariant();
                 foreach (string name in colorNames) {
                     if (text.Contains(name)) {
-                        if (text.Contains("bk-" + name))
+                        if (text.Contains("bk-" + name)) {
                             e.SubItem.BackColor = Color.FromName(name);
-                        else
-                            e.SubItem.ForeColor = Color.FromName(name);
+                            if (DemoTheme.IsDarkMode)
+                                e.SubItem.ForeColor = e.SubItem.BackColor.GetBrightness() > 0.5f ? Color.Black : Color.White;
+                        } else
+                            e.SubItem.ForeColor = GetDataTextColor(name);
                     }
                 }
                 FontStyle style = FontStyle.Regular;
@@ -60,6 +63,18 @@ namespace ObjectListViewDemo
                 if (style != FontStyle.Regular)
                     e.SubItem.Font = new Font(e.SubItem.Font, style);
             };
+        }
+
+        private static Color GetDataTextColor(string name) {
+            if (DemoTheme.IsDarkMode) {
+                switch (name) {
+                    case "black": return ObjectListViewTheme.TextColor;
+                    case "red": return Color.LightCoral;
+                    case "green": return Color.LightGreen;
+                    case "blue": return ObjectListViewTheme.LinkColor;
+                }
+            }
+            return Color.FromName(name);
         }
 
         private void SetupColumns() {

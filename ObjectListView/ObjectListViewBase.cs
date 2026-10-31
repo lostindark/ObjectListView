@@ -709,6 +709,10 @@ namespace BrightIdeasSoftware
                 glassPanel.Dispose();
             }
             this.glassPanels.Clear();
+            if (this.subItemCheckBoxImageList != null)
+                this.subItemCheckBoxImageList.Dispose();
+            if (this.resizedImageList != null)
+                this.resizedImageList.Dispose();
 
             this.UnsubscribeNotifications(null);
         }
@@ -909,19 +913,24 @@ namespace BrightIdeasSoftware
         /// Gets the style that will be used by default to format hot rows
         /// </summary>
         public static HotItemStyle DefaultHotItemStyle {
-            get {
-                if (sDefaultHotItemStyle == null) {
-                    sDefaultHotItemStyle = new HotItemStyle();
-                    sDefaultHotItemStyle.BackColor = Color.FromArgb(224, 235, 253);
-                }
-                return sDefaultHotItemStyle;
-            }
+            get { return ObjectListViewTheme.DefaultHotItemStyle; }
         }
-        private static HotItemStyle sDefaultHotItemStyle;
 
         #endregion
 
         #region Public properties
+
+        /// <summary>Gets or sets the row background, adapting the default system color to the selected palette.</summary>
+        public override Color BackColor {
+            get { return ObjectListViewTheme.ResolveWindowColor(base.BackColor); }
+            set { base.BackColor = value; }
+        }
+
+        /// <summary>Gets or sets the row text color, adapting the default system color to the selected palette.</summary>
+        public override Color ForeColor {
+            get { return ObjectListViewTheme.ResolveTextColor(base.ForeColor); }
+            set { base.ForeColor = value; }
+        }
 
         /// <summary>
         /// Gets or sets an model filter that is combined with any column filtering that the end-user specifies.
@@ -999,7 +1008,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public virtual Color AlternateRowBackColorOrDefault {
             get {
-                return this.alternateRowBackColor == Color.Empty ? Color.LemonChiffon : this.alternateRowBackColor;
+                return this.alternateRowBackColor.IsEmpty ? ObjectListViewTheme.AlternateRowColor : this.alternateRowBackColor;
             }
         }
 
@@ -2190,7 +2199,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public virtual Color SelectedBackColorOrDefault {
             get {
-                return this.SelectedBackColor.IsEmpty ? SystemColors.Highlight : this.SelectedBackColor;
+                return this.SelectedBackColor.IsEmpty ? ObjectListViewTheme.HighlightColor : this.SelectedBackColor;
             }
         }
 
@@ -2212,7 +2221,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public virtual Color SelectedForeColorOrDefault {
             get {
-                return this.SelectedForeColor.IsEmpty ? SystemColors.HighlightText : this.SelectedForeColor;
+                return this.SelectedForeColor.IsEmpty ? ObjectListViewTheme.HighlightTextColor : this.SelectedForeColor;
             }
         }
 
@@ -3462,7 +3471,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public virtual Color UnfocusedSelectedBackColorOrDefault {
             get {
-                return this.UnfocusedSelectedBackColor.IsEmpty ? SystemColors.Control : this.UnfocusedSelectedBackColor;
+                return this.UnfocusedSelectedBackColor.IsEmpty ? ObjectListViewTheme.InactiveSelectionColor : this.UnfocusedSelectedBackColor;
             }
         }
 
@@ -3484,7 +3493,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public virtual Color UnfocusedSelectedForeColorOrDefault {
             get {
-                return this.UnfocusedSelectedForeColor.IsEmpty ? SystemColors.ControlText : this.UnfocusedSelectedForeColor;
+                return this.UnfocusedSelectedForeColor.IsEmpty ? ObjectListViewTheme.InactiveSelectionTextColor : this.UnfocusedSelectedForeColor;
             }
         }
 
@@ -3574,8 +3583,12 @@ namespace BrightIdeasSoftware
             get { return useExplorerTheme; }
             set {
                 useExplorerTheme = value;
-                if (this.Created)
-                    NativeMethods.SetWindowTheme(this.Handle, value ? "explorer" : "", null);
+                if (this.Created) {
+                    // Do not replace WinForms' dark native theme with the classic Explorer theme.
+                    NativeMethods.SetWindowTheme(this.Handle, ObjectListViewTheme.IsDarkMode ? "DarkMode_Explorer" : value ? "explorer" : "", null);
+                    if (ObjectListViewTheme.IsDarkMode)
+                        NativeMethods.SetWindowTheme(NativeMethods.GetHeaderControl(this), "DarkMode_ItemsView", null);
+                }
                 
                 this.OwnerDraw = !value;
             }
@@ -9123,6 +9136,7 @@ namespace BrightIdeasSoftware
         }
 
         void ISupportInitialize.EndInit() {
+            this.initializingColumns = false;
             if (this.RowHeight != -1) {
                 this.SmallImageList = this.SmallImageList;
                 if (this.CheckBoxes)
@@ -9132,7 +9146,6 @@ namespace BrightIdeasSoftware
             if (this.UseSubItemCheckBoxes || (this.VirtualMode && this.CheckBoxes))
                 this.SetupSubItemCheckBoxes();
 
-            this.initializingColumns = false;
             if (this.IsHandleCreated)
                 this.RescaleColumnWidthsForDpi(this.GetWindowDpi());
             this.Frozen = false;
@@ -9146,16 +9159,36 @@ namespace BrightIdeasSoftware
         /// Update our externally visible image list so it holds the same images as our shadow list, but sized correctly
         /// </summary>
         private void SetupBaseImageList() {
-            // If a row height hasn't been set, or an image list has been give which is the required size, just assign it
-            if (rowHeight == -1 ||
-                this.View != View.Details ||
-                (this.shadowedImageList != null && this.shadowedImageList.ImageSize.Height == rowHeight))
-                this.BaseSmallImageList = this.shadowedImageList;
-            else {
-                int width = (this.shadowedImageList == null ? 16 : this.shadowedImageList.ImageSize.Width);
-                this.BaseSmallImageList = this.MakeResizedImageList(width, rowHeight, shadowedImageList);
+            ImageList previous = this.resizedImageList;
+            ImageList previousBase = base.SmallImageList;
+            ImageList replacement = this.shadowedImageList;
+            ImageList resized = null;
+            bool attached = false;
+            try {
+                if (rowHeight != -1 &&
+                    this.View == View.Details &&
+                    (this.shadowedImageList == null || this.shadowedImageList.ImageSize.Height != rowHeight)) {
+                    int width = (this.shadowedImageList == null ? 16 : this.shadowedImageList.ImageSize.Width);
+                    resized = this.MakeResizedImageList(width, rowHeight, shadowedImageList);
+                    replacement = resized;
+                }
+                this.BaseSmallImageList = replacement;
+                this.resizedImageList = resized ?? (ReferenceEquals(previous, replacement) ? previous : null);
+                attached = true;
+                if (previous != null && !ReferenceEquals(previous, replacement))
+                    previous.Dispose();
+            } finally {
+                if (!attached) {
+                    try {
+                        base.SmallImageList = previousBase;
+                    } finally {
+                        if (resized != null)
+                            resized.Dispose();
+                    }
+                }
             }
         }
+        private ImageList resizedImageList;
 
         /// <summary>
         /// Return a copy of the given source image list, where each image has been resized to be height x height in size.
@@ -9167,27 +9200,26 @@ namespace BrightIdeasSoftware
         /// <returns>A new image list</returns>
         private ImageList MakeResizedImageList(int width, int height, ImageList source) {
             ImageList il = new ImageList();
-            il.ImageSize = new Size(width, height);
-
-            // If there's nothing to copy, just return the new list
-            if (source == null)
+            bool complete = false;
+            try {
+                il.ImageSize = new Size(width, height);
+                if (source != null) {
+                    il.TransparentColor = source.TransparentColor;
+                    il.ColorDepth = source.ColorDepth;
+                    IntPtr handle = il.Handle;
+                    var keys = source.Images.Keys;
+                    for (int i = 0; i < source.Images.Count; i++) {
+                        using (Image image = source.Images[i])
+                        using (Bitmap bitmap = this.MakeResizedImage(width, height, image, source.TransparentColor))
+                            il.Images.Add(keys[i], bitmap);
+                    }
+                }
+                complete = true;
                 return il;
-
-            il.TransparentColor = source.TransparentColor;
-            il.ColorDepth = source.ColorDepth;
-
-            // Fill the imagelist with resized copies from the source
-            for (int i = 0; i < source.Images.Count; i++) {
-                Bitmap bm = this.MakeResizedImage(width, height, source.Images[i], source.TransparentColor);
-                il.Images.Add(bm);
+            } finally {
+                if (!complete)
+                    il.Dispose();
             }
-
-            // Give each image the same key it has in the original
-            foreach (String key in source.Images.Keys) {
-                il.Images.SetKeyName(source.Images.IndexOfKey(key), key);
-            }
-
-            return il;
         }
 
         /// <summary>
@@ -9200,12 +9232,20 @@ namespace BrightIdeasSoftware
         /// <returns>A new bitmap</returns>
         private Bitmap MakeResizedImage(int width, int height, Image image, Color transparent) {
             Bitmap bm = new Bitmap(width, height);
-            Graphics g = Graphics.FromImage(bm);
-            g.Clear(transparent);
-            int x = Math.Max(0, (bm.Size.Width - image.Size.Width) / 2);
-            int y = Math.Max(0, (bm.Size.Height - image.Size.Height) / 2);
-            g.DrawImage(image, x, y, image.Size.Width, image.Size.Height);
-            return bm;
+            bool complete = false;
+            try {
+                using (Graphics g = Graphics.FromImage(bm)) {
+                    g.Clear(transparent);
+                    int x = Math.Max(0, (bm.Size.Width - image.Size.Width) / 2);
+                    int y = Math.Max(0, (bm.Size.Height - image.Size.Height) / 2);
+                    g.DrawImage(image, x, y, image.Size.Width, image.Size.Height);
+                }
+                complete = true;
+                return bm;
+            } finally {
+                if (!complete)
+                    bm.Dispose();
+            }
         }
 
         /// <summary>
@@ -9268,6 +9308,8 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <remarks>This gives the ListView a small image list, if it doesn't already have one.</remarks>
         public virtual void SetupSubItemCheckBoxes() {
+            if (this.initializingColumns)
+                return;
             this.ShowImagesOnSubItems = true;
             if (this.SmallImageList == null || !this.SmallImageList.Images.ContainsKey(CHECKED_KEY))
                 this.InitializeSubItemCheckBoxImages();
@@ -9294,27 +9336,43 @@ namespace BrightIdeasSoftware
             if (this.DesignMode)
                 return;
 
-            ImageList il = this.SmallImageList;
-            if (il == null) {
-                il = new ImageList();
-                il.ImageSize = new Size(16, 16);
-                il.ColorDepth = ColorDepth.Depth32Bit;
+            // Legacy serialized image lists can have no spare bitmap capacity for appended states.
+            ImageList source = this.SmallImageList;
+            ImageList il = this.MakeResizedImageList(source == null ? 16 : source.ImageSize.Width,
+                source == null ? 16 : source.ImageSize.Height, source);
+            bool attached = false;
+            try {
+                if (source == null)
+                    il.ColorDepth = ColorDepth.Depth32Bit;
+                this.AddCheckStateBitmap(il, CHECKED_KEY, CheckBoxState.CheckedNormal);
+                this.AddCheckStateBitmap(il, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
+                this.AddCheckStateBitmap(il, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
+
+                this.SmallImageList = il;
+                ImageList previous = this.subItemCheckBoxImageList;
+                this.subItemCheckBoxImageList = il;
+                attached = true;
+                if (previous != null)
+                    previous.Dispose();
+            } finally {
+                if (!attached) {
+                    this.shadowedImageList = source;
+                    il.Dispose();
+                }
             }
-
-            this.AddCheckStateBitmap(il, CHECKED_KEY, CheckBoxState.CheckedNormal);
-            this.AddCheckStateBitmap(il, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
-            this.AddCheckStateBitmap(il, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
-
-            this.SmallImageList = il;
         }
+        private ImageList subItemCheckBoxImageList;
 
         private void AddCheckStateBitmap(ImageList il, string key, CheckBoxState boxState) {
-            Bitmap b = new Bitmap(il.ImageSize.Width, il.ImageSize.Height);
-            Graphics g = Graphics.FromImage(b);
-            g.Clear(il.TransparentColor);
-            Point location = new Point(b.Width / 2 - 5, b.Height / 2 - 6);
-            CheckBoxRenderer.DrawCheckBox(g, location, boxState);
-            il.Images.Add(key, b);
+            using (Bitmap b = new Bitmap(il.ImageSize.Width, il.ImageSize.Height)) {
+                using (Graphics g = Graphics.FromImage(b)) {
+                    g.Clear(il.TransparentColor);
+                    Point location = new Point(b.Width / 2 - 5, b.Height / 2 - 6);
+                    ThemedRendering.DrawCheckBox(g, location, boxState);
+                }
+                IntPtr handle = il.Handle;
+                il.Images.Add(key, b);
+            }
         }
 
         #endregion
@@ -9851,6 +9909,7 @@ namespace BrightIdeasSoftware
             if (column == null)
                 return;
             Control c = this.GetCellEditor(item, subItemIndex);
+            ObjectListViewTheme.ApplyCellEditorColors(c);
             Rectangle cellBounds = this.CalculateCellBounds(item, subItemIndex);
             c.Bounds = this.CalculateCellEditorBounds(item, subItemIndex, c.PreferredSize);
 
@@ -10868,9 +10927,9 @@ namespace BrightIdeasSoftware
         protected virtual void InitializeEmptyListMsgOverlay() {
             TextOverlay overlay = new TextOverlay();
             overlay.Alignment = System.Drawing.ContentAlignment.MiddleCenter;
-            overlay.TextColor = SystemColors.ControlDarkDark;
-            overlay.BackColor = Color.BlanchedAlmond;
-            overlay.BorderColor = SystemColors.ControlDark;
+            overlay.TextColor = ObjectListViewTheme.EmptyListTextColor;
+            overlay.BackColor = ObjectListViewTheme.EmptyListBackColor;
+            overlay.BorderColor = ObjectListViewTheme.ControlDarkColor;
             overlay.BorderWidth = 2.0f;
             this.EmptyListMsgOverlay = overlay;
         }

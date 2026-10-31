@@ -33,15 +33,27 @@
             this.label24 = new System.Windows.Forms.Label();
             this.checkBoxCheckboxes = new System.Windows.Forms.CheckBox();
             this.groupBox11 = new System.Windows.Forms.GroupBox();
+#if NETFRAMEWORK
+            this.comboBoxFilterType = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxFilterType = new System.Windows.Forms.ComboBox();
+#endif
             this.textBoxFilterFast = new System.Windows.Forms.TextBox();
             this.checkBoxGroups = new System.Windows.Forms.CheckBox();
             this.buttonCopy = new System.Windows.Forms.Button();
             this.buttonRemove = new System.Windows.Forms.Button();
             this.label26 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxEditable = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxEditable = new System.Windows.Forms.ComboBox();
+#endif
             this.label25 = new System.Windows.Forms.Label();
+#if NETFRAMEWORK
+            this.comboBoxView = new ObjectListViewDemo.ThemedComboBox();
+#else
             this.comboBoxView = new System.Windows.Forms.ComboBox();
+#endif
             this.buttonDisable = new System.Windows.Forms.Button();
             this.buttonAdd = new System.Windows.Forms.Button();
             this.olvFast = new BrightIdeasSoftware.FastObjectListView();

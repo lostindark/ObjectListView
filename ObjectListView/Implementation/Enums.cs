@@ -31,6 +31,18 @@ using System.Text;
 
 namespace BrightIdeasSoftware {
 
+    /// <summary>Determines the application-wide default palette for ObjectListView.</summary>
+    public enum ObjectListViewColorMode {
+        /// <summary>Follow WinForms on .NET 10; retain the classic palette on .NET Framework.</summary>
+        Default,
+        /// <summary>Use the Windows application color preference sampled at configuration time.</summary>
+        System,
+        /// <summary>Use the classic light palette.</summary>
+        Light,
+        /// <summary>Use the dark palette unless high contrast is enabled.</summary>
+        Dark
+    }
+
     public partial class ObjectListViewBase {
         /// <summary>
         /// How does a user indicate that they want to edit cells?

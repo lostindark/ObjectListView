@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
@@ -23,12 +24,24 @@ namespace BrightIdeasSoftware.Tests
         private string originalDirectory;
         private Exception uiException;
         private VisualStyleState originalVisualStyles;
+#if NETFRAMEWORK
+        private readonly Dictionary<DefaultTraceListener, bool> assertionUiSettings = new Dictionary<DefaultTraceListener, bool>();
+        private TraceListener assertionListener;
+#endif
 #if NET10_0_OR_GREATER
         private SystemColorMode originalWinFormsMode;
 #endif
 
         [TestInitialize]
         public void InitializeDemo() {
+#if NETFRAMEWORK
+            foreach (DefaultTraceListener listener in Trace.Listeners.OfType<DefaultTraceListener>()) {
+                this.assertionUiSettings.Add(listener, listener.AssertUiEnabled);
+                listener.AssertUiEnabled = false;
+            }
+            this.assertionListener = new FailingAssertionListener();
+            Trace.Listeners.Add(this.assertionListener);
+#endif
             Application.ThreadException += this.OnUiException;
             this.originalDirectory = Directory.GetCurrentDirectory();
             Directory.SetCurrentDirectory(AppContext.BaseDirectory);
@@ -48,6 +61,12 @@ namespace BrightIdeasSoftware.Tests
 #endif
             Application.ThreadException -= this.OnUiException;
             Application.VisualStyleState = this.originalVisualStyles;
+#if NETFRAMEWORK
+            Trace.Listeners.Remove(this.assertionListener);
+            this.assertionListener.Dispose();
+            foreach (var setting in this.assertionUiSettings)
+                setting.Key.AssertUiEnabled = setting.Value;
+#endif
             if (this.uiException != null)
                 System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(this.uiException).Throw();
         }
@@ -413,6 +432,24 @@ namespace BrightIdeasSoftware.Tests
         }
 
 #if NETFRAMEWORK
+        private sealed class FailingAssertionListener : TraceListener {
+            public override void Write(string message) {
+                Console.Error.Write(message);
+            }
+
+            public override void WriteLine(string message) {
+                Console.Error.WriteLine(message);
+            }
+
+            public override void Fail(string message) {
+                this.Fail(message, null);
+            }
+
+            public override void Fail(string message, string detailMessage) {
+                throw new AssertFailedException("Debug assertion failed: " + message + Environment.NewLine + detailMessage);
+            }
+        }
+
         private sealed class TabPaintProbe : ObjectListViewDemo.ThemedTabControl {
             public void Send(ref Message message) {
                 this.WndProc(ref message);

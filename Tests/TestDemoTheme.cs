@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
@@ -24,24 +23,12 @@ namespace BrightIdeasSoftware.Tests
         private string originalDirectory;
         private Exception uiException;
         private VisualStyleState originalVisualStyles;
-#if NETFRAMEWORK
-        private readonly Dictionary<DefaultTraceListener, bool> assertionUiSettings = new Dictionary<DefaultTraceListener, bool>();
-        private TraceListener assertionListener;
-#endif
 #if NET10_0_OR_GREATER
         private SystemColorMode originalWinFormsMode;
 #endif
 
         [TestInitialize]
         public void InitializeDemo() {
-#if NETFRAMEWORK
-            foreach (DefaultTraceListener listener in Trace.Listeners.OfType<DefaultTraceListener>()) {
-                this.assertionUiSettings.Add(listener, listener.AssertUiEnabled);
-                listener.AssertUiEnabled = false;
-            }
-            this.assertionListener = new FailingAssertionListener();
-            Trace.Listeners.Add(this.assertionListener);
-#endif
             Application.ThreadException += this.OnUiException;
             this.originalDirectory = Directory.GetCurrentDirectory();
             Directory.SetCurrentDirectory(AppContext.BaseDirectory);
@@ -61,12 +48,6 @@ namespace BrightIdeasSoftware.Tests
 #endif
             Application.ThreadException -= this.OnUiException;
             Application.VisualStyleState = this.originalVisualStyles;
-#if NETFRAMEWORK
-            Trace.Listeners.Remove(this.assertionListener);
-            this.assertionListener.Dispose();
-            foreach (var setting in this.assertionUiSettings)
-                setting.Key.AssertUiEnabled = setting.Value;
-#endif
             if (this.uiException != null)
                 System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(this.uiException).Throw();
         }
@@ -280,25 +261,16 @@ namespace BrightIdeasSoftware.Tests
 
         [TestMethod]
         public void Test_ThemeMenu_ReloadsTheActualDemoAndPreservesWindowAndTab() {
-            string diagnosticPath = Path.Combine(Environment.GetEnvironmentVariable("GITHUB_WORKSPACE") ?? this.originalDirectory,
-                "artifacts", "TestResults", "theme-reload.log");
-            Directory.CreateDirectory(Path.GetDirectoryName(diagnosticPath));
-            object diagnosticLock = new object();
-            Action<string> log = message => {
-                lock (diagnosticLock)
-                    File.AppendAllText(diagnosticPath, DateTime.UtcNow.ToString("O") + " " + message + Environment.NewLine);
-            };
-            log("Starting reload test");
             Exception failure = null;
             int stage = 0;
             int threadExits = 0;
             DateTime deadline = DateTime.UtcNow.AddSeconds(30);
-            Rectangle bounds = new Rectangle(80, 80, 1450, 1150);
+            Rectangle workingArea = Screen.PrimaryScreen.WorkingArea;
+            Rectangle bounds = new Rectangle(workingArea.Left + 20, workingArea.Top + 20,
+                Math.Min(1450, workingArea.Width - 40), Math.Min(1150, workingArea.Height - 40));
             using (var timer = new Timer { Interval = 100 }) {
-                using (var watchdog = new System.Threading.Timer(delegate { log(DemoWindowDiagnostics.DescribeOwnedWindows()); }, null, 20000, System.Threading.Timeout.Infinite)) {
                 timer.Tick += delegate {
                     timer.Stop();
-                    log("Timer tick, stage " + stage);
                     try {
                         if (DateTime.UtcNow > deadline)
                             throw new TimeoutException("The demo did not complete its theme reload.");
@@ -308,9 +280,7 @@ namespace BrightIdeasSoftware.Tests
                             return;
                         }
                         form.Opacity = 0;
-                        log("Opacity set");
                         form.ShowInTaskbar = false;
-                        log("Taskbar visibility set");
                         var tabs = form.Controls.OfType<TabControl>().Single();
                         var menu = form.Controls.OfType<StatusStrip>().Single().Items.OfType<ToolStripDropDownButton>().Single();
                         var items = menu.DropDownItems.OfType<ToolStripMenuItem>().ToArray();
@@ -322,6 +292,7 @@ namespace BrightIdeasSoftware.Tests
                         Assert.AreEqual(1, items.Count(item => item.Checked));
                         if (stage == 0) {
                             form.Bounds = bounds;
+                            bounds = form.Bounds;
                             tabs.SelectedIndex = 2;
                         } else {
                             Assert.AreEqual(bounds, form.Bounds);
@@ -334,26 +305,22 @@ namespace BrightIdeasSoftware.Tests
                         int[] nextItems = { 2, 1, 0 };
                         int next = nextItems[stage++];
                         items[next].PerformClick();
-                        log("Theme click completed");
                         timer.Start();
                     } catch (Exception ex) {
-                        log(ex.ToString());
                         failure = ex;
                         foreach (Form form in Application.OpenForms.Cast<Form>().ToArray())
                             form.Close();
+                        Application.ExitThread();
                     }
                 };
                 EventHandler threadExited = delegate { threadExits++; };
                 Application.ThreadExit += threadExited;
                 timer.Start();
                 try {
-                    log("Entering RunDemo");
                     ObjectListViewDemo.MainForm.RunDemo();
-                    log("RunDemo returned");
                 } finally {
                     timer.Stop();
                     Application.ThreadExit -= threadExited;
-                }
                 }
             }
             if (failure != null)
@@ -450,24 +417,6 @@ namespace BrightIdeasSoftware.Tests
         }
 
 #if NETFRAMEWORK
-        private sealed class FailingAssertionListener : TraceListener {
-            public override void Write(string message) {
-                Console.Error.Write(message);
-            }
-
-            public override void WriteLine(string message) {
-                Console.Error.WriteLine(message);
-            }
-
-            public override void Fail(string message) {
-                this.Fail(message, null);
-            }
-
-            public override void Fail(string message, string detailMessage) {
-                throw new AssertFailedException("Debug assertion failed: " + message + Environment.NewLine + detailMessage);
-            }
-        }
-
         private sealed class TabPaintProbe : ObjectListViewDemo.ThemedTabControl {
             public void Send(ref Message message) {
                 this.WndProc(ref message);

@@ -1,374 +1,209 @@
 # ObjectListView v3 implementation plan
 
-[Documentation index](README.md)
+[Documentation index](README.md) | [Migration guide](v3-migration.md)
+
+**V3 is a work in progress, not a completed release.** This plan tracks remaining
+work and acceptance gates; the migration guide describes implemented contracts.
 
 ## Goals and compatibility policy
 
-Version 3 is a deliberate API cleanup, not a rewrite. Preserve useful behavior and source compatibility where practical, but remove properties, events, and methods that do not fit the new contracts. Every breaking change needs a documented replacement or an explanation of why the capability is being retired.
+V3 is an API cleanup, not a rewrite. Preserve useful behavior and source
+compatibility where practical. Every breaking change must have a documented
+replacement or retirement rationale.
 
-The main goals are enumerable-friendly collection APIs, explicit grouping configuration, unified styling, consistent custom rendering and hit testing, and focused cleanup.
+Priorities are enumerable-friendly APIs, explicit grouping, shared style
+resolution, consistent rendering/hit testing, and focused cleanup.
 
-The upstream roadmap's proposed .NET Framework 4.0 minimum is historical. The current repository already targets **.NET Framework 4.6.2**; this plan does not lower that target or reintroduce .NET 2.0 support.
+Runtime targets are **.NET Framework 4.6.2** and **.NET 10 for Windows**.
+Retain the Framework designer; modern designer support remains a separate
+acceptance milestone. .NET 8 and older Framework targets are out of scope.
+Before release, review Framework support: Microsoft's support for 4.6.2 ends
+January 12, 2027. Changes to Windows compatibility require a separate support decision.
 
-The platform migration workstream retains `net462` and adds `net10.0-windows`
-to all six runtime/test projects. It also introduces separate modern Designer SDK
-client/server/protocol projects, without mixing platform work with the remaining
-API redesign. Runtime previews may precede complete designer acceptance.
-The Framework designer is retained; .NET 8 is not a target. Before shipping v3,
-review the support policy: Microsoft support for .NET Framework 4.6.2 ends on
-January 12, 2027. Do not remove Windows compatibility branches without a separate
-operating-system support decision.
+## Current status
 
-## Current foundations
-
-These prerequisites are already complete:
-
-- All six runtime/test projects use SDK-style project files and target `net462;net10.0-windows`.
-- The test project uses MSTest 4.5.1 and package references.
-- The pre-platform-migration baseline is 610 passing cases in both Debug and Release; preserve test identities, not just totals.
-- WinForms tests execute serially on STA threads with fresh, invisible, non-activating forms that are disposed after each test.
-- All 13 previously excluded Munger tests are included.
-- Full-framework MSBuild retains the Framework resource path; .NET 10 uses preserialized resources without a BinaryFormatter opt-in.
-
-Use the [documented build and test workflow](../README.md#tests). The test baseline includes inherited fixtures for regular, fast, and tree list controls. Preserve those concrete cases, not merely an overall test count.
-
-Some v3 building blocks also already exist: `Objects` and `SetObjects()` use `IEnumerable`, `OLVExporter` accepts an enumerable, and `IRenderer` supports cell rendering, hit testing, and editor positioning. Extend these mechanisms rather than introducing parallel implementations.
+| Workstream | Status |
+| --- | --- |
+| Platform and test infrastructure | Implemented: SDK-style projects, both runtime targets, MSTest, serial STA UI fixtures, and preserialized modern resources |
+| Enumerable APIs | Implemented: sequence inputs, snapshot getters, private accepted batches, and updated dependent commands/interfaces |
+| Generic control foundation | Implemented: shared UI base, typed storage, compatibility facade, typed adapters, source hooks, and display-order `Rows` |
+| Saved layouts | Implemented: shared versioned format; legacy BinaryFormatter layouts must be recreated |
+| DPI and demo layout | Implemented: host DPI configuration, column scaling, and corrected layout/drawing geometry |
+| Dark mode | Implemented: shared palette, stock .NET 10 controls, Framework fallbacks, and demo theme selection |
+| Modern designer | Preview: packaged client/server/protocol integration; desktop acceptance gates remain |
+| Grouping redesign | Planned |
+| Unified style precedence | Planned; dark mode does not complete this phase |
+| Shared rendering/hit-test layout | Planned |
+| Final API cleanup and release | Pending |
 
 ## Platform migration checkpoint
 
-This checkpoint is the repository handoff for subsequent .NET support iterations.
-The runtime migration is implemented; modern designer support is still a preview,
-not a completed acceptance milestone. Do not mix the open designer work with the
-unrelated grouping/styling phases below.
+The runtime migration is implemented. Keep open designer work separate from the
+grouping, styling, and layout redesigns.
 
-| Workstream | Progress |
+### Implemented foundations
+
+- Both demos and runtime/test projects target `net462;net10.0-windows`.
+  Modern designer assets are separate from runtime dependencies.
+- Framework resources and designer types are retained. Modern resources do not
+  require a BinaryFormatter compatibility switch.
+- Saved layouts use the same format on both runtimes. State regressions cover
+  hidden/removed columns and remembered display-order keys.
+- Modern column and copied-value printer editors, binding metadata, localization,
+  image resources, and generated-code rebuilds have packaged-consumer coverage.
+- Header resizing uses public Designer SDK adorner/behavior APIs, with bounded
+  preview, cancellation, and one transaction per gesture. Do not reintroduce
+  private-reflection hooks.
+- CI builds/tests both configurations and targets and checks package contents,
+  fresh consumers, and two-way layout interchange.
+
+### DPI, dark mode, and review follow-up
+
+- Demos use system awareness on Framework and `PerMonitorV2` on .NET 10.
+  Tabs inherit parent autoscaling; split-panel content uses docked layout.
+- Initial column widths and limits scale from 96-DPI values. Modern DPI changes
+  preserve current user sizing; handle recreation must not scale widths twice.
+- Business-card and task-button geometry is DPI-aware and measured against content.
+- `ObjectListViewTheme` owns palette decisions. Explicit editor colors, including
+  system-color assignments, are preserved through WinForms property metadata.
+- The .NET 10 demo retains stock control rendering, with targeted background/header
+  color corrections. Framework-only dark fallbacks use buffered painting.
+- Demo banners and illustrative colors are configured explicitly, not inferred
+  from existing RGB values. The theme menu reloads examples while preserving
+  window position and the selected tab.
+- Drawing resources are scoped. Control-owned image-list copies are disposed on
+  replacement, control disposal, and failed construction/attachment.
+- Serialized image lists are copied before appending checkbox states. Setup waits
+  until `EndInit` so late-loaded designer icons and keys are preserved.
+- Runtime theme tests and actual-demo tests are separate. Demo tests reference the
+  built assembly and cover control wiring, theme reloads, captions, images, and
+  print preview.
+
+Recent focused Release checks pass on both runtimes. This is not evidence of a
+new full Debug/Release matrix or packaged-consumer acceptance for the final revision.
+Historical test totals and temporary package names are not release criteria.
+
+### Open acceptance gates
+
+1. Verify physical mouse header resizing in Visual Studio, including serialization
+   and one-operation Undo/Redo. Dispatcher checks pass; Columns/Properties remain
+   the verified workaround.
+2. Verify the complete smart-tag View change/return workflow and subsequent
+   native header interaction.
+3. Establish modern designer discovery for project-reference-only consumers.
+   Runtime rendering works, but NuGet designer acceptance does not prove this path.
+4. Repeat affected packaged-consumer checks after designer fixes, retaining
+   Framework designer and runtime-only deployment coverage.
+5. Run the full Debug/Release test matrix and package checks on the final revision.
+   Report clipboard-access or ImageList failures rather than hiding or skipping them.
+
+ARM64 and every Windows/Visual Studio/monitor configuration are not claimed.
+Local desktop fixtures and screenshots are not reproducible acceptance evidence
+unless recreated from a fresh checkout.
+
+## Phase 1: establish API and performance baselines
+
+Test infrastructure is ready; the API inventory and performance budgets remain.
+
+- Classify public APIs and extension points as keep, replace, or remove.
+- Document replacements before introducing breaking changes.
+- Measure regular, fast, virtual, bound, and tree controls with small/large sources.
+  Include sorting, filtering, selection, checks, and batch mutations.
+- Preserve concrete test identities and coverage, not just passing totals.
+
+**Exit criteria:** agreed API inventory, reproducible measurements, regression
+budgets, and retained baseline cases passing without new skips.
+
+## Phase 2: enumerable APIs and generic controls
+
+**Implemented.** See the [migration guide](v3-migration.md) for signatures,
+ownership, null behavior, and subclass hooks.
+
+Preserve these invariants:
+
+- Consume sequences once before mutation; enumeration failures do not partially
+  apply a batch.
+- Keep independent snapshots and read-only source/display-order access distinct.
+- Preserve cancellation, notification subscriptions, ordering, and control-specific
+  behavior.
+- Typed commands dispatch through the existing virtual pipeline; accepted event
+  batches are private, validated snapshots.
+
+Generic virtual/tree controls and replacement data-source interfaces remain
+separate work, not implied by the current typed control.
+
+## Phase 3: explicit grouping configuration
+
+Replace `AlwaysGroupByColumn` and `AlwaysGroupBySortOrder` with one configuration
+built on `GroupingParameters`.
+
+Separate group column/order from item sort column/order, with an explicit choice
+between following sorting and fixed grouping. Use the same model for header
+clicks, menus, programmatic calls, and virtual grouping. Retire related switches
+only after their useful behavior has a replacement.
+
+**Acceptance:** independent group/item ordering, cancellation, custom comparers,
+non-groupable columns, collapsed-group state, and virtual grouping.
+
+## Phase 4: unified style resolution
+
+Unify shared row/cell, header, and tooltip concepts without creating an oversized
+renderer interface:
+
+| Concept | Responsibility |
 | --- | --- |
-| Runtime targets | All six original projects target `net462;net10.0-windows`; there is no .NET 8 target. Both demos run on both targets. |
-| Saved layouts | Shared, versioned OLVS schema 1 replaces BinaryFormatter. Old layouts must be recreated; malformed/incompatible input is rejected before applying it. |
-| Framework compatibility | Existing Framework designer types and resource build path are retained. The actual Framework designer's column editor, serialization, rebuild, and reopening were exercised. |
-| Modern designer implementation | SDK 1.6.0 client/server/protocol projects, custom column editor, filtering, smart-tag properties, and copied-value modal printer editors are packaged separately from runtime assets. |
-| Packaging and CI | Both configurations/targets are built and tested; package contents and fresh consumers are checked, including actual two-way layout interchange. The publishing workflow still consumes a successful CI artifact rather than rebuilding. |
-| Desktop acceptance | Public-API header resizing passes designer input-dispatcher checks, including Undo/Redo. Physical mouse dragging, the complete smart-tag View workflow, and project-reference-only designer discovery remain open gates. |
-| Review follow-up | The reproduced layout-restoration finding is fixed with focused regressions. Security review reported no vulnerabilities in the reviewed changes. The final unfiltered four-way test matrix and package checks passed. |
+| Values | Font, colors, spacing, alignment, and borders |
+| State | Selected, focused, hot, pressed, disabled, and combinations |
+| Resolution | Per-property inheritance, explicit overrides, and callback precedence |
+| Context | Bounds, DPI, RTL, model, column, and state |
 
-### Verified behavior and important fixes
+Distinguish unspecified values from explicit overrides. Integrate rows/cells,
+then headers, then tooltips; temporary adapters need a retirement plan.
 
-- Before review, the full post-migration suites passed 621 Framework cases and
-  620 modern cases in each configuration, with no skipped cases. Four review
-  regressions bring the passing totals to 625 and 624. The difference is the
-  Framework-only DesignSurface test; shared typed-property metadata assertions
-  remain covered on both targets.
-- The final local review run passed all 625 Framework and 624 modern cases,
-  unfiltered, in both configurations, including the clipboard integration test.
-  Earlier attempts encountered desktop clipboard access denial (Win32 error 5)
-  and transient ImageList allocation failures. Isolated cases and the subsequent
-  complete suites passed once desktop access recovered. Keep these environment
-  failures visible when diagnosing future runs; do not remove or permanently skip
-  the affected tests.
-- Review found that hiding a column, removing an earlier column, and saving could
-  produce a layout that its own control rejected. Remembered display positions
-  are relative ordering keys and can exceed the remaining column count. Restore
-  now preserves those keys, and menu ordering uses `CompareTo` so extreme
-  nonnegative keys and the -1 sentinel cannot overflow a subtraction comparer.
-  [State regressions](../Tests/TestState.cs) cover regular/fast/tree hide-remove
-  round trips, unhiding, and extreme-key ordering on both targets.
-- Custom column editing and serialization were exercised on ObjectListView,
-  FastObjectListView, VirtualObjectListView, TreeListView, DataListView,
-  FastDataListView, DataTreeListView, and a concrete typed subclass.
-- Actual toolbox insertion passed for the standard control and a concrete typed
-  control in a named namespace. The fixture's original global-namespace subclass
-  failed Visual Studio toolbox type resolution; it was a fixture/tooling issue,
-  not a runtime generic-control failure.
-- Column add/hide, selection of visible versus AllColumns entries, Undo/Redo,
-  Cancel rollback, generated-code rebuild, and save/close/reopen were exercised.
-- Printer editors passed existing-value Cancel isolation, pen Undo/Redo, and the
-  supported solid/hatch/gradient/None brush cases. Do not put the modern
-  ListViewPrinter runtime DLL in the server designer-plugin directory: duplicate
-  load contexts caused `PenData`-to-`PenData` assignment failures. The Framework
-  printer copy needed by the client is intentional.
-- Modern DataSource metadata uses `AttributeProvider(typeof(IListSource))`.
-  The legacy converter string had allowed component names to be serialized as
-  string values. BindingSource references and DataSet/People DataMember references
-  now round-trip as actual component references on all three bound-control types.
-- ImageList PNG import, header-image keys, French/neutral resources, and
-  generated-code execution in both cultures passed. These checks do not enable
-  BinaryFormatter compatibility switches.
-- A visible host exercised focus, cell-editor geometry and commit, rendering and
-  hit testing, Windows keyboard input, and actual OLE drag/drop with model identity
-  preserved. LTR/RTL cases passed on both runtimes at 96-DPI virtualization and
-  actual 144-DPI per-monitor mode. A modern x86 package-consumer smoke check also
-  passed; ARM64 and other Windows/Visual Studio/monitor combinations are not claimed.
-- DPI follow-up: both demo hosts now use a system-aware manifest for `net462`
-  and `PerMonitorV2` startup for .NET 10, without changing font defaults. The main
-  demo's tabs inherit parent scaling and omit independent `AutoScaleDimensions`;
-  otherwise early scaling shrank anchored settings and command panels. All eight
-  Debug/Release demo executables reported the expected native DPI context at
-  144 DPI. Focused layout checks passed at native 144 and virtualized 96 DPI on
-  both runtimes. Framework windows can still blur when moved between monitors
-  with different DPI; the runtime library does not set application DPI policy.
-- Column-DPI follow-up fixes the cramped text introduced by DPI-aware startup.
-  Existing widths and their limits now scale to the native window DPI, including
-  hidden/fixed columns, with initialization deferral and no repeated scaling on
-  handle recreation. .NET 10 DPI callbacks preserve current user sizing.
-  Actual Simple/Complex/Printer demo checks passed at native 144 and virtualized
-  96 DPI on both runtimes; the Complex Example's 150-pixel column becomes 225
-  pixels at 150% scaling. Restoring saved physical widths before first handle
-  creation also establishes scaled limits before applying the payload, avoiding
-  double scaling or premature clamping. The local `3.0.0-designer-dpi2` package
-  passed runtime consumer and two-way layout checks.
-- [Column-DPI regressions](../Tests/TestColumn.cs) add eight shared cases and one
-  modern callback case; focused runs pass on both targets. Current unfiltered
-  evidence covers 636 cases per target before the final restore-order guard,
-  but those four-way reruns are
-  **not fully green**: the existing clipboard-access case fails in each run.
-  Modern Debug also had one transient ImageList allocation failure; its isolated
-  rerun and the DPI cases passed together. Keep these environment failures
-  visible rather than excluding cases or claiming complete regression success.
-  After the restore-order guard, combined state/DPI selections passed 19 Framework
-  and 20 modern cases in both configurations; actual pre-handle restore checks
-  passed at native 144 and virtualized 96 DPI on both runtimes.
-- DataListView demo layout follow-up: the apparent empty view still had all
-  88 source/model/native rows, but both groups inside its split container had
-  collapsed to zero size during DPI autoscaling. They now fill padded split
-  panels instead of using four-edge anchors. Fixed label sizing and a wider
-  gap keep the settings clear of the list. Visible rows, live data edits, and
-  resizing passed on both runtimes/configurations at native 144 and virtualized
-  96 DPI. A selected-tab visible-content bounds audit also passed for all ten
-  demo tabs on both runtimes at both DPI levels. Row counts alone are not proof
-  that a demo's content is actually visible.
-- Both source DataGridViews now use `AutoSizeColumnsMode.AllCells` to fit their
-  headers and data rather than runtime-dependent default pixel widths. Preferred
-  content/header widths passed in both configurations/targets at native 144 and
-  virtualized 96 DPI, including growth after editing a longer value and shrinkage
-  after restoring it.
-- Custom-drawing follow-up: the Complex Example business-card overlay and Tile
-  view share DPI-scaled geometry sized to all detail lines, rather than a fixed
-  250-by-120-pixel box. Pretty Tasks buttons now size to text, with measured
-  minimum column widths and DPI-scaled padding/row heights. Eight graphics runs
-  passed across configurations/targets and native 144/virtualized 96 DPI; bitmap
-  checks also verify the final detail line at 192 DPI and with extra fields.
-  Button label bounds and button hit targets passed. No native tooltip changes
-  were needed; this report concerned the business-card overlay.
-- The smart-tag Columns action opened the custom editor in action-list context.
-  A complete smart-tag View round trip is not yet verified.
-- Header resizing now uses the public SDK `Adorner`, `Glyph`, and `Behavior`
-  APIs, with one change transaction per gesture. Live preview is bounded by the
-  column limits; capture loss cancels and restores the original width. Fixed and
-  free-space-filling columns are not resize targets. No private SDK hooks or
-  runtime Designer SDK dependencies were added.
-- Four new [resize transaction cases](../Tests/TestDesignerColumnResize.cs)
-  cover bounded commit, explicit/disposal cancellation, and change-notification
-  failure rollback. The full Debug/Release matrix passed 629 Framework and
-  628 modern cases, zero skipped. After the final free-space-column hit-test
-  guard, both solution configurations rebuilt and the focused cases passed on
-  both targets.
-- The final local candidate, `3.0.0-designer-behavior3`, passed package asset and
-  runtime-dependency checks, fresh consumers on both runtimes, and two-way layout
-  interchange. In Visual Studio at 144 DPI, targeted native messages to the
-  designer client's input dispatcher verified exact 160-to-220 resizing, RTL,
-  minimum/maximum bounds, capture-loss rollback, and single-operation Undo/Redo.
-  Saving, closing, and reopening preserved width 220. All eight control families
-  still loaded custom designer filtering, and regenerated consumer code rebuilt.
-  These are actual designer integration checks, **not physical-input passes**.
-- Properties-based SmallIcon-to-Details transitions and subsequent dispatcher
-  resizing passed. This does not substitute for the smart-tag dropdown workflow.
-  Physical mouse attempts were refused because the owned Visual Studio did not
-  have foreground access; do not inject input into another application to bypass
-  that safety check.
+**Acceptance:** state combinations, column overrides, callbacks, high contrast,
+resource ownership, and designer serialization.
 
-### Open acceptance gates, in priority order
+## Phase 5: shared rendering and hit-test layout
 
-1. Verify the new public-API resize path using an actual mouse, including
-   serialization and one-operation Undo/Redo. Dispatcher-driven equivalents pass,
-   but physical acceptance requires an available desktop. Width editing through
-   Columns/Properties remains the verified user workaround.
-2. Verify a complete smart-tag View change and return, including native header
-   interaction after returning to Details view.
-3. Establish modern designer asset discovery for a consumer using project
-   references only. A fresh isolated source-reference consumer built and rendered
-   the basic control, but custom filtering and column editing did not load.
-   The inspected client/server asset discovery path uses NuGet. An opt-in local,
-   design-only NuGet bridge has not been implemented or approved; it would not be
-   strictly project-reference-only support. Package-consumer acceptance does not
-   prove this workflow.
-4. Repeat the affected packaged-consumer checks after each designer fix; retain
-   the Framework designer and runtime-only deployment checks.
+Extend existing renderers rather than introducing parallel geometry calculations.
+Reuse layout for painting, hit testing, tooltip targets, and editor placement.
+Keep native rendering when customization is unnecessary.
 
-The earlier header investigation compared the built-in designer's native child
-handling and end-track notifications with the custom designer. `HookChildHandles`
-is not accessible through the pinned stable SDK reference API. The new adorner
-path avoids that hook; do not restore private-reflection workarounds or label a
-passing build as proof of physical interaction. Test helpers must identify the
-owned Visual Studio shell rather than trusting `Process.MainWindowHandle`, and
-must not send pointer-bearing header messages into another process using a local
-buffer.
+**Acceptance:** matching geometry under scrolling, column reordering, DPI changes,
+RTL, and tree indentation; preserve resizing, sorting, checkboxes, keyboard
+behavior, and accessibility. Use visible Windows hosts for interaction checks.
 
-### Continuing an iteration
+## Phase 6: cleanup and preview release
 
-Use the [build/test commands](../README.md#tests), running target frameworks
-sequentially because clipboard state is shared. Build the whole solution before
-packing so every required client/server asset exists, then run
-[`Test-Package.ps1`](../.github/scripts/Test-Package.ps1) against that exact package:
+Once contracts stabilize:
+
+- Split `ObjectListViewBase.cs` into focused partial files where it improves cohesion.
+- Retire redundant compatibility APIs such as `CheckedObjectsEnumerable` only after
+  their replacements and migration impact are established.
+- Update demos, designer-generated code, and migration examples.
+- Set assembly/package versions deliberately, preserving signing and documenting
+  source/binary compatibility.
+- Release a v3 preview before freezing the final API.
+
+**Exit criteria:** retained tests pass in Debug and Release, new contracts have
+focused coverage, demos run, representative consumers and serialization work,
+and every public breaking change is documented.
+
+## Continuing an iteration
+
+Use the [build/test workflow](../README.md#tests). Run frameworks sequentially
+because clipboard state is shared. Build the whole solution before packing:
 
 ```powershell
 dotnet pack ObjectListView\ObjectListView.csproj --configuration Release --no-build --no-restore -p:PackageVersion=3.0.0-iteration --output artifacts\packages
 .\.github\scripts\Test-Package.ps1 -PackageDirectory artifacts\packages -PackageVersion 3.0.0-iteration
 ```
 
-Rerun the unfiltered four-way test matrix on an available Windows desktop,
-including the clipboard integration test. Confirm CI results for the committed
-revision rather than treating a filtered local run as full coverage.
+For designer acceptance, use a fresh package consumer in Visual Studio 2026 and
+a namespaced concrete typed subclass. Reference runtime printer DLLs from their
+normal deployment location, never the package's reserved `Design\WinForms` folders.
 
-For desktop acceptance, use a standalone WinForms package consumer in Visual
-Studio 2026, a namespaced concrete typed subclass, and an ordinary runtime printer
-reference when testing printer editors. Never reference runtime DLLs directly
-inside a package's reserved `Design\WinForms` folders: Visual Studio may deduplicate
-the package using that wrong directory and skip its designer assets.
-
-The previous desktop fixtures, screenshots, and TRX logs were local session
-artifacts, not committed test infrastructure. A fresh checkout must recreate the
-desktop consumer and re-exercise the relevant checks; do not assume those local
-artifacts are available to another contributor or cloud session. Update this
-checkpoint and the [migration guide](v3-migration.md) with new results and remaining
-limitations after each iteration. No release publication is implied by a commit.
-
-## Phase 1: establish the API contract and regression baseline
-
-The test infrastructure is ready, but API and performance baselines still need to be established.
-
-- Inventory public properties, methods, events, and extension points. Classify each as keep, replace, or remove.
-- Record replacement APIs and migration examples before making breaking changes.
-- Establish behavioral and performance baselines for regular, fast, virtual, data-bound, and tree lists.
-- Measure representative small and large collections, including sorting, filtering, selection, checking, and batch updates. Agree on regression budgets before optimizing.
-
-**Exit criteria:** an agreed API-change inventory, reproducible measurements, and the existing test suite passing without lost or newly skipped cases.
-
-## Phase 2: make collection APIs enumerable-friendly
-
-Change these APIs together:
-
-| API | Proposed v3 contract |
-| --- | --- |
-| `SelectedObjects`, `CheckedObjects` | Keep `IList` properties with materialized snapshot getters. |
-| `SetSelectedObjects()`, `SetCheckedObjects()` | Accept `IEnumerable` to replace selection and checked state; retain `SelectObjects()` for compatibility. |
-| `AddObjects()`, `InsertObjects()` | Accept `IEnumerable`. |
-| `RefreshObjects()`, `RemoveObjects()` | Accept `IEnumerable`. |
-| `CopyObjectsToClipboard()` | Accept `IEnumerable`. |
-| `TypedObjectListView<T>` | Expose corresponding `IEnumerable<T>` methods; retain `IList<T>` selection and check properties. |
-
-Use non-generic `IEnumerable` at the heterogeneous UI boundary, matching the existing `SetObjects()` contract. Typed controls and adapters provide convenient LINQ access.
-
-Enumeration semantics are part of the contract:
-
-- Consume each input sequence once where repeated access is necessary, materializing it at a defined point on the appropriate thread.
-- Materialize before clearing selection, changing checked state, or modifying a collection that the input sequence may reference.
-- Preserve snapshot getters rather than introducing live, deferred enumeration over UI state.
-- Preserve ordering, duplicate handling, cancellation events, notification subscriptions, and documented null behavior.
-- Keep collection-shaped event payloads where handlers need to inspect or modify them.
-- Propagate enumeration failures explicitly; do not turn a failed sequence into an apparently successful empty update.
-
-Update every override and dependent interface in the same milestone, including `VirtualObjectListView`, `FastObjectListView`, data-bound controls, `TreeListView`, and `IVirtualListDataSource`. Reuse the existing collection helpers where their ownership and enumeration semantics fit.
-
-**Acceptance cases:** LINQ queries, iterator methods, single-use enumerables, self-referential selection changes, empty/null inputs, enumeration failures, notification cleanup, and the control-specific checked-object behavior of tree and virtual lists.
-
-**Deliverable:** the enumerable API change, its migration examples, and focused additions to the existing collection, selection, checkbox, notification, tree, and export tests.
-
-The enumerable milestone is implemented; see the [migration guide](v3-migration.md)
-for the new signatures, enumeration semantics, and retained control-specific behavior.
-The later phases below are not part of this milestone.
-
-### Immediate generic-control design
-
-`ObjectListViewBase` owns shared UI behavior, `TypedObjectListView<T>` owns typed
-model storage/operations, and `ObjectListView` retains the non-generic facade.
-The control-design work retains the existing Framework designer; modern designer
-acceptance remains a distinct platform milestone. The control-design work focuses on:
-
-- Canonical row, selection, and check-state dispatch through typed and legacy overrides.
-- Snapshot `Objects` access, with separate read-only source hooks and an inexpensive
-  display-order `Rows` view.
-- Non-virtual typed command overloads that preserve the existing virtual command pipeline.
-- `TypedObjectListViewAdapter<T>` for existing controls and typed callbacks, with weak
-  column-adapter caching and a single underlying callback slot.
-- Private accepted mutation batches, event-payload isolation, and consistent model equality.
-
-Custom source subclasses migrate from `Objects` source overrides to
-`GetModelObjectsCore`/`SetModelObjectsCore`; public getters no longer drive UI
-source enumeration. Generic virtual/tree controls and new data-source interfaces
-remain separate work. See the migration guide for the supported hooks and ownership rules.
-
-## Phase 3: replace the grouping-property tangle
-
-Remove `AlwaysGroupByColumn` and `AlwaysGroupBySortOrder`, but preserve the ability to group by one column while sorting items by another.
-
-Build one explicit grouping configuration on top of the existing `GroupingParameters` pipeline:
-
-- Separate the group column and order from the item sort column and order.
-- Make following the current sort column versus using explicit grouping a documented choice.
-- Route header clicks, command menus, programmatic grouping, and virtual grouping through the same configuration.
-- Review related switches, including `SortGroupItemsByPrimaryColumn`; remove them only when the replacement covers their useful behavior.
-- Preserve grouping cancellation and custom comparer extension points where they fit the new contract.
-
-**Acceptance cases:** sorting within groups, cancelled grouping, non-groupable columns, collapsed-group state, independent group/item ordering, and virtual-list grouping.
-
-**Deliverable:** a single grouping model, updated callers and demos, focused regression tests, and an old-to-new API mapping.
-
-## Phase 4: unify styling before expanding custom rendering
-
-Row/cell styles, header styles, and tooltip formatting currently use separate systems. Unify their shared concepts without forcing every surface into one oversized renderer interface.
-
-| Shared concept | Responsibility |
-| --- | --- |
-| Style values | Font, colors, spacing, alignment, and applicable borders. |
-| Visual state | Selected, focused, hot, pressed, disabled, and their combinations. |
-| Style resolution | Defined per-property inheritance and override precedence. |
-| Layout context | Bounds, DPI, RTL direction, model, column, and state. |
-
-An unspecified value must be distinguishable from an explicit override, such as inheriting a font style versus explicitly requesting regular text. Define how formatting callbacks participate in precedence so existing customizations are not silently overwritten.
-
-Integrate incrementally: cells/rows, then headers, then tooltips. Preserve the default appearance. Use temporary adapters where they make migration straightforward, with a clear retirement plan rather than permanent duplicate style systems.
-
-**Acceptance cases:** state combinations, per-column overrides, formatting callbacks, high contrast, resource ownership, and designer serialization round trips.
-
-**Deliverable:** shared style resolution used by all three surfaces, with documented inheritance and precedence.
-
-## Phase 5: share layout across rendering and hit testing
-
-Extend the existing renderer architecture:
-
-- Calculate layout once and reuse its geometry for painting, hit testing, tooltip targeting, and cell-editor placement.
-- Introduce surface-specific renderer contracts for headers and tooltips where needed.
-- Preserve native header resizing, sorting, checkbox interaction, keyboard behavior, and accessibility.
-- Verify scrolling offsets, reordered columns, DPI scaling, RTL layouts, and tree indentation.
-- Preserve native drawing where no custom rendering is requested.
-
-Do not let drawing and hit testing independently calculate where an interactive element is located.
-
-**Exit criteria:** working custom cell, header, and tooltip examples with matching layout and hit detection, covered by focused geometry tests and Windows integration checks. Visual or activation-dependent checks must use an appropriate visible test host rather than assuming the invisible fixture can validate those behaviors.
-
-## Phase 6: finish cleanup and prepare migration
-
-After the behavioral contracts stabilize:
-
-- Split the large `ObjectListViewBase.cs` into focused partial files without unnecessarily redesigning the inheritance hierarchy.
-- Remove redundant compatibility APIs. For example, `CheckedObjectsEnumerable` becomes unnecessary once `SetCheckedObjects()` accepts an enumerable.
-- Remove obsolete compatibility paths only where their replacement and support implications are understood.
-- Update demos, designer-generated configuration through the designer, and Markdown examples.
-- Publish a migration guide covering removed members, changed return types, overrides, grouping, custom renderers, and style precedence.
-- Set v3 assembly and package versions deliberately, accounting for source and binary compatibility and existing signing.
-- Release a v3 alpha before freezing the final API.
-
-**Exit criteria:** all retained baseline tests pass in Debug and Release, new contracts have focused coverage, demos build and run, serialization and representative consumer migrations have been exercised, and the migration guide accounts for every public breaking change.
-
-## Delivery order
-
-Implement independently reviewable milestones in this order:
-
-1. API inventory and behavioral/performance baseline.
-2. Enumerable collection APIs and dependent callers.
-3. Explicit grouping configuration.
-4. Shared style resolution.
-5. Shared layout, custom rendering, and hit testing.
-6. Cleanup, migration documentation, and alpha release.
-
-The enumerable APIs are the first feature milestone. They deliver a concrete benefit and expose cross-control dependencies before the higher-risk styling and rendering work. Do not mix a test-framework migration, platform retargeting, or unrelated feature additions into those API changes.
+Use only the owned Visual Studio instance for desktop input checks. Do not send
+pointer-bearing native messages across processes using local buffers.
+Confirm CI for the committed revision and update this plan and the migration
+guide with remaining limitations. A commit is not a release publication.

@@ -55,7 +55,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: test-results
-          path: artifacts\TestResults\**\*.trx
+          path: |
+            artifacts\TestResults\**\*.trx
+            artifacts\TestResults\**\*.log
           if-no-files-found: ignore
 
       - name: Build NuGet packages

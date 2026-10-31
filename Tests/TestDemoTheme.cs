@@ -280,14 +280,24 @@ namespace BrightIdeasSoftware.Tests
 
         [TestMethod]
         public void Test_ThemeMenu_ReloadsTheActualDemoAndPreservesWindowAndTab() {
+            string diagnosticPath = Path.Combine(this.originalDirectory, "artifacts", "TestResults", "theme-reload.log");
+            Directory.CreateDirectory(Path.GetDirectoryName(diagnosticPath));
+            object diagnosticLock = new object();
+            Action<string> log = message => {
+                lock (diagnosticLock)
+                    File.AppendAllText(diagnosticPath, DateTime.UtcNow.ToString("O") + " " + message + Environment.NewLine);
+            };
+            log("Starting reload test");
             Exception failure = null;
             int stage = 0;
             int threadExits = 0;
             DateTime deadline = DateTime.UtcNow.AddSeconds(30);
             Rectangle bounds = new Rectangle(80, 80, 1450, 1150);
             using (var timer = new Timer { Interval = 100 }) {
+                using (var watchdog = new System.Threading.Timer(delegate { log(DemoWindowDiagnostics.DescribeOwnedWindows()); }, null, 20000, System.Threading.Timeout.Infinite)) {
                 timer.Tick += delegate {
                     timer.Stop();
+                    log("Timer tick, stage " + stage);
                     try {
                         if (DateTime.UtcNow > deadline)
                             throw new TimeoutException("The demo did not complete its theme reload.");
@@ -297,7 +307,9 @@ namespace BrightIdeasSoftware.Tests
                             return;
                         }
                         form.Opacity = 0;
+                        log("Opacity set");
                         form.ShowInTaskbar = false;
+                        log("Taskbar visibility set");
                         var tabs = form.Controls.OfType<TabControl>().Single();
                         var menu = form.Controls.OfType<StatusStrip>().Single().Items.OfType<ToolStripDropDownButton>().Single();
                         var items = menu.DropDownItems.OfType<ToolStripMenuItem>().ToArray();
@@ -321,8 +333,10 @@ namespace BrightIdeasSoftware.Tests
                         int[] nextItems = { 2, 1, 0 };
                         int next = nextItems[stage++];
                         items[next].PerformClick();
+                        log("Theme click completed");
                         timer.Start();
                     } catch (Exception ex) {
+                        log(ex.ToString());
                         failure = ex;
                         foreach (Form form in Application.OpenForms.Cast<Form>().ToArray())
                             form.Close();
@@ -332,10 +346,13 @@ namespace BrightIdeasSoftware.Tests
                 Application.ThreadExit += threadExited;
                 timer.Start();
                 try {
+                    log("Entering RunDemo");
                     ObjectListViewDemo.MainForm.RunDemo();
+                    log("RunDemo returned");
                 } finally {
                     timer.Stop();
                     Application.ThreadExit -= threadExited;
+                }
                 }
             }
             if (failure != null)

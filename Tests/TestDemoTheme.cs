@@ -263,6 +263,7 @@ namespace BrightIdeasSoftware.Tests
         public void Test_ThemeMenu_ReloadsTheActualDemoAndPreservesWindowAndTab() {
             Exception failure = null;
             int stage = 0;
+            int threadExits = 0;
             DateTime deadline = DateTime.UtcNow.AddSeconds(30);
             Rectangle bounds = new Rectangle(80, 80, 1450, 1150);
             using (var timer = new Timer { Interval = 100 }) {
@@ -272,7 +273,7 @@ namespace BrightIdeasSoftware.Tests
                         if (DateTime.UtcNow > deadline)
                             throw new TimeoutException("The demo did not complete its theme reload.");
                         var form = Application.OpenForms.OfType<ObjectListViewDemo.MainForm>().SingleOrDefault();
-                        if (form == null) {
+                        if (form == null || !form.Visible || !form.IsHandleCreated) {
                             timer.Start();
                             return;
                         }
@@ -284,6 +285,7 @@ namespace BrightIdeasSoftware.Tests
                         ObjectListViewColorMode[] modes = { ObjectListViewColorMode.System, ObjectListViewColorMode.Dark, ObjectListViewColorMode.Light, ObjectListViewColorMode.System };
                         int[] checkedItems = { 0, 2, 1, 0 };
                         Assert.AreEqual(modes[stage], ObjectListViewTheme.ColorMode);
+                        Assert.AreEqual(0, threadExits, "Theme changes must not stop the application's message loop.");
                         Assert.IsTrue(items[checkedItems[stage]].Checked);
                         Assert.AreEqual(1, items.Count(item => item.Checked));
                         if (stage == 0) {
@@ -313,15 +315,19 @@ namespace BrightIdeasSoftware.Tests
                     timer.Start();
                 };
                 Application.Idle += startTimer;
+                EventHandler threadExited = delegate { threadExits++; };
+                Application.ThreadExit += threadExited;
                 try {
                     ObjectListViewDemo.MainForm.RunDemo();
                 } finally {
                     Application.Idle -= startTimer;
+                    Application.ThreadExit -= threadExited;
                 }
             }
             if (failure != null)
                 System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
             Assert.AreEqual(3, stage);
+            Assert.AreEqual(1, threadExits);
         }
 
         private static IEnumerable<Control> Descendants(Control parent) {

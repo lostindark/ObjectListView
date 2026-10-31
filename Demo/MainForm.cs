@@ -34,30 +34,48 @@ namespace ObjectListViewDemo {
         }
 
         internal static void RunDemo() {
-            ObjectListViewColorMode colorMode = ObjectListViewColorMode.System;
-            Rectangle? windowBounds = null;
-            FormWindowState windowState = FormWindowState.Normal;
-            int selectedTab = 0;
-            while (true) {
-                DemoTheme.SetColorMode(colorMode);
-                using (var form = new MainForm()) {
-                    if (windowBounds.HasValue) {
-                        form.StartPosition = FormStartPosition.Manual;
-                        form.Bounds = windowBounds.Value;
-                        form.WindowState = windowState;
-                        form.tabControl1.SelectedIndex = selectedTab;
-                    }
-                    form.FormClosing += delegate {
-                        windowState = form.WindowState;
-                        windowBounds = windowState == FormWindowState.Normal ? form.Bounds : form.RestoreBounds;
-                        selectedTab = form.tabControl1.SelectedIndex;
-                    };
-                    Application.Run(form);
-                    ObjectListViewColorMode? requestedMode = form.requestedColorMode;
-                    if (!requestedMode.HasValue)
-                        break;
-                    colorMode = requestedMode.Value;
+            using (var context = new DemoApplicationContext())
+                Application.Run(context);
+        }
+
+        private sealed class DemoApplicationContext : ApplicationContext {
+            private ObjectListViewColorMode colorMode = ObjectListViewColorMode.System;
+            private Rectangle? windowBounds;
+            private FormWindowState windowState = FormWindowState.Normal;
+            private int selectedTab;
+
+            public DemoApplicationContext() {
+                this.CreateMainForm();
+            }
+
+            private void CreateMainForm() {
+                DemoTheme.SetColorMode(this.colorMode);
+                var form = new MainForm();
+                if (this.windowBounds.HasValue) {
+                    form.StartPosition = FormStartPosition.Manual;
+                    form.Bounds = this.windowBounds.Value;
+                    form.WindowState = this.windowState;
+                    form.tabControl1.SelectedIndex = this.selectedTab;
                 }
+                form.FormClosing += delegate {
+                    this.windowState = form.WindowState;
+                    this.windowBounds = this.windowState == FormWindowState.Normal ? form.Bounds : form.RestoreBounds;
+                    this.selectedTab = form.tabControl1.SelectedIndex;
+                };
+                this.MainForm = form;
+            }
+
+            protected override void OnMainFormClosed(object sender, EventArgs e) {
+                var form = (MainForm)sender;
+                ObjectListViewColorMode? requestedMode = form.requestedColorMode;
+                if (!requestedMode.HasValue) {
+                    base.OnMainFormClosed(sender, e);
+                    return;
+                }
+                form.Dispose();
+                this.colorMode = requestedMode.Value;
+                this.CreateMainForm();
+                this.MainForm.Show();
             }
         }
 

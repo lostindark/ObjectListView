@@ -309,18 +309,13 @@ namespace BrightIdeasSoftware.Tests
                             form.Close();
                     }
                 };
-                EventHandler startTimer = null;
-                startTimer = delegate {
-                    Application.Idle -= startTimer;
-                    timer.Start();
-                };
-                Application.Idle += startTimer;
                 EventHandler threadExited = delegate { threadExits++; };
                 Application.ThreadExit += threadExited;
+                timer.Start();
                 try {
                     ObjectListViewDemo.MainForm.RunDemo();
                 } finally {
-                    Application.Idle -= startTimer;
+                    timer.Stop();
                     Application.ThreadExit -= threadExited;
                 }
             }

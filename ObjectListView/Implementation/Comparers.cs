@@ -139,7 +139,7 @@ namespace BrightIdeasSoftware
             object x1 = this.column.GetValue(x.RowObject);
             object y1 = this.column.GetValue(y.RowObject);
 
-            // Handle nulls. Null values come last
+            // Handle nulls. Null values come first in ascending order (last in descending)
             bool xIsNull = (x1 == null || x1 == System.DBNull.Value);
             bool yIsNull = (y1 == null || y1 == System.DBNull.Value);
             if (xIsNull || yIsNull) {
@@ -333,7 +333,7 @@ namespace BrightIdeasSoftware
             object x1 = this.column.GetValue(x);
             object y1 = this.column.GetValue(y);
 
-            // Handle nulls. Null values come last
+            // Handle nulls. Null values come first in ascending order (last in descending)
             bool xIsNull = (x1 == null || x1 == System.DBNull.Value);
             bool yIsNull = (y1 == null || y1 == System.DBNull.Value);
             if (xIsNull || yIsNull) {

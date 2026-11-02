@@ -6,11 +6,15 @@
 ObjectListView is a Windows Forms control that presents model objects in a .NET
 `ListView`, with sorting, grouping, filtering, cell editing, and tree views.
 
+This repository is a fork of the
+[original ObjectListView](https://objectlistview.sourceforge.net/cs/index.html).
+
 ## Version 3 development
 
 **V3 is a work in progress, not a completed release.** It targets
 **.NET Framework 4.6.2 and .NET 10 for Windows** and introduces breaking API changes
-that require recompiling consumers.
+that require updating consumer code. **V3 is not binary compatible with V2:**
+users must fix code affected by the breaking changes and recompile their applications.
 
 Modern Visual Studio designer support remains a preview. Native header-divider
 dragging is a known limitation; use the Columns editor or Properties instead.
@@ -81,5 +85,3 @@ interactive Visual Studio checks.
 ## License
 
 See [LICENSE](LICENSE) for the GNU General Public License, version 3.
-
-[Original ObjectListView website](https://objectlistview.sourceforge.net/cs/index.html)

@@ -4,8 +4,12 @@ A Windows Forms ListView control with model-based rows, sorting, grouping,
 filtering, checkboxes, cell editing, and tree views.
 The namespace is `BrightIdeasSoftware`; the assembly is `ObjectListView.dll`.
 
+This project is a fork of the
+[original ObjectListView](https://objectlistview.sourceforge.net/cs/index.html).
+
 **V3 is still a work in progress, not a completed release.**
-It includes breaking API changes; read the
+**V3 is not binary compatible with V2:** users must fix code affected by the
+breaking API changes and recompile their applications. Read the
 [migration guide](https://github.com/lostindark/ObjectListView/blob/main/docs/v3-migration.md)
 before upgrading.
 

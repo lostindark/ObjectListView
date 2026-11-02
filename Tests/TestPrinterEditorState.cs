@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Windows.Forms;
 using BrightIdeasSoftware.Design;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -59,6 +60,31 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(hatch.HatchStyle, hatchCopy.HatchStyle);
             Assert.IsNull(PrinterEditorState.Decode(PrinterEditorState.Encode(null, true), true));
             Assert.IsNull(PrinterEditorState.Decode(PrinterEditorState.Encode(null, false), false));
+        }
+    }
+
+    [STATestClass]
+    public class TestPrinterRows
+    {
+        private sealed class RowAccessPrinter : ListViewPrinterBase
+        {
+            public ListViewItem ReadRow(ListView list, int index) {
+                return this.GetRow(list, index);
+            }
+        }
+
+        [TestMethod]
+        public void Test_BasePrinter_RejectsVirtualRowsButReadsNormalRows() {
+            using (var printer = new RowAccessPrinter())
+            using (var list = new ListView { ShowGroups = false }) {
+                ListViewItem item = list.Items.Add("normal row");
+                Assert.AreSame(item, printer.ReadRow(list, 0));
+                list.Items.Clear();
+                list.VirtualMode = true;
+                list.VirtualListSize = 1;
+
+                Assert.ThrowsExactly<NotSupportedException>(() => printer.ReadRow(list, 0));
+            }
         }
     }
 }

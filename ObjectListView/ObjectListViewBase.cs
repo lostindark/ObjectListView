@@ -3483,7 +3483,7 @@ namespace BrightIdeasSoftware
             }
 
             NativeMethods.LVGROUPMETRICS metrics = new NativeMethods.LVGROUPMETRICS();
-            metrics.cbSize = ((uint)Marshal.SizeOf(typeof(NativeMethods.LVGROUPMETRICS)));
+            metrics.cbSize = (uint)Marshal.SizeOf<NativeMethods.LVGROUPMETRICS>();
             metrics.mask = (uint)GroupMetricsMask.LVGMF_BORDERSIZE;
             metrics.Bottom = (uint)this.SpaceBetweenGroups;
             NativeMethods.SetGroupMetrics(this, metrics);
@@ -7346,8 +7346,8 @@ namespace BrightIdeasSoftware
                     //System.Diagnostics.Debug.WriteLine("LVN_ITEMCHANGED");
                     NativeMethods.NMLISTVIEW nmlistviewPtr2 = (NativeMethods.NMLISTVIEW)m.GetLParam(typeof(NativeMethods.NMLISTVIEW));
                     if ((nmlistviewPtr2.uChanged & LVIF_STATE) != 0) {
-                        CheckState currentValue = this.CalculateCheckState(nmlistviewPtr2.uOldState);
-                        CheckState newCheckValue = this.CalculateCheckState(nmlistviewPtr2.uNewState);
+                        CheckState currentValue = CalculateCheckState(nmlistviewPtr2.uOldState);
+                        CheckState newCheckValue = CalculateCheckState(nmlistviewPtr2.uNewState);
                         if (currentValue != newCheckValue)
                         {
                             // Remove the state indices so that we don't trigger the OnItemChecked method
@@ -7397,8 +7397,8 @@ namespace BrightIdeasSoftware
                     //System.Diagnostics.Debug.WriteLine("LVN_ITEMCHANGING");
                     NativeMethods.NMLISTVIEW nmlistviewPtr = (NativeMethods.NMLISTVIEW)m.GetLParam(typeof(NativeMethods.NMLISTVIEW));
                     if ((nmlistviewPtr.uChanged & LVIF_STATE) != 0) {
-                        CheckState currentValue = this.CalculateCheckState(nmlistviewPtr.uOldState);
-                        CheckState newCheckValue = this.CalculateCheckState(nmlistviewPtr.uNewState);
+                        CheckState currentValue = CalculateCheckState(nmlistviewPtr.uOldState);
+                        CheckState newCheckValue = CalculateCheckState(nmlistviewPtr.uNewState);
 
                         if (currentValue != newCheckValue) {
                             // Prevent the base method from seeing the state change,
@@ -7429,7 +7429,7 @@ namespace BrightIdeasSoftware
         }
         private bool skipNextHitTest;
 
-        private CheckState CalculateCheckState(int state) {
+        private static CheckState CalculateCheckState(int state) {
             switch ((state & 0xf000) >> 12) {
                 case 1:
                     return CheckState.Unchecked;
@@ -7531,7 +7531,7 @@ namespace BrightIdeasSoftware
                 case HDN_TRACKA:
                 case HDN_TRACKW:
                     if (nmheader.iItem >= 0 && nmheader.iItem < this.Columns.Count) {
-                        NativeMethods.HDITEM hditem = (NativeMethods.HDITEM)Marshal.PtrToStructure(nmheader.pHDITEM, typeof(NativeMethods.HDITEM));
+                        NativeMethods.HDITEM hditem = Marshal.PtrToStructure<NativeMethods.HDITEM>(nmheader.pHDITEM);
                         OLVColumn column = this.GetColumn(nmheader.iItem);
                         if (hditem.cxy < column.MinimumWidth)
                         {
@@ -7550,7 +7550,7 @@ namespace BrightIdeasSoftware
                 case HDN_ITEMCHANGINGW:
                     nmheader = (NativeMethods.NMHEADER)m.GetLParam(typeof(NativeMethods.NMHEADER));
                     if (nmheader.iItem >= 0 && nmheader.iItem < this.Columns.Count) {
-                        NativeMethods.HDITEM hditem = (NativeMethods.HDITEM)Marshal.PtrToStructure(nmheader.pHDITEM, typeof(NativeMethods.HDITEM));
+                        NativeMethods.HDITEM hditem = Marshal.PtrToStructure<NativeMethods.HDITEM>(nmheader.pHDITEM);
                         OLVColumn column = this.GetColumn(nmheader.iItem);
                         // Check the mask to see if the width field is valid, and if it is, make sure it's within range
                         if ((hditem.mask & 1) == 1) {
@@ -9123,7 +9123,7 @@ namespace BrightIdeasSoftware
         /// Implementation only class that suspends and resumes selection
         /// events on instance creation and disposal.
         /// </summary>
-        private class SuspendSelectionDisposable : IDisposable {
+        private sealed class SuspendSelectionDisposable : IDisposable {
             public SuspendSelectionDisposable(ObjectListViewBase objectListView) {
                 this.objectListView = objectListView;
                 this.objectListView.SuspendSelectionEvents();
@@ -9420,20 +9420,20 @@ namespace BrightIdeasSoftware
                 Point pt1 = new Point(midX - deltaX, midY + deltaY);
                 Point pt2 = new Point(midX, midY - deltaY - 1);
                 Point pt3 = new Point(midX + deltaX, midY + deltaY);
-                il.Images.Add(SORT_INDICATOR_UP_KEY, this.MakeTriangleBitmap(il.ImageSize, new Point[] { pt1, pt2, pt3 }));
+                il.Images.Add(SORT_INDICATOR_UP_KEY, MakeTriangleBitmap(il.ImageSize, new Point[] { pt1, pt2, pt3 }));
             }
 
             if (il.Images.IndexOfKey(SORT_INDICATOR_DOWN_KEY) == -1) {
                 Point pt1 = new Point(midX - deltaX, midY - deltaY);
                 Point pt2 = new Point(midX, midY + deltaY);
                 Point pt3 = new Point(midX + deltaX, midY - deltaY);
-                il.Images.Add(SORT_INDICATOR_DOWN_KEY, this.MakeTriangleBitmap(il.ImageSize, new Point[] { pt1, pt2, pt3 }));
+                il.Images.Add(SORT_INDICATOR_DOWN_KEY, MakeTriangleBitmap(il.ImageSize, new Point[] { pt1, pt2, pt3 }));
             }
 
             this.SmallImageList = il;
         }
 
-        private Bitmap MakeTriangleBitmap(Size sz, Point[] pts) {
+        private static Bitmap MakeTriangleBitmap(Size sz, Point[] pts) {
             Bitmap bm = new Bitmap(sz.Width, sz.Height);
             Graphics g = Graphics.FromImage(bm);
             g.FillPolygon(new SolidBrush(Color.Gray), pts);
@@ -9991,7 +9991,7 @@ namespace BrightIdeasSoftware
                     this.View == View.Details &&
                     (this.shadowedImageList == null || this.shadowedImageList.ImageSize.Height != rowHeight)) {
                     int width = (this.shadowedImageList == null ? 16 : this.shadowedImageList.ImageSize.Width);
-                    resized = this.MakeResizedImageList(width, rowHeight, shadowedImageList);
+                    resized = MakeResizedImageList(width, rowHeight, shadowedImageList);
                     replacement = resized;
                 }
                 this.BaseSmallImageList = replacement;
@@ -10024,7 +10024,7 @@ namespace BrightIdeasSoftware
         /// <param name="height">Height and width of the new images</param>
         /// <param name="source">Source of the images (can be null)</param>
         /// <returns>A new image list</returns>
-        private ImageList MakeResizedImageList(int width, int height, ImageList source) {
+        private static ImageList MakeResizedImageList(int width, int height, ImageList source) {
             ImageList il = new ImageList();
             bool complete = false;
             try {
@@ -10036,7 +10036,7 @@ namespace BrightIdeasSoftware
                     var keys = source.Images.Keys;
                     for (int i = 0; i < source.Images.Count; i++) {
                         using (Image image = source.Images[i])
-                        using (Bitmap bitmap = this.MakeResizedImage(width, height, image, source.TransparentColor))
+                        using (Bitmap bitmap = MakeResizedImage(width, height, image, source.TransparentColor))
                         {
                             il.Images.Add(keys[i], bitmap);
                         }
@@ -10060,7 +10060,7 @@ namespace BrightIdeasSoftware
         /// <param name="image">Image to be centred</param>
         /// <param name="transparent">The background color</param>
         /// <returns>A new bitmap</returns>
-        private Bitmap MakeResizedImage(int width, int height, Image image, Color transparent) {
+        private static Bitmap MakeResizedImage(int width, int height, Image image, Color transparent) {
             Bitmap bm = new Bitmap(width, height);
             bool complete = false;
             try {
@@ -10113,17 +10113,17 @@ namespace BrightIdeasSoftware
             // image list.
             if (this.StateImageList.Images.Count == 0)
             {
-                this.AddCheckStateBitmap(this.StateImageList, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
+                AddCheckStateBitmap(this.StateImageList, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
             }
 
             if (this.StateImageList.Images.Count <= 1)
             {
-                this.AddCheckStateBitmap(this.StateImageList, CHECKED_KEY, CheckBoxState.CheckedNormal);
+                AddCheckStateBitmap(this.StateImageList, CHECKED_KEY, CheckBoxState.CheckedNormal);
             }
 
             if (this.TriStateCheckBoxes && this.StateImageList.Images.Count <= 2)
             {
-                this.AddCheckStateBitmap(this.StateImageList, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
+                AddCheckStateBitmap(this.StateImageList, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
             }
             else {
                 if (this.StateImageList.Images.ContainsKey(INDETERMINATE_KEY))
@@ -10191,7 +10191,7 @@ namespace BrightIdeasSoftware
 
             // Legacy serialized image lists can have no spare bitmap capacity for appended states.
             ImageList source = this.SmallImageList;
-            ImageList il = this.MakeResizedImageList(source == null ? 16 : source.ImageSize.Width,
+            ImageList il = MakeResizedImageList(source == null ? 16 : source.ImageSize.Width,
                 source == null ? 16 : source.ImageSize.Height, source);
             bool attached = false;
             try {
@@ -10200,9 +10200,9 @@ namespace BrightIdeasSoftware
                     il.ColorDepth = ColorDepth.Depth32Bit;
                 }
 
-                this.AddCheckStateBitmap(il, CHECKED_KEY, CheckBoxState.CheckedNormal);
-                this.AddCheckStateBitmap(il, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
-                this.AddCheckStateBitmap(il, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
+                AddCheckStateBitmap(il, CHECKED_KEY, CheckBoxState.CheckedNormal);
+                AddCheckStateBitmap(il, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
+                AddCheckStateBitmap(il, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
 
                 this.SmallImageList = il;
                 ImageList previous = this.subItemCheckBoxImageList;
@@ -10221,7 +10221,7 @@ namespace BrightIdeasSoftware
         }
         private ImageList subItemCheckBoxImageList;
 
-        private void AddCheckStateBitmap(ImageList il, string key, CheckBoxState boxState) {
+        private static void AddCheckStateBitmap(ImageList il, string key, CheckBoxState boxState) {
             using (Bitmap b = new Bitmap(il.ImageSize.Width, il.ImageSize.Height)) {
                 using (Graphics g = Graphics.FromImage(b)) {
                     g.Clear(il.TransparentColor);

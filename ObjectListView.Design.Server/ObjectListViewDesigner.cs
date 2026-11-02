@@ -22,9 +22,9 @@ namespace BrightIdeasSoftware.Design
 
         public override void Initialize(IComponent component) {
             base.Initialize(component);
-            this.behaviorService = (BehaviorService)this.GetService(typeof(BehaviorService));
-            var host = (IDesignerHost)this.GetService(typeof(IDesignerHost));
-            var changes = (IComponentChangeService)this.GetService(typeof(IComponentChangeService));
+            this.behaviorService = this.GetService<BehaviorService>();
+            var host = this.GetService<IDesignerHost>();
+            var changes = this.GetService<IComponentChangeService>();
             if (this.behaviorService == null || host == null || changes == null)
             {
                 throw new InvalidOperationException("ObjectListView requires the WinForms designer behavior and change services.");

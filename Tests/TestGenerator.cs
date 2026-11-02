@@ -7,11 +7,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests
 {
-    class GeneratorTestModelEmpty
+    sealed class GeneratorTestModelEmpty
     {
     }
 
-    class GeneratorTestModel1
+    sealed class GeneratorTestModel1
     {
         [OLVColumn("Primary",
             AspectToStringFormat = "AspectToStringFormat",
@@ -72,7 +72,7 @@ namespace BrightIdeasSoftware.Tests
 
     }
 
-    class GeneratorTestModelSorting
+    sealed class GeneratorTestModelSorting
     {
         [OLVColumn("Secondary", DisplayIndex = 1)]
         public string OLVSecondaryColumn {
@@ -106,7 +106,7 @@ namespace BrightIdeasSoftware.Tests
     }
 
 
-    class GeneratorTestModelGroupies
+    sealed class GeneratorTestModelGroupies
     {
         [OLVColumn("Secondary", 
             DisplayIndex = 1,
@@ -120,7 +120,7 @@ namespace BrightIdeasSoftware.Tests
         private int groupy;
     }
 
-    class GeneratorTestPropertiesWithoutOlvColumnAttribute {
+    sealed class GeneratorTestPropertiesWithoutOlvColumnAttribute {
         public int Property1 {
             get { return this.property1; }
             set { this.property1 = value; }
@@ -147,7 +147,7 @@ namespace BrightIdeasSoftware.Tests
         private bool? triStateCheckBox;
     }
 
-    class ClassWithChildren
+    sealed class ClassWithChildren
     {
         public int Property1 {
             get { return this.property1; }
@@ -168,7 +168,7 @@ namespace BrightIdeasSoftware.Tests
         private IList<ClassWithChildren> myChildren;
     }
 
-    class ClassWithUntypedChildren
+    sealed class ClassWithUntypedChildren
     {
         public int Property1 {
             get { return this.property1; }
@@ -196,7 +196,7 @@ namespace BrightIdeasSoftware.Tests
         private IList<ClassWithChildren> myChildren;
     }
 
-    class ClassWithIgnoredProperties {
+    sealed class ClassWithIgnoredProperties {
 
         [OLVIgnore]
         public string PublicProperty {

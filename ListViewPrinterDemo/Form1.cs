@@ -242,18 +242,18 @@ namespace ListViewPrinterDemo
         	this.listViewPrinter1.GroupHeaderFormat = this.listViewPrinter2.GroupHeaderFormat;
         	this.listViewPrinter1.ListHeaderFormat = this.listViewPrinter2.ListHeaderFormat;
 
-            this.ApplyPenData(this.listViewPrinter1.CellFormat);
-            this.ApplyPenData(this.listViewPrinter1.HeaderFormat);
-            this.ApplyPenData(this.listViewPrinter1.FooterFormat);
-            this.ApplyPenData(this.listViewPrinter1.GroupHeaderFormat);
-            this.ApplyPenData(this.listViewPrinter1.ListHeaderFormat);
+            ApplyPenData(this.listViewPrinter1.CellFormat);
+            ApplyPenData(this.listViewPrinter1.HeaderFormat);
+            ApplyPenData(this.listViewPrinter1.FooterFormat);
+            ApplyPenData(this.listViewPrinter1.GroupHeaderFormat);
+            ApplyPenData(this.listViewPrinter1.ListHeaderFormat);
 
         	this.listViewPrinter1.WatermarkFont = this.listViewPrinter2.WatermarkFont;
         	this.listViewPrinter1.WatermarkTransparency = this.listViewPrinter2.WatermarkTransparency;
         	this.listViewPrinter1.WatermarkColor = this.listViewPrinter2.WatermarkColor;
         }
 
-        private void ApplyPenData(BlockFormat blockFormat)
+        private static void ApplyPenData(BlockFormat blockFormat)
         {
             blockFormat.BackgroundBrushData = blockFormat.BackgroundBrushData;
             blockFormat.BottomBorderPenData = blockFormat.BottomBorderPenData;

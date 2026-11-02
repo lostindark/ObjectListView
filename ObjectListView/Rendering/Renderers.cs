@@ -239,7 +239,7 @@ namespace BrightIdeasSoftware {
     /// This class provides compatibility for v1 RendererDelegates
     /// </summary>
     [ToolboxItem(false)]
-    internal class Version1Renderer : AbstractRenderer {
+    internal sealed class Version1Renderer : AbstractRenderer {
         public Version1Renderer(RenderDelegate renderDelegate) {
             this.RenderDelegate = renderDelegate;
         }
@@ -2944,7 +2944,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Instances of this class kept track of the animation state of a single image.
         /// </summary>
-        internal class AnimationState {
+        internal sealed class AnimationState {
             private const int PropertyTagTypeShort = 3;
             private const int PropertyTagTypeLong = 4;
             private const int PropertyTagFrameDelay = 0x5100;

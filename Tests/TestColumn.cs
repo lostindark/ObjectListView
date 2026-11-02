@@ -425,7 +425,7 @@ namespace BrightIdeasSoftware.Tests
             this.dict2["GetRate"] = 2.0;
         }
 
-        private void InitializeDictionary(IDictionary dict) {
+        private static void InitializeDictionary(IDictionary dict) {
             dict["Name"] = "name";
             dict["Occupation"] = "occupation";
             dict["CulinaryRating"] = 100;
@@ -581,7 +581,7 @@ namespace BrightIdeasSoftware.Tests
             this.dict2["GetRate"] = 2.0;
         }
 
-        private void InitializeDictionary(IDictionary dict) {
+        private static void InitializeDictionary(IDictionary dict) {
             dict["Name"] = "name";
             dict["Occupation"] = "occupation";
             dict["CulinaryRating"] = 100;

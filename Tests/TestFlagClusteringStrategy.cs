@@ -73,7 +73,7 @@ namespace BrightIdeasSoftware.Tests {
         [TestMethod]
         public void Test_GetClusterDisplayLabel() {
             FlagClusteringStrategy strategy = new FlagClusteringStrategy(typeof(TestFlagEnum));
-            ICluster cluster = new Cluster(TestFlagEnum.FlagValue2);
+            Cluster cluster = new Cluster(TestFlagEnum.FlagValue2);
             cluster.Count = 2;
             string result = strategy.GetClusterDisplayLabel(cluster);
             Assert.AreEqual("FlagValue2 (2 items)", result);

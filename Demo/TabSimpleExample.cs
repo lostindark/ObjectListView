@@ -315,18 +315,18 @@ namespace ObjectListViewDemo {
             Animation animation = animatedDecoration.Animation;
 
             // Animate the same star several times to make ghosting
-            this.AddStarAnimation(animation, 250, 0.4f);
-            this.AddStarAnimation(animation, 200, 0.5f);
-            this.AddStarAnimation(animation, 150, 0.6f);
-            this.AddStarAnimation(animation, 100, 0.7f);
-            this.AddStarAnimation(animation, 50, 0.8f);
-            this.AddStarAnimation(animation, 0, 1.0f);
+            AddStarAnimation(animation, 250, 0.4f);
+            AddStarAnimation(animation, 200, 0.5f);
+            AddStarAnimation(animation, 150, 0.6f);
+            AddStarAnimation(animation, 100, 0.7f);
+            AddStarAnimation(animation, 50, 0.8f);
+            AddStarAnimation(animation, 0, 1.0f);
 
             animation.Start();
         }
 
-        private void AddStarAnimation(Animation animation, int start, float opacity) {
-            Sprite sprite = new ImageSprite(Resource1.star32);
+        private static void AddStarAnimation(Animation animation, int start, float opacity) {
+            ImageSprite sprite = new ImageSprite(Resource1.star32);
             sprite.Opacity = opacity;
             sprite.Add(0, 4000, Effects.Walk(Locators.AnimationBounds(), WalkDirection.Anticlockwise));
             sprite.Add(0, 4000, Effects.Rotate(0, 1480));

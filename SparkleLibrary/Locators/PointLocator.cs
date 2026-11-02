@@ -607,7 +607,7 @@ namespace BrightIdeasSoftware
             Point pt = this.RationalizeStartPoint(r, this.StartPointLocator.GetPoint());
             int segment = this.DecideSegment(r, pt);
 
-            Point[] targetPoints = new Point[] {};
+            Point[] targetPoints = Array.Empty<Point>();
 
             if (this.Direction == WalkDirection.Clockwise) {
                 switch (segment) {

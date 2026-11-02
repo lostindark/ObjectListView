@@ -592,9 +592,10 @@ namespace BrightIdeasSoftware
         /// <param name="lv">The ListView in virtual mode</param>
         /// <param name="n">index of item to get</param>
         /// <returns>the item</returns>
+        /// <exception cref="NotSupportedException">The base printer does not support virtual list items.</exception>
         virtual protected ListViewItem GetVirtualItem(ListView lv, int n)
         {
-            throw new ApplicationException("Virtual list items cannot be retrieved. Use an ObjectListView instead.");
+            throw new NotSupportedException("Virtual list items cannot be retrieved. Use an ObjectListView instead.");
         }
 
         /// <summary>
@@ -1209,8 +1210,9 @@ namespace BrightIdeasSoftware
         private String[] SplitAndFormat(String text)
         {
             String s = String.Format(CultureInfo.CurrentCulture, text, this.pageNumber, DateTime.Now);
-            return s.Split(new Char[] { '\x09' }, 3);
+            return s.Split(HeaderFooterSeparators, 3);
         }
+        private static readonly char[] HeaderFooterSeparators = { '\t' };
 
         #endregion
 
@@ -1940,7 +1942,7 @@ namespace BrightIdeasSoftware
             }
         }
 
-        private ValueT GetKeyOrDefault<KeyT, ValueT>(Dictionary<KeyT, ValueT> map, KeyT key, ValueT defaultValue)
+        private static ValueT GetKeyOrDefault<KeyT, ValueT>(Dictionary<KeyT, ValueT> map, KeyT key, ValueT defaultValue)
         {
             return map.TryGetValue(key, out ValueT value) ? value : defaultValue;
         }
@@ -1993,7 +1995,7 @@ namespace BrightIdeasSoftware
             return height;
         }
 
-        private RectangleF ApplyInsets(RectangleF cell, float left, float top, float right, float bottom)
+        private static RectangleF ApplyInsets(RectangleF cell, float left, float top, float right, float bottom)
         {
             return new RectangleF(cell.X + left,
                 cell.Y + top,
@@ -2008,7 +2010,7 @@ namespace BrightIdeasSoftware
         /// <returns></returns>
         public RectangleF CalculatePaddedBox(RectangleF cell)
         {
-            return this.ApplyInsets(cell,
+            return ApplyInsets(cell,
                 this.GetPadding(Sides.Left),
                 this.GetPadding(Sides.Top),
                 this.GetPadding(Sides.Right),
@@ -2022,7 +2024,7 @@ namespace BrightIdeasSoftware
         /// <returns></returns>
         public RectangleF CalculateBorderedBox(RectangleF cell)
         {
-            return this.ApplyInsets(cell,
+            return ApplyInsets(cell,
                 this.GetBorderWidth(Sides.Left),
                 this.GetBorderWidth(Sides.Top),
                 this.GetBorderWidth(Sides.Right),
@@ -2036,7 +2038,7 @@ namespace BrightIdeasSoftware
         /// <returns></returns>
         public RectangleF CalculateTextBox(RectangleF cell)
         {
-            return this.ApplyInsets(cell,
+            return ApplyInsets(cell,
                 this.GetTextInset(Sides.Left),
                 this.GetTextInset(Sides.Top),
                 this.GetTextInset(Sides.Right),
@@ -2132,7 +2134,7 @@ namespace BrightIdeasSoftware
         {
             if (this.BackgroundBrush != null) {
                 // Enlarge the background area by half the border widths on each side
-                RectangleF r2 = this.ApplyInsets(r,
+                RectangleF r2 = ApplyInsets(r,
                       this.GetBorderWidth(Sides.Left) / -2,
                       this.GetBorderWidth(Sides.Top) / -2,
                       this.GetBorderWidth(Sides.Right) / -2,

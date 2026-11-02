@@ -463,7 +463,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="window">The window</param>
         public void AddTool(IWin32Window window) {
-            NativeMethods.TOOLINFO lParam = this.MakeToolInfoStruct(window);
+            NativeMethods.TOOLINFO lParam = MakeToolInfoStruct(window);
             NativeMethods.SendMessageTOOLINFO(this.Handle, TTM_ADDTOOL, 0, lParam);
         }
 
@@ -495,7 +495,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="window"></param>
         public void RemoveToolTip(IWin32Window window) {
-            NativeMethods.TOOLINFO lParam = this.MakeToolInfoStruct(window);
+            NativeMethods.TOOLINFO lParam = MakeToolInfoStruct(window);
             NativeMethods.SendMessageTOOLINFO(this.Handle, TTM_DELTOOL, 0, lParam);
         }
 
@@ -523,7 +523,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="window"></param>
         /// <returns>A filled in TOOLINFO</returns>
-        private NativeMethods.TOOLINFO MakeToolInfoStruct(IWin32Window window) {
+        private static NativeMethods.TOOLINFO MakeToolInfoStruct(IWin32Window window) {
 
             NativeMethods.TOOLINFO toolinfo_tooltip = new NativeMethods.TOOLINFO();
             toolinfo_tooltip.hwnd = window.Handle;

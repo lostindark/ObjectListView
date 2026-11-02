@@ -1647,7 +1647,7 @@ namespace BrightIdeasSoftware
                 return treeModel != null && treeModel.TreeCanExpand;
             }
 
-            private static IEnumerable<T> DefaultChildrenGetter(T model) {
+            private static List<T> DefaultChildrenGetter(T model) {
                 ITreeModelWithChildren treeModel = model as ITreeModelWithChildren;
                 return CreateModelList(treeModel == null ? null : treeModel.TreeChildren);
             }

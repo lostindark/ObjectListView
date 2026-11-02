@@ -52,7 +52,7 @@ namespace BrightIdeasSoftware
     /// <summary>
     /// A GlassPanelForm sits transparently over an ObjectListView to show overlays.
     /// </summary>
-    internal partial class GlassPanelForm : Form
+    internal sealed partial class GlassPanelForm : Form
     {
         public GlassPanelForm() {
             this.Name = "GlassPanelForm";
@@ -428,7 +428,7 @@ namespace BrightIdeasSoftware
             this.Overlay.Draw(this.objectListView, g, this.objectListView.ClientRectangle);
         }
 
-        protected void RecalculateBounds() {
+        private void RecalculateBounds() {
             if (!this.isGlassShown)
             {
                 return;

@@ -45,7 +45,7 @@ namespace BrightIdeasSoftware.Tests {
             DateTimeClusteringStrategy strategy = new DateTimeClusteringStrategy(DateTimePortion.Hour | DateTimePortion.Minute, "HH:mm");
             strategy.Column = new OLVColumn();
             strategy.Column.AspectGetter = delegate(object x) { return DATE1; };
-            ICluster cluster = new Cluster(strategy.GetClusterKey(null));
+            Cluster cluster = new Cluster(strategy.GetClusterKey(null));
             cluster.Count = 2;
             string result = strategy.GetClusterDisplayLabel(cluster);
             Assert.AreEqual("22:23 (2 items)", result);
@@ -56,7 +56,7 @@ namespace BrightIdeasSoftware.Tests {
             DateTimeClusteringStrategy strategy = new DateTimeClusteringStrategy(DateTimePortion.Year | DateTimePortion.Month, "MM-yy");
             strategy.Column = new OLVColumn();
             strategy.Column.AspectGetter = delegate(object x) { return DATE1; };
-            ICluster cluster = new Cluster(strategy.GetClusterKey(null));
+            Cluster cluster = new Cluster(strategy.GetClusterKey(null));
             cluster.Count = 1;
             string result = strategy.GetClusterDisplayLabel(cluster);
             Assert.AreEqual("11-98 (1 item)", result);
@@ -67,7 +67,7 @@ namespace BrightIdeasSoftware.Tests {
             DateTimeClusteringStrategy strategy = new DateTimeClusteringStrategy(DateTimePortion.Year | DateTimePortion.Month, "HH:mm");
             strategy.Column = new OLVColumn();
             strategy.Column.AspectGetter = delegate(object x) { return DATE1; };
-            ICluster cluster = new Cluster(null);
+            Cluster cluster = new Cluster(null);
             cluster.Count = 1;
             string result = strategy.GetClusterDisplayLabel(cluster);
             Assert.AreEqual(ClusteringStrategy.NULL_LABEL + " (1 item)", result);

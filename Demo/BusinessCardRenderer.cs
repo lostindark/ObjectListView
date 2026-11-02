@@ -103,7 +103,7 @@ namespace ObjectListViewDemo {
                     Size spacing = ScaleSize(g, new Size(Spacing, Spacing));
                     Size inset = ScaleSize(g, new Size(BorderInset, BorderInset));
                     itemBounds.Inflate(-inset.Width, -inset.Height);
-                    using (GraphicsPath path = this.GetRoundedRect(itemBounds, ScaleSize(g, new Size(20, 20)).Width)) {
+                    using (GraphicsPath path = GetRoundedRect(itemBounds, ScaleSize(g, new Size(20, 20)).Width)) {
                         g.FillPath(backBrush, path);
                         g.DrawPath(borderPen, path);
                     }
@@ -132,7 +132,7 @@ namespace ObjectListViewDemo {
                         SizeF size = g.MeasureString(item.Text, font, (int)textBounds.Width, format);
                         RectangleF titleBounds = textBounds;
                         titleBounds.Height = size.Height;
-                        using (GraphicsPath path = this.GetRoundedRect(titleBounds, ScaleSize(g, new Size(15, 15)).Width))
+                        using (GraphicsPath path = GetRoundedRect(titleBounds, ScaleSize(g, new Size(15, 15)).Width))
                         {
                             g.FillPath(headerBackBrush, path);
                         }
@@ -157,7 +157,7 @@ namespace ObjectListViewDemo {
             }
         }
 
-        private GraphicsPath GetRoundedRect(RectangleF rect, float diameter)
+        private static GraphicsPath GetRoundedRect(RectangleF rect, float diameter)
         {
             GraphicsPath path = new GraphicsPath();
 

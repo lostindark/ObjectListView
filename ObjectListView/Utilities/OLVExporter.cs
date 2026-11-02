@@ -200,7 +200,7 @@ namespace BrightIdeasSoftware {
 
         private delegate string StringToString(string str);
 
-        private void WriteOneRow(StringBuilder sb, IEnumerable<string> strings, string startRow, string betweenCells, string endRow, StringToString encoder) {
+        private static void WriteOneRow(StringBuilder sb, IEnumerable<string> strings, string startRow, string betweenCells, string endRow, StringToString encoder) {
             sb.Append(startRow);
             bool first = true;
             foreach (string s in strings) {
@@ -239,7 +239,7 @@ namespace BrightIdeasSoftware {
 
             StringBuilder sb = new StringBuilder(DOUBLEQUOTE);
             sb.Append(text.Replace(DOUBLEQUOTE, TWODOUBEQUOTES));
-            sb.Append(DOUBLEQUOTE);
+            sb.Append('"');
 
             return sb.ToString();
         }
@@ -278,7 +278,7 @@ namespace BrightIdeasSoftware {
                             // decimal numeric entity
                             sb.Append("&#");
                             sb.Append(((int)text[i]).ToString(CultureInfo.InvariantCulture));
-                            sb.Append(";");
+                            sb.Append(';');
                         } else
                         {
                             sb.Append(text[i]);

@@ -155,14 +155,14 @@ namespace ObjectListViewDemo
                     Trace.TraceWarning("The Windows shell could not supply an icon for '{0}'.", path);
                     return -1;
                 }
-                this.AddImageToCollection(path, this.SmallImageList, smallIcon);
-                this.AddImageToCollection(path, this.LargeImageList, largeIcon);
+                AddImageToCollection(path, this.SmallImageList, smallIcon);
+                AddImageToCollection(path, this.LargeImageList, largeIcon);
             }
 
             return this.SmallImageCollection.IndexOfKey(path);
         }
 
-        private void AddImageToCollection(string key, ImageList imageList, Icon image) {
+        private static void AddImageToCollection(string key, ImageList imageList, Icon image) {
             if (imageList == null)
             {
                 return;

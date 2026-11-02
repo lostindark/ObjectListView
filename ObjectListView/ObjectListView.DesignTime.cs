@@ -169,6 +169,36 @@ namespace BrightIdeasSoftware.Design
 
         #region IDesignerFilter overrides
 
+        private static readonly string[] hiddenProperties = {
+            "BackgroundImage", "BackgroundImageTiled", "HotTracking", "HoverSelection",
+            "LabelEdit", "VirtualListSize", "VirtualMode"
+        };
+
+        private static readonly string[] hiddenTreeProperties = {
+            "GroupImageList", "GroupWithItemCountFormat", "GroupWithItemCountSingularFormat", "HasCollapsibleGroups",
+            "SpaceBetweenGroups", "ShowGroups", "SortGroupItemsByPrimaryColumn", "ShowItemCountOnGroups"
+        };
+
+        private static readonly string[] hiddenEvents = {
+            "AfterLabelEdit",
+            "BeforeLabelEdit",
+            "DrawColumnHeader",
+            "DrawItem",
+            "DrawSubItem",
+            "RetrieveVirtualItem",
+            "SearchForVirtualItem",
+            "VirtualItemsSelectionRangeChanged"
+        };
+
+        private static readonly string[] hiddenTreeEvents = {
+            "AboutToCreateGroups",
+            "AfterCreatingGroups",
+            "BeforeCreatingGroups",
+            "GroupTaskClicked",
+            "GroupExpandingCollapsing",
+            "GroupStateChanged"
+        };
+
         /// <summary>
         /// Adjusts the set of properties the component exposes through a <see cref="System.ComponentModel.TypeDescriptor"/>.
         /// </summary>
@@ -191,9 +221,7 @@ namespace BrightIdeasSoftware.Design
             // So we shadow the unwanted properties, and give the replacement properties
             // non-browsable attributes so that they are hidden from the user
 
-            List<string> unwantedProperties = new List<string>(new string[] { 
-                "BackgroundImage", "BackgroundImageTiled", "HotTracking", "HoverSelection", 
-                "LabelEdit", "VirtualListSize", "VirtualMode" });
+            List<string> unwantedProperties = new List<string>(hiddenProperties);
 
             // Also hid Tooltip properties, since giving a tooltip to the control through the IDE
             // messes up the tooltip handling
@@ -206,10 +234,7 @@ namespace BrightIdeasSoftware.Design
             // If we are looking at a TreeListView, remove group related properties
             // since TreeListViews can't show groups
             if (this.Control is ITreeListView) {
-                unwantedProperties.AddRange(new string[] {
-                    "GroupImageList", "GroupWithItemCountFormat", "GroupWithItemCountSingularFormat", "HasCollapsibleGroups", 
-                    "SpaceBetweenGroups", "ShowGroups", "SortGroupItemsByPrimaryColumn", "ShowItemCountOnGroups"
-                });
+                unwantedProperties.AddRange(hiddenTreeProperties);
             }
 
             // Shadow the unwanted properties, and give the replacement properties
@@ -234,28 +259,12 @@ namespace BrightIdeasSoftware.Design
 
             // Remove the events that don't make sense for an ObjectListView.
             // See PreFilterProperties() for why we do this dance rather than just remove the event.
-            List<string> unwanted = new List<string>(new string[] {
-                "AfterLabelEdit",
-                "BeforeLabelEdit",
-                "DrawColumnHeader",
-                "DrawItem",
-                "DrawSubItem",
-                "RetrieveVirtualItem",
-                "SearchForVirtualItem",
-                "VirtualItemsSelectionRangeChanged"
-            });
+            List<string> unwanted = new List<string>(hiddenEvents);
 
             // If we are looking at a TreeListView, remove group related events
             // since TreeListViews can't show groups
             if (this.Control is ITreeListView) {
-                unwanted.AddRange(new string[] {
-                    "AboutToCreateGroups",
-                    "AfterCreatingGroups",
-                    "BeforeCreatingGroups",
-                    "GroupTaskClicked",
-                    "GroupExpandingCollapsing", 
-                    "GroupStateChanged"
-                });
+                unwanted.AddRange(hiddenTreeEvents);
             }
 
             foreach (string unwantedEvent in unwanted) {
@@ -376,7 +385,7 @@ namespace BrightIdeasSoftware.Design
         /// only have to modify the returned collection of actions, but we have to implement
         /// the properties and commands that the returned actions use. </para>
         /// </remarks>
-        private class ListViewActionListAdapter : DesignerActionList
+        private sealed class ListViewActionListAdapter : DesignerActionList
         {
             public ListViewActionListAdapter(ObjectListViewDesigner designer, DesignerActionList wrappedList)
                 : base(wrappedList.Component) {
@@ -391,14 +400,14 @@ namespace BrightIdeasSoftware.Design
                 return items;
             }
 
-            private void EditValue(ComponentDesigner componentDesigner, IComponent iComponent, string propertyName) {
+            private static void EditValue(ComponentDesigner componentDesigner, IComponent iComponent, string propertyName) {
                 // One more complication. The ListViewActionList classes uses an internal class, EditorServiceContext, to 
                 // edit the items/columns/groups collections. So, we use reflection to bypass the data hiding.
                 Type tEditorServiceContext = Type.GetType("System.Windows.Forms.Design.EditorServiceContext, System.Design");
                 tEditorServiceContext.InvokeMember("EditValue", BindingFlags.InvokeMethod | BindingFlags.Static, null, null, new object[] { componentDesigner, iComponent, propertyName }, CultureInfo.CurrentCulture);
             }
 
-            private void SetValue(object target, string propertyName, object value) {
+            private static void SetValue(object target, string propertyName, object value) {
                 TypeDescriptor.GetProperties(target)[propertyName].SetValue(target, value);
             }
 
@@ -440,7 +449,7 @@ namespace BrightIdeasSoftware.Design
 
         #region DesignerCommandSet
 
-        private class CDDesignerCommandSet : DesignerCommandSet
+        private sealed class CDDesignerCommandSet : DesignerCommandSet
         {
 
             public CDDesignerCommandSet(ComponentDesigner componentDesigner) {
@@ -535,7 +544,7 @@ namespace BrightIdeasSoftware.Design
     /// <summary>
     /// Control how the overlay is presented in the IDE
     /// </summary>
-    internal class OverlayConverter : ExpandableObjectConverter
+    internal sealed class OverlayConverter : ExpandableObjectConverter
     {
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType) {
             return destinationType == typeof(string) || base.CanConvertTo(context, destinationType);

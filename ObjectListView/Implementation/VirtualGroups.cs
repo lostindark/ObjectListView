@@ -305,7 +305,7 @@ namespace BrightIdeasSoftware
     /// </summary>
     /// <remarks>Keep this callback non-generic so it can be exposed through COM.</remarks>
     [Guid("6FC61F50-80E8-49b4-B200-3F38D3865ABD")]
-    internal class OwnerDataCallbackImpl : IOwnerDataCallback
+    internal sealed class OwnerDataCallbackImpl : IOwnerDataCallback
     {
         public OwnerDataCallbackImpl(ObjectListViewBase olv, Func<IVirtualGroups> groupingStrategy) {
             this.olv = olv;

@@ -326,7 +326,7 @@ namespace BrightIdeasSoftware.Tests
                         new OLVSortDescription(list.GetColumn(1), currentOrder)
                     });
 
-                    this.ClickHeader(list, clickedColumn, Keys.None);
+                    ClickHeader(list, clickedColumn, Keys.None);
 
                     SortOrder expectedOrder = clickedColumn == 2 || currentOrder == SortOrder.Descending ?
                         SortOrder.Ascending : SortOrder.Descending;
@@ -353,26 +353,26 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(2)]
         public void TestFourSortFieldsAndChangingDirections(int kind) {
             TypedObjectListView<object> list = this.CreateList(kind);
-            this.SortFourFields(list);
-            this.AssertOrder(list, "d,b,a,c,e");
+            SortFourFields(list);
+            AssertOrder(list, "d,b,a,c,e");
             CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 },
                 list.Columns.Cast<OLVColumn>().Select(list.GetSortPriority).ToArray());
 
             list.Sort(list.GetColumn(2), SortOrder.Descending, true);
-            this.AssertOrder(list, "d,c,b,a,e");
+            AssertOrder(list, "d,c,b,a,e");
             Assert.AreEqual(3, list.GetSortPriority(list.GetColumn(2)));
             Assert.AreEqual(4, list.SortDescriptions.Count);
 
             list.Sort();
-            this.AssertOrder(list, "d,c,b,a,e");
+            AssertOrder(list, "d,c,b,a,e");
             list.AddObject(new SortRow("f", 0, 0, 0, 2));
-            this.AssertOrder(list, "d,c,f,b,a,e");
+            AssertOrder(list, "d,c,f,b,a,e");
 
             list.Sort(list.GetColumn(0), SortOrder.Descending, true);
-            this.AssertOrder(list, "e,d,c,f,b,a");
+            AssertOrder(list, "e,d,c,f,b,a");
             Assert.AreEqual(1, list.GetSortPriority(list.GetColumn(0)));
 
-            this.ClickHeader(list, 3, Keys.None);
+            ClickHeader(list, 3, Keys.None);
             Assert.AreEqual(1, list.SortDescriptions.Count);
             Assert.AreEqual(1, list.GetSortPriority(list.GetColumn(3)));
             Assert.AreEqual(0, list.GetSortPriority(list.GetColumn(0)));
@@ -389,20 +389,20 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(3)]
         public void TestCanceledAndUnsortableFieldsPreserveTheSort(int kind) {
             TypedObjectListView<object> list = this.CreateList(kind);
-            this.SortFourFields(list);
+            SortFourFields(list);
             EventHandler<BeforeSortingEventArgs> cancel = delegate(object sender, BeforeSortingEventArgs args) {
                 args.Canceled = true;
             };
             list.BeforeSorting += cancel;
             list.Sort(list.GetColumn(2), SortOrder.Descending, true);
             list.BeforeSorting -= cancel;
-            this.AssertOrder(list, "d,b,a,c,e");
+            AssertOrder(list, "d,b,a,c,e");
             Assert.AreEqual(SortOrder.Ascending, list.SortDescriptions[2].SortOrder);
 
             list.GetColumn(3).Sortable = false;
             list.Sort(list.GetColumn(3), SortOrder.Descending, false);
             Assert.AreEqual(4, list.SortDescriptions.Count);
-            this.AssertOrder(list, "d,b,a,c,e");
+            AssertOrder(list, "d,b,a,c,e");
         }
 
         [TestMethod]
@@ -412,7 +412,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(3)]
         public void TestSortingEventsCanChangeFourthSortField(int kind) {
             TypedObjectListView<object> list = this.CreateList(kind);
-            this.SortFourFields(list);
+            SortFourFields(list);
             IList<OLVSortDescription> reported = null;
             list.BeforeSorting += delegate(object sender, BeforeSortingEventArgs args) {
                 Assert.AreEqual(4, args.SortDescriptions.Count);
@@ -422,7 +422,7 @@ namespace BrightIdeasSoftware.Tests
                 reported = args.SortDescriptions;
             };
             list.Sort();
-            this.AssertOrder(list, "d,a,b,c,e");
+            AssertOrder(list, "d,a,b,c,e");
             Assert.AreEqual(4, reported.Count);
             Assert.AreEqual(SortOrder.Ascending, reported[3].SortOrder);
             Assert.AreEqual(SortOrder.Ascending, list.SortDescriptions[3].SortOrder);
@@ -450,7 +450,7 @@ namespace BrightIdeasSoftware.Tests
                 new OLVSortDescription(list.GetColumn(2), SortOrder.Ascending),
                 new OLVSortDescription(list.GetColumn(3), SortOrder.Descending)
             });
-            this.AssertOrder(list, "d,b,a,c,e");
+            AssertOrder(list, "d,b,a,c,e");
             Assert.AreSame(list.SortDescriptions[0].Column, list.PrimarySortColumn);
             Assert.AreSame(list.SortDescriptions[1].Column, list.SecondarySortColumn);
             Assert.AreEqual(list.SortDescriptions[0].SortOrder, list.PrimarySortOrder);
@@ -459,13 +459,13 @@ namespace BrightIdeasSoftware.Tests
             list.SecondarySortOrder = SortOrder.Ascending;
             Assert.AreEqual(SortOrder.Ascending, list.SortDescriptions[1].SortOrder);
             list.Sort();
-            this.AssertOrder(list, "b,a,c,d,e");
+            AssertOrder(list, "b,a,c,d,e");
             list.PrimarySortOrder = SortOrder.None;
             list.Sort();
             Assert.AreEqual(0, list.SortDescriptions.Count);
             list.PrimarySortOrder = SortOrder.Descending;
             list.Sort();
-            this.AssertOrder(list, "e,b,a,c,d");
+            AssertOrder(list, "e,b,a,c,d");
             Assert.AreEqual(4, list.SortDescriptions.Count);
 
             list.PrimarySortColumn = list.GetColumn(2);
@@ -507,7 +507,7 @@ namespace BrightIdeasSoftware.Tests
                 Assert.AreSame(reported[1].Column, args.SecondaryColumnToSort);
             };
             list.Sort(list.GetColumn(0), SortOrder.Ascending);
-            this.AssertOrder(list, "b,c,a,e,d");
+            AssertOrder(list, "b,c,a,e,d");
             Assert.AreEqual(4, reported.Count);
             Assert.IsTrue(reported.IsReadOnly);
             Assert.AreSame(list.GetColumn(3), list.PrimarySortColumn);
@@ -521,8 +521,8 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(3)]
         public void TestPlainClickRemainsSingleColumnOnResort(int kind) {
             TypedObjectListView<object> list = this.CreateList(kind);
-            this.SortFourFields(list);
-            this.ClickHeader(list, 2, Keys.None);
+            SortFourFields(list);
+            ClickHeader(list, 2, Keys.None);
             EventHandler<BeforeSortingEventArgs> assertSingleColumn = delegate(object sender, BeforeSortingEventArgs args) {
                 Assert.AreEqual(1, args.SortDescriptions.Count);
                 Assert.AreSame(list.GetColumn(2), args.SortDescriptions[0].Column);
@@ -534,7 +534,7 @@ namespace BrightIdeasSoftware.Tests
             list.Sort();
             Assert.AreEqual(1, list.SortDescriptions.Count);
             list.BeforeSorting -= assertSingleColumn;
-            list.Sort(new OLVSortDescription[0]);
+            list.Sort(Array.Empty<OLVSortDescription>());
             Assert.AreEqual(0, list.SortDescriptions.Count);
             Assert.IsNull(list.PrimarySortColumn);
             Assert.IsNull(list.SecondarySortColumn);
@@ -546,11 +546,11 @@ namespace BrightIdeasSoftware.Tests
         public void TestGroupedItemsUseAllSortFields(int kind) {
             TypedObjectListView<object> list = this.CreateList(kind);
             list.ShowGroups = true;
-            this.ClickHeader(list, 1, Keys.None);
-            this.ClickHeader(list, 2, Keys.Shift);
-            this.ClickHeader(list, 3, Keys.Shift);
-            this.ClickHeader(list, 3, Keys.Shift);
-            this.ClickHeader(list, 0, Keys.Shift);
+            ClickHeader(list, 1, Keys.None);
+            ClickHeader(list, 2, Keys.Shift);
+            ClickHeader(list, 3, Keys.Shift);
+            ClickHeader(list, 3, Keys.Shift);
+            ClickHeader(list, 0, Keys.Shift);
             for (int i = 0; i < 2; i++) {
                 OLVGroup group = list.OLVGroups[0];
                 IEnumerable<SortRow> rows = kind == 0
@@ -565,11 +565,11 @@ namespace BrightIdeasSoftware.Tests
         [TestMethod]
         public void TestTreeChildrenRetainMultiSortWhenExpanded() {
             TreeListView list = (TreeListView)this.CreateList(2);
-            this.SortFourFields(list);
+            SortFourFields(list);
             SortRow root = (SortRow)list.GetModelObject(0);
             root.Children.AddRange(new[] { new SortRow("child-a", 0, 0, 0, 0), new SortRow("child-b", 0, 0, 0, 1) });
             list.Expand(root);
-            this.AssertOrder(list, "d,child-b,child-a,b,a,c,e");
+            AssertOrder(list, "d,child-b,child-a,b,a,c,e");
         }
 
         [TestMethod]
@@ -584,19 +584,19 @@ namespace BrightIdeasSoftware.Tests
         public void TestHeadersRenderPriorityBesideEachSortArrow(bool themes, int fieldCount) {
             TypedObjectListView<object> list = this.CreateList(0);
             list.HeaderUsesThemes = themes;
-            this.SortFourFields(list);
+            SortFourFields(list);
             if (fieldCount < 4) {
-                this.ClickHeader(list, 0, Keys.None);
+                ClickHeader(list, 0, Keys.None);
                 if (fieldCount == 2)
                 {
-                    this.ClickHeader(list, 1, Keys.Shift);
+                    ClickHeader(list, 1, Keys.Shift);
                 }
             }
             for (int i = 4; i < fieldCount; i++) {
                 OLVColumn column = new OLVColumn("Extra field", "") { AspectGetter = x => 0, Width = 110 };
                 list.AllColumns.Add(column);
                 list.Columns.Add(column);
-                this.ClickHeader(list, i, Keys.Shift);
+                ClickHeader(list, i, Keys.Shift);
             }
             HeaderControl header = list.HeaderControl;
             MethodInfo draw = typeof(HeaderControl).GetMethod("CustomDrawHeaderCell", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -720,22 +720,22 @@ namespace BrightIdeasSoftware.Tests
             return list;
         }
 
-        private void SortFourFields(TypedObjectListView<object> list) {
-            this.ClickHeader(list, 0, Keys.None);
-            this.ClickHeader(list, 1, Keys.Shift);
-            this.ClickHeader(list, 1, Keys.Shift);
-            this.ClickHeader(list, 2, Keys.Shift);
-            this.ClickHeader(list, 3, Keys.Shift);
-            this.ClickHeader(list, 3, Keys.Shift);
+        private static void SortFourFields(TypedObjectListView<object> list) {
+            ClickHeader(list, 0, Keys.None);
+            ClickHeader(list, 1, Keys.Shift);
+            ClickHeader(list, 1, Keys.Shift);
+            ClickHeader(list, 2, Keys.Shift);
+            ClickHeader(list, 3, Keys.Shift);
+            ClickHeader(list, 3, Keys.Shift);
         }
 
-        private void ClickHeader(TypedObjectListView<object> list, int columnIndex, Keys modifiers) {
+        private static void ClickHeader(TypedObjectListView<object> list, int columnIndex, Keys modifiers) {
             typeof(ObjectListViewBase).GetMethod("HandleColumnClick", BindingFlags.Instance | BindingFlags.NonPublic,
                 null, new[] { typeof(ColumnClickEventArgs), typeof(Keys) }, null)
                 .Invoke(list, new object[] { new ColumnClickEventArgs(columnIndex), modifiers });
         }
 
-        private void AssertOrder(TypedObjectListView<object> list, string expected) {
+        private static void AssertOrder(TypedObjectListView<object> list, string expected) {
             Assert.AreEqual(expected, String.Join(",", Enumerable.Range(0, list.GetItemCount())
                 .Select(i => ((SortRow)list.GetModelObject(i)).Name)));
         }

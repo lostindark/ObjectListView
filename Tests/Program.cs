@@ -175,11 +175,11 @@ namespace BrightIdeasSoftware.Tests
             sb.AppendLine("^^^^^^^^^^");
 
             List<string[]> values = new List<string[]>();
-            values.Add(new string[] { "*Name*", "*Info*", "*Description*" });
+            values.Add(PropertyTableHeaders);
 
             foreach (PropertyInfo pinfo in properties) {
 
-                values.Add(new string[] { }); // marks a new entry
+                values.Add(Array.Empty<string>()); // marks a new entry
                 DescriptionAttribute descAttr = Attribute.GetCustomAttribute(pinfo, typeof(DescriptionAttribute)) as DescriptionAttribute;
                 //OLVDocAttribute docAttr = Attribute.GetCustomAttribute(pinfo, typeof(OLVDocAttribute)) as OLVDocAttribute;
                 values.Add(new string[] {                 
@@ -239,9 +239,9 @@ namespace BrightIdeasSoftware.Tests
             sb.AppendLine("^^^^^^");
 
             List<string[]> values = new List<string[]>();
-            values.Add(new string[] { "*Name*", "*Parameters*", "*Description*" });
+            values.Add(EventTableHeaders);
             foreach (EventInfo einfo in events) {
-                values.Add(new string[] { }); // marks a new entry
+                values.Add(Array.Empty<string>()); // marks a new entry
                 DescriptionAttribute descAttr = Attribute.GetCustomAttribute(einfo, typeof(DescriptionAttribute)) as DescriptionAttribute;
                 values.Add(new string[] {                 
                         einfo.Name,
@@ -277,10 +277,10 @@ namespace BrightIdeasSoftware.Tests
             sb.AppendLine("^^^^^^^");
 
             List<string[]> values = new List<string[]>();
-            values.Add(new string[] { "*Name*", "*Description*" });
+            values.Add(MethodTableHeaders);
             foreach (MethodInfo info in methods) {
 
-                values.Add(new string[] { }); // marks a new entry
+                values.Add(Array.Empty<string>()); // marks a new entry
                 DescriptionAttribute descAttr = Attribute.GetCustomAttribute(info, typeof(DescriptionAttribute)) as DescriptionAttribute;
                 values.Add(new string[] {                 
                         String.Format(CultureInfo.InvariantCulture, "``{0} {1} {2}({3})``",
@@ -292,20 +292,24 @@ namespace BrightIdeasSoftware.Tests
             GenerateTable(sb, values);
         }
 
-        private static string GetName(PropertyInfo pinfo) {
-            string name = pinfo.Name;
-            
-            // Some name are so long they make the formatting strange.
-            List<string[]> pairs = new List<string[]>(new string[][] {
+        private static readonly string[] PropertyTableHeaders = { "*Name*", "*Info*", "*Description*" };
+        private static readonly string[] EventTableHeaders = { "*Name*", "*Parameters*", "*Description*" };
+        private static readonly string[] MethodTableHeaders = { "*Name*", "*Description*" };
+
+        // Some names are so long they make the formatting strange.
+        private static readonly string[][] PropertyNameReplacements = {
                 new string[] { "GroupWithItemCountSingularFormatOrDefault", "GroupWithItemCountSingularFormat OrDefault" },
                 new string[] { "RenderNonEditableCheckboxesAsDisabled", "RenderNonEditableCheckboxes AsDisabled" },
                 new string[] { "UpdateSpaceFillingColumnsWhenDraggingColumnDivider", "UpdateSpaceFillingColumnsWhenDragging ColumnDivider" },
                 new string[] { "UnfocusedSelectedForeColorOrDefault", "UnfocusedHighlightForegroundColorOr Default" },
                 new string[] { "UnfocusedSelectedBackColorOrDefault", "UnfocusedHighlightBackgroundColorOr Default" }
             
-            });
+        };
 
-            foreach (string[] pair in pairs) {
+        private static string GetName(PropertyInfo pinfo) {
+            string name = pinfo.Name;
+
+            foreach (string[] pair in PropertyNameReplacements) {
                 if (name == pair[0]) {
                     name = pair[1];
                     break;
@@ -443,7 +447,7 @@ namespace BrightIdeasSoftware.Tests
 
             foreach (ParameterInfo parameter in info.GetParameters()) {
                 sb.Append(GetTypeName(parameter.ParameterType));
-                sb.Append(" ");
+                sb.Append(' ');
                 sb.Append(parameter.Name);
                 sb.Append(", ");
             }

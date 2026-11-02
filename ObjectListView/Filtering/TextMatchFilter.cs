@@ -648,7 +648,7 @@ namespace BrightIdeasSoftware {
                     return true;
                 }
 
-                return this.Regex.Match(cellText).Success;
+                return this.Regex.IsMatch(cellText);
             }
 
             /// <summary>

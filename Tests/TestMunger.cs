@@ -240,7 +240,7 @@ namespace BrightIdeasSoftware.Tests
             private string readOnlyProperty;
         }
 
-        private class TestSubClass : TestBaseClass
+        private sealed class TestSubClass : TestBaseClass
         {
             public new string NonVirtualTestProperty {
                 get { return subTestProperty1; }

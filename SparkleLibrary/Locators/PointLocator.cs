@@ -81,7 +81,7 @@ namespace BrightIdeasSoftware
     {
         #region Properties
 
-        public Point Offset ;
+        public Point Offset { get; set; }
 
         public ISprite Sprite {
             get { return this.sprite; }
@@ -167,7 +167,7 @@ namespace BrightIdeasSoftware
             this.Point = pt;
         }
 
-        protected Point Point ;
+        protected Point Point { get; set; }
 
         public override Point GetPoint() {
             return this.OffsetBy(this.Point);
@@ -227,8 +227,8 @@ namespace BrightIdeasSoftware
 
         #region Configuration properties
 
-        protected IRectangleLocator RectangleLocator ;
-        protected SizeF PointProportions ;
+        protected IRectangleLocator RectangleLocator { get; set; }
+        protected SizeF PointProportions { get; set; }
 
         #endregion
 
@@ -308,8 +308,8 @@ namespace BrightIdeasSoftware
 
         #region Configuration properties
 
-        protected IPointLocator Locator1 ;
-        protected IPointLocator Locator2 ;
+        protected IPointLocator Locator1 { get; set; }
+        protected IPointLocator Locator2 { get; set; }
 
         #endregion
 
@@ -357,8 +357,8 @@ namespace BrightIdeasSoftware
 
         #region Configuration properties
 
-        protected IPointLocator ReferencePointLocator ;
-        protected IPointLocator SpritePointLocator ;
+        protected IPointLocator ReferencePointLocator { get; set; }
+        protected IPointLocator SpritePointLocator { get; set; }
 
         #endregion
 
@@ -391,7 +391,7 @@ namespace BrightIdeasSoftware
     /// </summary>
     public class BaseWalker : AbstractPointLocator
     {
-        public float WalkProgress ;
+        public float WalkProgress { get; set; }
 
         /// <summary>
         /// Walk the given distance between the given points, starting at pt.
@@ -511,7 +511,7 @@ namespace BrightIdeasSoftware
 
         #region Configuration properties
 
-        protected IEnumerable<IPointLocator> Locators ;
+        protected IEnumerable<IPointLocator> Locators { get; set; }
 
         #endregion
                 
@@ -591,9 +591,9 @@ namespace BrightIdeasSoftware
 
         #region Configuration properties
 
-        public IRectangleLocator RectangleLocator ;
-        public IPointLocator StartPointLocator ;
-        public WalkDirection Direction ;
+        public IRectangleLocator RectangleLocator { get; set; }
+        public IPointLocator StartPointLocator { get; set; }
+        public WalkDirection Direction { get; set; }
 
         #endregion
 

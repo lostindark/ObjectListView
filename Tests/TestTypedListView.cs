@@ -725,7 +725,7 @@ namespace BrightIdeasSoftware.Tests {
             this.tolv.CreateControl();
         }
 
-        protected PersonListView tolv;
+        protected PersonListView tolv { get; set; }
 
         public sealed class PersonListView : TypedObjectListView<Person> {
             public List<Person> Storage { get { return (List<Person>)this.StoredModelObjects; } }

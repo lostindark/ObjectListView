@@ -30,7 +30,7 @@ namespace BrightIdeasSoftware.Tests
             return mainForm.objectListView1;
         }
 
-        protected TypedObjectListView<object> olv;
+        protected TypedObjectListView<object> olv { get; set; }
 
         [TestMethod]
         public void Test_SetObjects_All() {

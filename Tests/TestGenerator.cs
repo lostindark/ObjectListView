@@ -209,7 +209,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestGenerator : WinFormsTestFixture
     {
-        protected ObjectListView olv;
+        protected ObjectListView olv { get; set; }
 
         [TestInitialize]
         public void InitEachTest() {
@@ -390,7 +390,7 @@ namespace BrightIdeasSoftware.Tests
 
     [STATestClass]
     public class TestColumnBuildingForTreeListView : WinFormsTestFixture {
-        protected TreeListView tolv;
+        protected TreeListView tolv { get; set; }
 
         [TestInitialize]
         public void InitEachTest() {

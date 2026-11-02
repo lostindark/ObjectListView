@@ -96,7 +96,7 @@ namespace ObjectListViewDemo
             }
             this.treeView = treeView;
         }
-        protected TreeView treeView;
+        protected TreeView treeView { get; set; }
 
         /// <summary>
         /// Create a SysImageListHelper that will fetch images for the given listview control.
@@ -125,7 +125,7 @@ namespace ObjectListViewDemo
 
             this.listView = listView;
         }
-        protected ObjectListViewBase listView;
+        protected ObjectListViewBase listView { get; set; }
 
         /// <summary>
         /// Return the index of the image that has the Shell Icon for the given file/directory.

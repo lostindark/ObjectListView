@@ -410,7 +410,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// The strategies used to find matching text.
         /// </summary>
-        protected List<TextMatchingStrategy> MatchingStrategies = new List<TextMatchingStrategy>();
+        protected List<TextMatchingStrategy> MatchingStrategies { get; set; } = new List<TextMatchingStrategy>();
 
         #endregion
 

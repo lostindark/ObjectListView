@@ -47,7 +47,7 @@ namespace BrightIdeasSoftware
     {
         #region Properties
 
-        public Point Expansion ;
+        public Point Expansion { get; set; }
 
         public ISprite Sprite {
             get { return this.sprite; }
@@ -168,8 +168,8 @@ namespace BrightIdeasSoftware
 
         #region Configuration properties
 
-        protected IPointLocator TopLeftLocator ;
-        protected IPointLocator BottomRightLocator ;
+        protected IPointLocator TopLeftLocator { get; set; }
+        protected IPointLocator BottomRightLocator { get; set; }
 
         #endregion
 
@@ -202,7 +202,7 @@ namespace BrightIdeasSoftware
             this.Rectangle = new Rectangle(x, y, width, height);
         }
 
-        protected Rectangle Rectangle ;
+        protected Rectangle Rectangle { get; set; }
 
         public override Rectangle GetRectangle() {
             return this.Expand(this.Rectangle);

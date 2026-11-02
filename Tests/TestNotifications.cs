@@ -41,7 +41,7 @@ namespace BrightIdeasSoftware.Tests
             this.olv = GetObjectListView();
             this.olv.UseNotifyPropertyChanged = true;
         }
-        protected TypedObjectListView<object> olv;
+        protected TypedObjectListView<object> olv { get; set; }
 
         protected virtual TypedObjectListView<object> GetObjectListView() {
             return mainForm.objectListView1;

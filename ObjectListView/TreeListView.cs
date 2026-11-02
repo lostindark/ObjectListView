@@ -1983,12 +1983,12 @@ namespace BrightIdeasSoftware
             /// 
             /// </summary>
 // ReSharper disable once InconsistentNaming
-            protected IModelFilter modelFilter;
+            protected IModelFilter modelFilter { get; set; }
             /// <summary>
             /// 
             /// </summary>
 // ReSharper disable once InconsistentNaming
-            protected IListFilter listFilter;
+            protected IListFilter listFilter { get; set; }
         }
 
         /// <summary>

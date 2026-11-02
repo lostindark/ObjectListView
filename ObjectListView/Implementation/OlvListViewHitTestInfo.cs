@@ -270,27 +270,27 @@ namespace BrightIdeasSoftware {
             return (ListViewHitTestLocations)(flags & 0xffff);
         }
 
-        #region Public fields
+        #region Public properties
 
         /// <summary>
         /// Where is the hit location?
         /// </summary>
-        public HitTestLocation HitTestLocation;
+        public HitTestLocation HitTestLocation { get; set; }
 
         /// <summary>
         /// Where is the hit location?
         /// </summary>
-        public HitTestLocationEx HitTestLocationEx;
+        public HitTestLocationEx HitTestLocationEx { get; set; }
 
         /// <summary>
         /// Which group was hit?
         /// </summary>
-        public OLVGroup Group;
+        public OLVGroup Group { get; set; }
 
         /// <summary>
         /// Custom renderers can use this information to supply more details about the hit location
         /// </summary>
-        public Object UserData;
+        public Object UserData { get; set; }
 
         #endregion
 

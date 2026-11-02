@@ -41,7 +41,7 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         private const int NumberOfRoots = 2;
-        protected TreeListView olv;
+        protected TreeListView olv { get; set; }
 
         [TestMethod]
         public void TestInitialConditions() {

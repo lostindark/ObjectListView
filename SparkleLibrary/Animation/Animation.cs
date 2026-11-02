@@ -471,10 +471,10 @@ namespace BrightIdeasSoftware
                 this.Sprite = sprite;
             }
 
-            public IAnimateable Component;
-            public long ScheduledStartTick;
-            public long StartTick;
-            public bool Stopped;
+            public IAnimateable Component { get; set; }
+            public long ScheduledStartTick { get; set; }
+            public long StartTick { get; set; }
+            public bool Stopped { get; set; }
 
             public bool Started {
                 get { return this.StartTick != 0; }
@@ -485,7 +485,7 @@ namespace BrightIdeasSoftware
             /// </summary>
             /// <remarks>Almost all components are sprites so we keep this property to
             /// prevent the use of casts.</remarks>
-            public ISprite Sprite;
+            public ISprite Sprite { get; set; }
         }
 
         #endregion

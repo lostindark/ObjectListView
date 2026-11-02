@@ -1477,7 +1477,8 @@ namespace BrightIdeasSoftware
         /// This is useful when you have setup specific colors on a RowFormatter delegate, for example.
         /// </para>
         /// </remarks>
-        public Brush TextBrush;
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public Brush TextBrush { get; set; }
         
         /// <summary>
         /// This object is used by the IDE to set the text brush.
@@ -1521,8 +1522,8 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// What brush will be used to paint the background?
         /// </summary>
-        [Browsable(false)]
-        public Brush BackgroundBrush;
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public Brush BackgroundBrush { get; set; }
 
         /// <summary>
         /// This object is used by the IDE to set the background brush.

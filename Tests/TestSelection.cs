@@ -170,13 +170,13 @@ namespace BrightIdeasSoftware.Tests
         {
             countSelectionChanged++;
         }
-        protected int countSelectionChanged;
+        protected int countSelectionChanged { get; set; }
 
         protected virtual TypedObjectListView<object> GetObjectListView()
         {
             return mainForm.objectListView1;
         }
-        protected TypedObjectListView<object> olv;
+        protected TypedObjectListView<object> olv { get; set; }
     }
 
     [STATestClass]

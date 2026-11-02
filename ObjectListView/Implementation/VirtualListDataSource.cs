@@ -167,7 +167,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// The list view that this data source is giving information to.
         /// </summary>
-        protected ObjectListViewBase listView;
+        protected ObjectListViewBase listView { get; set; }
 
         /// <summary>
         /// 

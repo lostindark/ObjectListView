@@ -21,7 +21,7 @@ namespace BrightIdeasSoftware.Tests
 
     public class Person : INotifyPropertyChanged, ITreeModel
     {
-        public bool? IsActive;
+        public bool? IsActive { get; set; }
 
         public Person(string name)
         {
@@ -158,10 +158,9 @@ namespace BrightIdeasSoftware.Tests
             child.Parent = this;
         }
 
-        // Allows tests for fields.
-        public string Photo;
-        public string Comments;
-        public bool CanTellJokes;
+        public string Photo { get; set; }
+        public string Comments { get; set; }
+        public bool CanTellJokes { get; set; }
 
         #region Implementation of INotifyPropertyChanged
 

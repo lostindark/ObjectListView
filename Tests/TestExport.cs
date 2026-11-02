@@ -201,6 +201,6 @@ namespace BrightIdeasSoftware.Tests
             }), html);
         }
 
-        protected ObjectListView olv;
+        protected ObjectListView olv { get; set; }
     }
 }

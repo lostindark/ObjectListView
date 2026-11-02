@@ -11,7 +11,7 @@ namespace BrightIdeasSoftware.Tests
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001", Justification = "TestCleanup disposes the fixture form and its owned controls.")]
     public abstract class WinFormsTestFixture
     {
-        protected MainForm mainForm;
+        protected MainForm mainForm { get; set; }
 
         protected VirtualObjectListView CreateVirtualObjectListView() {
             var list = new VirtualObjectListView { View = View.Details, ShowGroups = false };

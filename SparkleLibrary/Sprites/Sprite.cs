@@ -394,18 +394,18 @@ namespace BrightIdeasSoftware
                 this.Effect = effect;
             }
 
-            public long ScheduledStartTick;
-            public long Duration ;
+            public long ScheduledStartTick { get; set; }
+            public long Duration { get; set; }
 
-            public bool Started ;
-            public bool Stopped ;
+            public bool Started { get; set; }
+            public bool Stopped { get; set; }
 
-            public long StartTick ;
+            public long StartTick { get; set; }
             public long ScheduledEndTick {
                 get { return this.StartTick + this.Duration; }
             }
 
-            public IEffect Effect ;
+            public IEffect Effect { get; set; }
         }
     }
 }

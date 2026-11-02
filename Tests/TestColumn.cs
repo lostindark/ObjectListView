@@ -280,14 +280,41 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual("AspectToStringConverter called", column.GetStringValue(this.person1));
         }
 
+        [TestMethod]
+        public void Test_FieldAspect_CanReadChainAndWrite() {
+            var model = new FieldAspectModel();
+            var column = new OLVColumn("Text", "Text");
+            var chainedColumn = new OLVColumn("Length", "Text.Length");
+
+            Assert.AreEqual("field", column.GetValue(model));
+            Assert.AreEqual(5, chainedColumn.GetValue(model));
+            column.PutValue(model, "updated");
+            Assert.AreEqual("updated", model.Text);
+        }
+
+        [TestMethod]
+        [DataRow("Text", "field")]
+        [DataRow("Text.Length", 5)]
+        public void Test_GeneratedFieldAspect_CanReadAndChain(string aspectName, object expected) {
+            var model = new FieldAspectModel();
+            var column = new OLVColumn("Field", aspectName);
+            new TypedColumn<FieldAspectModel>(column).GenerateAspectGetter();
+
+            Assert.AreEqual(expected, column.GetValue(model));
+        }
+
+        private sealed class FieldAspectModel {
+            public string Text = "field";
+        }
+
         [TestInitialize]
         public void Init() {
             this.person1 = new Person("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
             this.person2 = new Person2("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
         }
 
-        protected Person person1;
-        protected Person2 person2;
+        protected Person person1 { get; set; }
+        protected Person2 person2 { get; set; }
     }
 
     [STATestClass]
@@ -308,7 +335,7 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
-        public void TestSimpleField() {
+        public void TestSimpleAspect() {
             this.ExecuteAspect("Comments", "comments");
         }
 
@@ -323,7 +350,7 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
-        public void TestChainedField() {
+        public void TestChainedAspect() {
             this.ExecuteAspect("Comments.ToUpper", "COMMENTS");
         }
 
@@ -385,8 +412,8 @@ namespace BrightIdeasSoftware.Tests
             this.person2 = new Person2("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
         }
 
-        protected Person person1;
-        protected Person2 person2;
+        protected Person person1 { get; set; }
+        protected Person2 person2 { get; set; }
     }
 
     [STATestClass]
@@ -436,8 +463,8 @@ namespace BrightIdeasSoftware.Tests
             dict["Photo"] = "  photo  ";
         }
 
-        protected Hashtable dict1;
-        protected Dictionary<string, Object> dict2;
+        protected Hashtable dict1 { get; set; }
+        protected Dictionary<string, Object> dict2 { get; set; }
     }
 
     [STATestClass]
@@ -494,7 +521,7 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
-        public void TestSimpleField() {
+        public void TestSimpleAspect() {
             this.ExecuteAspect("Comments", "NEW comments");
         }
 
@@ -537,8 +564,8 @@ namespace BrightIdeasSoftware.Tests
 
         }
 
-        protected Person person1;
-        protected Person2 person2;
+        protected Person person1 { get; set; }
+        protected Person2 person2 { get; set; }
     }
 
     [STATestClass]
@@ -560,7 +587,7 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
-        public void TestSimpleField() {
+        public void TestSimpleAspect() {
             this.ExecuteAspect("Comments", "NEW comments");
             this.ExecuteAspect2("Comments", "NEW comments2");
         }
@@ -592,8 +619,8 @@ namespace BrightIdeasSoftware.Tests
             dict["Photo"] = "  photo  ";
         }
 
-        protected Hashtable dict1;
-        protected Dictionary<string, Object> dict2;
+        protected Hashtable dict1 { get; set; }
+        protected Dictionary<string, Object> dict2 { get; set; }
     }
 
 }

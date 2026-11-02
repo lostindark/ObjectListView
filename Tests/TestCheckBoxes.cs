@@ -49,7 +49,7 @@ namespace BrightIdeasSoftware.Tests
 
         }
 
-        protected TypedObjectListView<object> olv;
+        protected TypedObjectListView<object> olv { get; set; }
 
         [TestMethod]
         public void TestCheckObject() {

@@ -288,7 +288,7 @@ namespace BrightIdeasSoftware.Tests
         {
             return mainForm.objectListView1;
         }
-        protected TypedObjectListView<object> olv;
+        protected TypedObjectListView<object> olv { get; set; }
     }
 
     [STATestClass]

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Globalization;
@@ -13,14 +14,20 @@ namespace ObjectListViewDemo
             DemoTheme.ApplyInformationBanner(this.label12);
         }
 
-        // Public fields (yuck) to avoid the baggage of wrapping a private field.
-        // Necessary until I stop supporting .Net 2.0.
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ObjectListViewBase SimpleView { get; set; }
 
-        public ObjectListViewBase SimpleView;
-        public ObjectListViewBase ComplexView;
-        public ObjectListViewBase FileExplorerView;
-        public ObjectListViewBase DataListView;
-        public ObjectListViewBase TreeListView;
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ObjectListViewBase ComplexView { get; set; }
+
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ObjectListViewBase FileExplorerView { get; set; }
+
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ObjectListViewBase DataListView { get; set; }
+
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ObjectListViewBase TreeListView { get; set; }
 
         protected override void InitializeTab() {
 

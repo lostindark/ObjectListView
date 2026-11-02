@@ -55,6 +55,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Globalization;
 using System.Windows.Forms;
@@ -67,6 +68,7 @@ namespace BrightIdeasSoftware {
     /// We could replace this with EventHandler&lt;CellEditEventArgs&gt; but that would break all
     /// cell editing event code from v1.x.
     /// </remarks>
+    [SuppressMessage("Naming", "CA1711", Justification = "This public delegate is the event-handler type for cell editing.")]
     public delegate void CellEditEventHandler(object sender, CellEditEventArgs e);
 
     public partial class ObjectListViewBase {
@@ -2074,6 +2076,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets an extended indication of the part of item/subitem/group that the mouse is currently over
         /// </summary>
+        [SuppressMessage("Naming", "CA1711", Justification = "Ex distinguishes extended native hit-test flags from the simplified hit location.")]
         public virtual HitTestLocationEx HotCellHitLocationEx {
             get { return this.hotCellHitLocationEx; }
             internal set { this.hotCellHitLocationEx = value; }
@@ -2125,6 +2128,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets an extended indication of the part of item/subitem/group that the mouse used to be over
         /// </summary>
+        [SuppressMessage("Naming", "CA1711", Justification = "Ex distinguishes extended native hit-test flags from the simplified hit location.")]
         public virtual HitTestLocationEx OldHotCellHitLocationEx {
             get { return this.oldHotCellHitLocationEx; }
             internal set { this.oldHotCellHitLocationEx = value; }

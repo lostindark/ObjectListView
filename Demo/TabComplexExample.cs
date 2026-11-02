@@ -11,6 +11,19 @@ using ContentAlignment = System.Drawing.ContentAlignment;
 namespace ObjectListViewDemo
 {
     public partial class TabComplexExample : OlvDemoTab {
+        private static readonly string[] cookingSkillTitles = {
+            "Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef"
+        };
+        private static readonly string[] cookingSkillImages = { "not", "hamburger", "toast", "beef", "chef" };
+        private static readonly string[] cookingSkillSubtitles = {
+            "Pay good money -- or flee the house -- rather than eat their home-cooked food",
+            "Offer to buy takeaway rather than risk what may appear on your plate",
+            "Neither spectacular nor dangerous",
+            "Try to visit at dinner time to wrangle an invitation to dinner",
+            "Do whatever is necessary to procure their services"
+        };
+        private static readonly string[] cookingSkillTasks = { "Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance" };
+        private static readonly string[] hourlyRateTitles = { "Less than $100", "$100-$1000", "Megabucks" };
 
         public TabComplexExample() {
             InitializeComponent();
@@ -169,23 +182,17 @@ namespace ObjectListViewDemo
             // Setup some fancy grouping formatting on the Cooking skill columns
             this.columnCookingSkill.MakeGroupies(
                 new object[] {10, 20, 30, 40},
-                new string[] {"Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef"},
-                new string[] {"not", "hamburger", "toast", "beef", "chef"},
-                new string[] {
-                    "Pay good money -- or flee the house -- rather than eat their home-cooked food",
-                    "Offer to buy takeaway rather than risk what may appear on your plate",
-                    "Neither spectacular nor dangerous",
-                    "Try to visit at dinner time to wrangle an invitation to dinner",
-                    "Do whatever is necessary to procure their services"
-                },
-                new string[] {"Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance"}
+                cookingSkillTitles,
+                cookingSkillImages,
+                cookingSkillSubtitles,
+                cookingSkillTasks
                 );
 
             // Setup grouping on the Hourly rate column
             // This uses the simpler form of MakeGroupies, that just produces a title for each group
             this.hourlyRateColumn.MakeGroupies(
                 new Double[] {100, 1000},
-                new string[] {"Less than $100", "$100-$1000", "Megabucks"});
+                hourlyRateTitles);
             this.hourlyRateColumn.AspectPutter = delegate(object x, object newValue) { ((Person) x).SetRate((double) newValue); };
 
             // The salary indicator column shows an image based on the person's salary.

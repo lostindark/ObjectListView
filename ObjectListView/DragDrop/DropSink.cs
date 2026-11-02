@@ -47,6 +47,7 @@
  */
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -343,6 +344,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the list receiving drops. Detaching stops auto-scrolling.
         /// </summary>
+        [SuppressMessage("Maintainability", "CA1513", Justification = ".NET Framework 4.6.2 lacks ObjectDisposedException.ThrowIf.")]
         public override ObjectListViewBase ListView {
             get { return base.ListView; }
             set {

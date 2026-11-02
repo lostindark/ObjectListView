@@ -60,6 +60,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// This component has been stopped. It should release any resources acquired in Start().
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716", Justification = "Stop is the established animation lifecycle operation paired with Start.")]
         void Stop();
     }
 
@@ -103,6 +104,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// This component has been stopped. It should release any resources acquired in Start().
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716", Justification = "Stop implements the established IAnimateable lifecycle contract.")]
         public virtual void Stop() {
         }
     }

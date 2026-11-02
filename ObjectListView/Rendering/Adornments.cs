@@ -35,6 +35,7 @@
  */
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -573,6 +574,7 @@ namespace BrightIdeasSoftware
         /// Gets the font that will be used to draw the text or a reasonable default
         /// </summary>
         [Browsable(false)]
+        [SuppressMessage("Maintainability", "CA1513", Justification = ".NET Framework 4.6.2 lacks ObjectDisposedException.ThrowIf.")]
         public Font FontOrDefault {
             get {
                 if (this.disposed)
@@ -622,6 +624,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [SuppressMessage("Maintainability", "CA1513", Justification = ".NET Framework 4.6.2 lacks ObjectDisposedException.ThrowIf.")]
         public virtual StringFormat StringFormat {
             get {
                 if (this.disposed)

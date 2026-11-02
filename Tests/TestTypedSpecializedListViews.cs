@@ -221,6 +221,7 @@ namespace BrightIdeasSoftware.Tests {
         [DataRow("Data")]
         [DataRow("FastData")]
         [DataRow("DataTree")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1859", Justification = "The test deliberately exercises specialized controls through the untyped base contract.")]
         public void Test_TypedSpecializations_RejectIncompatibleModelsBeforeChangingRows(string kind) {
             using (ObjectListViewBase list = CreateList(kind)) {
                 this.Host(list);
@@ -241,6 +242,7 @@ namespace BrightIdeasSoftware.Tests {
         [TestMethod]
         [DataRow("Virtual")]
         [DataRow("Fast")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1859", Justification = "The test deliberately exercises specialized controls through the untyped base contract.")]
         public void Test_TypedVirtualMutations_RejectIncompatibleEventPayloads(string kind) {
             using (ObjectListViewBase list = CreateList(kind)) {
                 this.Host(list);

@@ -11,6 +11,18 @@ using ObjectListViewDemo.Properties;
 namespace ObjectListViewDemo
 {
     public partial class TabFastList : OlvDemoTab {
+        private static readonly string[] cookingSkillTitles = {
+            "Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef"
+        };
+        private static readonly string[] cookingSkillImages = { "not", "hamburger", "toast", "beef", "chef" };
+        private static readonly string[] cookingSkillSubtitles = {
+            "Pay good money -- or flee the house -- rather than eat their homecooked food",
+            "Offer to buy takeaway rather than risk what may appear on your plate",
+            "Neither spectacular nor dangerous",
+            "Try to visit at dinner time to wrangle an invitation to dinner",
+            "Do whatever is necessary to procure their services"
+        };
+        private static readonly string[] cookingSkillTasks = { "Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance" };
 
         public TabFastList()
         {
@@ -75,16 +87,10 @@ namespace ObjectListViewDemo
             this.olvColumn26.Renderer = new MultiImageRenderer(Resource1.star16, 5, 0, 40);
             this.olvColumn26.MakeGroupies(
                 new object[] {10, 20, 30, 40},
-                new string[] {"Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef"},
-                new string[] {"not", "hamburger", "toast", "beef", "chef"},
-                new string[] {
-                    "Pay good money -- or flee the house -- rather than eat their homecooked food",
-                    "Offer to buy takeaway rather than risk what may appear on your plate",
-                    "Neither spectacular nor dangerous",
-                    "Try to visit at dinner time to wrangle an invitation to dinner",
-                    "Do whatever is necessary to procure their services"
-                },
-                new string[] {"Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance"}
+                cookingSkillTitles,
+                cookingSkillImages,
+                cookingSkillSubtitles,
+                cookingSkillTasks
                 );
 
             this.olvColumn27.AspectGetter = delegate(object x) { return ((Person) x).YearOfBirth; };

@@ -222,6 +222,7 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         [TestMethod]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1859", Justification = "The test deliberately exercises untyped mutations through the shared base contract.")]
         public void Test_UntypedMutations_RejectInvalidModelsBeforeChangingRows() {
             this.tolv.Objects = PersonDb.All.Take(2);
             ObjectListViewBase shared = this.tolv;

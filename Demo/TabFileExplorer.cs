@@ -8,6 +8,7 @@ using BrightIdeasSoftware;
 
 namespace ObjectListViewDemo {
     public partial class TabFileExplorer : OlvDemoTab {
+        private static readonly string[] fileSizeTitles = { "Folders", "Small", "Big", "Disk space chewer" };
 
         public TabFileExplorer() {
             InitializeComponent();
@@ -94,7 +95,7 @@ namespace ObjectListViewDemo {
                 return OLVDemoCoordinator.FormatFileSize(sizeInBytes);
             };
             this.olvColumnSize.MakeGroupies(new long[] {0, 1024 * 1024, 512 * 1024 * 1024},
-                new string[] {"Folders", "Small", "Big", "Disk space chewer"});
+                fileSizeTitles);
 
             // Group by month-year, rather than date
             // This code is duplicated for FileCreated and FileModified, so we really should

@@ -312,6 +312,10 @@ namespace BrightIdeasSoftware.Tests
 
     [STATestClass]
     public class TestMultiSorting : WinFormsTestFixture {
+        private static readonly int[] expectedAscendingValues = { 0, 0, 0, 0, 1 };
+        private static readonly int[] expectedDescendingValues = { 1, 0, 0, 0, 0 };
+        private static readonly int[] expectedSortPriorities = { 1, 2, 3, 4 };
+
         [TestMethod]
         [DataRow(0)]
         [DataRow(1)]
@@ -342,7 +346,7 @@ namespace BrightIdeasSoftware.Tests
                     int[] values = Enumerable.Range(0, list.GetItemCount())
                         .Select(i => ((SortRow)list.GetModelObject(i)).Values[clickedColumn]).ToArray();
                     CollectionAssert.AreEqual(expectedOrder == SortOrder.Ascending ?
-                        new[] { 0, 0, 0, 0, 1 } : new[] { 1, 0, 0, 0, 0 }, values);
+                        expectedAscendingValues : expectedDescendingValues, values);
                 }
             }
         }
@@ -355,7 +359,7 @@ namespace BrightIdeasSoftware.Tests
             TypedObjectListView<object> list = this.CreateList(kind);
             SortFourFields(list);
             AssertOrder(list, "d,b,a,c,e");
-            CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 },
+            CollectionAssert.AreEqual(expectedSortPriorities,
                 list.Columns.Cast<OLVColumn>().Select(list.GetSortPriority).ToArray());
 
             list.Sort(list.GetColumn(2), SortOrder.Descending, true);

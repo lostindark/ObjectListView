@@ -1169,10 +1169,10 @@ namespace BrightIdeasSoftware {
         /// <param name="e"></param>
         /// <param name="g"></param>
         /// <param name="itemBounds"></param>
-        /// <param name="model"></param>
+        /// <param name="rowObject"></param>
         /// <returns></returns>
-        public override bool RenderItem(DrawListViewItemEventArgs e, Graphics g, Rectangle itemBounds, object model) {
-            this.ConfigureItem(e, itemBounds, model);
+        public override bool RenderItem(DrawListViewItemEventArgs e, Graphics g, Rectangle itemBounds, object rowObject) {
+            this.ConfigureItem(e, itemBounds, rowObject);
             return this.OptionalRender(g, itemBounds);
         }
 
@@ -1203,10 +1203,10 @@ namespace BrightIdeasSoftware {
         /// <param name="e"></param>
         /// <param name="g"></param>
         /// <param name="cellBounds"></param>
-        /// <param name="model"></param>
+        /// <param name="rowObject"></param>
         /// <returns></returns>
-        public override bool RenderSubItem(DrawListViewSubItemEventArgs e, Graphics g, Rectangle cellBounds, object model) {
-            this.ConfigureSubItem(e, cellBounds, model);
+        public override bool RenderSubItem(DrawListViewSubItemEventArgs e, Graphics g, Rectangle cellBounds, object rowObject) {
+            this.ConfigureSubItem(e, cellBounds, rowObject);
             return this.OptionalRender(g, cellBounds);
         }
 
@@ -4250,11 +4250,11 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <param name="g"></param>
         /// <param name="hti"></param>
-        /// <param name="bounds"></param>
+        /// <param name="alignedContentRectangle"></param>
         /// <param name="x"></param>
         /// <param name="y"></param>
-        protected override void StandardHitTest(Graphics g, OlvListViewHitTestInfo hti, Rectangle bounds, int x, int y) {
-            Rectangle r = ApplyCellPadding(bounds);
+        protected override void StandardHitTest(Graphics g, OlvListViewHitTestInfo hti, Rectangle alignedContentRectangle, int x, int y) {
+            Rectangle r = ApplyCellPadding(alignedContentRectangle);
             if (r.Contains(x, y))
             {
                 hti.HitTestLocation = HitTestLocation.Button;

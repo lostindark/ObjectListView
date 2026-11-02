@@ -66,6 +66,17 @@ Stateless helpers are now static. For example, use
 and `HeaderControl.HasCheckBox(column)` rather than calling them on instances.
 In subclasses, call protected utility methods directly instead of through `this`.
 
+## Configuration and parameter names
+
+Mutable static settings, including filtering labels, images, the editor registry,
+and tree indentation, are now properties. Their names, defaults, and writable
+behavior are unchanged; update field-specific reflection or `ref`/`out` usage.
+
+Override parameter names now match their base/interface declarations. Update named
+arguments using the old names, for example `shouldPreserveSelection` to
+`shouldPreserveState` on virtual `BuildList`, and `text` to `value` on data-source
+`SearchText`.
+
 ## Generic control hierarchy
 
 `TypedObjectListView<T>` is now a control with owned `List<T>` storage, not a

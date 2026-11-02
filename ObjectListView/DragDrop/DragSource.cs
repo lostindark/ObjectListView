@@ -99,9 +99,9 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// See IDragSource documentation
         /// </summary>
-        /// <param name="data"></param>
+        /// <param name="dragObject"></param>
         /// <returns></returns>
-        public virtual DragDropEffects GetAllowedEffects(Object data) {
+        public virtual DragDropEffects GetAllowedEffects(Object dragObject) {
             return DragDropEffects.None;
         }
 
@@ -183,9 +183,9 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Which operations are allowed in the operation? By default, all operations are supported.
         /// </summary>
-        /// <param name="data"></param>
+        /// <param name="dragObject"></param>
         /// <returns>All operations are supported</returns>
-        public virtual DragDropEffects GetAllowedEffects(Object data) {
+        public virtual DragDropEffects GetAllowedEffects(Object dragObject) {
             return DragDropEffects.All | DragDropEffects.Link; // why didn't MS include 'Link' in 'All'??
         }
 

@@ -993,7 +993,7 @@ namespace BrightIdeasSoftware
         /// <remarks>
         /// Invalidate any cached information when we rebuild the list.
         /// </remarks>
-        public override void BuildList(bool shouldPreserveSelection) {
+        public override void BuildList(bool shouldPreserveState) {
             this.InvalidateModelRows();
             this.UpdateVirtualListSize();
             this.ClearCachedInfo();

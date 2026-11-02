@@ -109,6 +109,7 @@ namespace BrightIdeasSoftware {
     /// </summary>
     [Flags]
     [SuppressMessage("Naming", "CA1707", Justification = "Member names mirror the Win32 hit-test constants.")]
+    [SuppressMessage("Naming", "CA1711", Justification = "Ex identifies extended native hit-test flags rather than the simplified hit location.")]
     [SuppressMessage("Design", "CA1069", Justification = "Win32 uses bit 0x8 for both state-icon hits and above-control hits in different contexts.")]
     public enum HitTestLocationEx {
         /// <summary>
@@ -280,6 +281,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Where is the hit location?
         /// </summary>
+        [SuppressMessage("Naming", "CA1711", Justification = "Ex distinguishes extended native hit-test flags from the simplified hit location.")]
         public HitTestLocationEx HitTestLocationEx { get; set; }
 
         /// <summary>

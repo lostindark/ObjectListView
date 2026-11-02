@@ -42,6 +42,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 
@@ -199,6 +200,7 @@ namespace BrightIdeasSoftware
         /// <remarks>If the aspect name is null or empty, this will return null.</remarks>
         /// <param name="target">The object that will be peeked</param>
         /// <returns>The value read from the target</returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "GetValueEx is the exception-propagating counterpart of GetValue.")]
         public Object GetValueEx(Object target) {
             if (this.Parts.Count == 0)
             {

@@ -220,6 +220,7 @@ namespace BrightIdeasSoftware
             return base.CanConvertTo(context, destinationType);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1845", Justification = "Span-based String.Concat is unavailable on net462; retain the shared, infrequent design-time conversion without target-specific scaffolding.")]
         public override object ConvertTo(ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value, Type destinationType)
         {
             if (destinationType == typeof(string)) {

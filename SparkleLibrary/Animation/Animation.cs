@@ -226,6 +226,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Start the story
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA1513", Justification = "The shared net462 and modern implementation retains explicit disposal checks to avoid target-specific scaffolding for unavailable helpers.")]
         public void Start() {
             lock (this.Timer) {
                 if (this.disposed)
@@ -255,6 +256,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Unpause the story
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA1513", Justification = "The shared net462 and modern implementation retains explicit disposal checks to avoid target-specific scaffolding for unavailable helpers.")]
         public void Unpause() {
             lock (this.Timer) {
                 if (this.disposed)

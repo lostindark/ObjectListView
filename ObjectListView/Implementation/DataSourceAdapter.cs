@@ -335,25 +335,25 @@ namespace BrightIdeasSoftware
         /// Decide if a new column should be added to the control to display
         /// the given property
         /// </summary>
-        /// <param name="property"></param>
+        /// <param name="propertyDescriptor"></param>
         /// <returns></returns>
-        protected virtual bool ShouldCreateColumn(PropertyDescriptor property) {
+        protected virtual bool ShouldCreateColumn(PropertyDescriptor propertyDescriptor) {
 
             // Is there a column that already shows this property? If so, we don't show it again
-            if (this.ListView.AllColumns.Exists(delegate(OLVColumn x) { return x.AspectName == property.Name; }))
+            if (this.ListView.AllColumns.Exists(delegate(OLVColumn x) { return x.AspectName == propertyDescriptor.Name; }))
             {
                 return false;
             }
 
             // Relationships to other tables turn up as IBindibleLists. Don't make columns to show them.
             // CHECK: Is this always true? What other things could be here? Constraints? Triggers?
-            if (property.PropertyType == typeof(IBindingList))
+            if (propertyDescriptor.PropertyType == typeof(IBindingList))
             {
                 return false;
             }
 
             // Ignore anything marked with [OLVIgnore]
-            return property.Attributes[typeof(OLVIgnoreAttribute)] == null;
+            return propertyDescriptor.Attributes[typeof(OLVIgnoreAttribute)] == null;
         }
 
         /// <summary>
@@ -361,14 +361,14 @@ namespace BrightIdeasSoftware
         /// The title and aspect name of the column are already filled in.
         /// </summary>
         /// <param name="column"></param>
-        /// <param name="property"></param>
-        protected virtual void ConfigureColumn(OLVColumn column, PropertyDescriptor property) {
+        /// <param name="propertyDescriptor"></param>
+        protected virtual void ConfigureColumn(OLVColumn column, PropertyDescriptor propertyDescriptor) {
 
             column.LastDisplayIndex = this.ListView.AllColumns.Count;
 
             // If our column is a BLOB, it could be an image, so assign a renderer to draw it.
             // CONSIDER: Is this a common enough case to warrant this code?
-            if (property.PropertyType == typeof(System.Byte[]))
+            if (propertyDescriptor.PropertyType == typeof(System.Byte[]))
             {
                 column.Renderer = new ImageRenderer();
             }

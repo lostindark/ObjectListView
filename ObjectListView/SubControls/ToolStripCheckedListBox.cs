@@ -158,23 +158,23 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Listen for events on the underlying control
         /// </summary>
-        /// <param name="c"></param>
-        protected override void OnSubscribeControlEvents(Control c) {
-            base.OnSubscribeControlEvents(c);
+        /// <param name="control"></param>
+        protected override void OnSubscribeControlEvents(Control control) {
+            base.OnSubscribeControlEvents(control);
 
-            CheckedListBox control = (CheckedListBox)c;
-            control.ItemCheck += new ItemCheckEventHandler(OnItemCheck);
+            CheckedListBox checkedListBox = (CheckedListBox)control;
+            checkedListBox.ItemCheck += new ItemCheckEventHandler(OnItemCheck);
         }
 
         /// <summary>
         /// Stop listening for events on the underlying control
         /// </summary>
-        /// <param name="c"></param>
-        protected override void OnUnsubscribeControlEvents(Control c) {
-            base.OnUnsubscribeControlEvents(c);
+        /// <param name="control"></param>
+        protected override void OnUnsubscribeControlEvents(Control control) {
+            base.OnUnsubscribeControlEvents(control);
 
-            CheckedListBox control = (CheckedListBox)c;
-            control.ItemCheck -= new ItemCheckEventHandler(OnItemCheck);
+            CheckedListBox checkedListBox = (CheckedListBox)control;
+            checkedListBox.ItemCheck -= new ItemCheckEventHandler(OnItemCheck);
         }
 
         /// <summary>

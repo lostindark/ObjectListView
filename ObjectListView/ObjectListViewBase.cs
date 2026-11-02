@@ -593,6 +593,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
@@ -1752,7 +1753,7 @@ namespace BrightIdeasSoftware
         /// <see cref="EditorRegistry"/>
         /// <remarks>All instances of ObjectListView share the same editor registry.</remarks>
 // ReSharper disable FieldCanBeMadeReadOnly.Global
-        public static EditorRegistry EditorRegistry = new EditorRegistry();
+        public static EditorRegistry EditorRegistry { get; set; } = new EditorRegistry();
 // ReSharper restore FieldCanBeMadeReadOnly.Global
 
         /// <summary>
@@ -2199,6 +2200,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [SuppressMessage("Naming", "CA1711", Justification = "Ex distinguishes extended native hit-test flags from the simplified hit location.")]
         public virtual HitTestLocationEx HotCellHitLocationEx
         {
             get { return this.hotCellHitLocationEx; }
@@ -7877,12 +7879,12 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the image that will be place next to the Sort Ascending command
         /// </summary>
-        public static Bitmap SortAscendingImage = BrightIdeasSoftware.Properties.Resources.SortAscending;
+        public static Bitmap SortAscendingImage { get; set; } = BrightIdeasSoftware.Properties.Resources.SortAscending;
 
         /// <summary>
         /// Gets or sets the image that will be placed next to the Sort Descending command
         /// </summary>
-        public static Bitmap SortDescendingImage = BrightIdeasSoftware.Properties.Resources.SortDescending;
+        public static Bitmap SortDescendingImage { get; set; } = BrightIdeasSoftware.Properties.Resources.SortDescending;
 
         /// <summary>
         /// Append the column selection menu items to the given menu strip.
@@ -10582,6 +10584,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Rescale known column widths and limits when the control's DPI changes.
         /// </summary>
+        [SuppressMessage("Maintainability", "CA1512", Justification = ".NET Framework 4.6.2 lacks ArgumentOutOfRangeException.ThrowIfNegativeOrZero.")]
         protected virtual void RescaleColumnWidthsForDpi(int dpi) {
             if (dpi <= 0)
             {
@@ -11764,41 +11767,41 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="args"></param>
-        protected override void OnDragEnter(DragEventArgs args) {
-            base.OnDragEnter(args);
+        /// <param name="drgevent"></param>
+        protected override void OnDragEnter(DragEventArgs drgevent) {
+            base.OnDragEnter(drgevent);
 
             if (this.DropSink != null)
             {
-                this.DropSink.Enter(args);
+                this.DropSink.Enter(drgevent);
             }
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="args"></param>
-        protected override void OnDragOver(DragEventArgs args) {
-            base.OnDragOver(args);
+        /// <param name="drgevent"></param>
+        protected override void OnDragOver(DragEventArgs drgevent) {
+            base.OnDragOver(drgevent);
 
             if (this.DropSink != null)
             {
-                this.DropSink.Over(args);
+                this.DropSink.Over(drgevent);
             }
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="args"></param>
-        protected override void OnDragDrop(DragEventArgs args) {
-            base.OnDragDrop(args);
+        /// <param name="drgevent"></param>
+        protected override void OnDragDrop(DragEventArgs drgevent) {
+            base.OnDragDrop(drgevent);
 
             this.lastMouseDownClickCount = 0;  // prevent drop events from becoming cell edits
 
             if (this.DropSink != null)
             {
-                this.DropSink.Drop(args);
+                this.DropSink.Drop(drgevent);
             }
         }
 
@@ -11818,26 +11821,26 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="args"></param>
-        protected override void OnGiveFeedback(GiveFeedbackEventArgs args) {
-            base.OnGiveFeedback(args);
+        /// <param name="gfbevent"></param>
+        protected override void OnGiveFeedback(GiveFeedbackEventArgs gfbevent) {
+            base.OnGiveFeedback(gfbevent);
 
             if (this.DropSink != null)
             {
-                this.DropSink.GiveFeedback(args);
+                this.DropSink.GiveFeedback(gfbevent);
             }
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="args"></param>
-        protected override void OnQueryContinueDrag(QueryContinueDragEventArgs args) {
-            base.OnQueryContinueDrag(args);
+        /// <param name="qcdevent"></param>
+        protected override void OnQueryContinueDrag(QueryContinueDragEventArgs qcdevent) {
+            base.OnQueryContinueDrag(qcdevent);
 
             if (this.DropSink != null)
             {
-                this.DropSink.QueryContinue(args);
+                this.DropSink.QueryContinue(qcdevent);
             }
         }
 

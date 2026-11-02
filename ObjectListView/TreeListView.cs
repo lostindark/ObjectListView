@@ -130,6 +130,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows.Forms;
 
 namespace BrightIdeasSoftware
@@ -1069,6 +1070,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="model">The model under consideration</param>
         /// <returns>Can the given model be expanded?</returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public tree callback.")]
         public delegate bool CanExpandGetterDelegate(T model);
 
         /// <summary>
@@ -1076,6 +1078,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="model">The parent whose children should be fetched</param>
         /// <returns>An enumerable over the children</returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public tree callback.")]
         public delegate IEnumerable<T> ChildrenGetterDelegate(T model);
 
         /// <summary>
@@ -1083,6 +1086,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="model">The child whose parent should be fetched</param>
         /// <returns>The parent of the child or null if the child is a root</returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public tree callback.")]
         public delegate T ParentGetterDelegate(T model);
 
         /// <summary>
@@ -1090,6 +1094,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="view">The view for which the Tree is being created</param>
         /// <returns>A subclass of Tree</returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public tree callback.")]
         public delegate Tree TreeFactoryDelegate(TypedTreeListView<T> view);
 
         //------------------------------------------------------------------------------------------
@@ -1930,11 +1935,11 @@ namespace BrightIdeasSoftware
             /// <summary>
             /// 
             /// </summary>
-            /// <param name="mFilter"></param>
-            /// <param name="lFilter"></param>
-            public void ApplyFilters(IModelFilter mFilter, IListFilter lFilter) {
-                this.modelFilter = mFilter;
-                this.listFilter = lFilter;
+            /// <param name="modelFilter"></param>
+            /// <param name="listFilter"></param>
+            public void ApplyFilters(IModelFilter modelFilter, IListFilter listFilter) {
+                this.modelFilter = modelFilter;
+                this.listFilter = listFilter;
                 this.RebuildList();
             }
 
@@ -2000,6 +2005,7 @@ namespace BrightIdeasSoftware
             /// Indicators for branches
             /// </summary>
             [Flags]
+            [SuppressMessage("Naming", "CA1711", Justification = "BranchFlags is a bitwise combination of branch-position indicators.")]
             public enum BranchFlags
             {
                 /// <summary>

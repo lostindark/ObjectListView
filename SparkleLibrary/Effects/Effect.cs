@@ -65,6 +65,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// The effect has completed
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716", Justification = "Stop is the established effect lifecycle operation paired with Start.")]
         void Stop();
 
         /// <summary>
@@ -90,6 +91,7 @@ namespace BrightIdeasSoftware
 
         public virtual void Start() { }
         public virtual void Apply(float fractionDone) { }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716", Justification = "Stop implements the established IEffect lifecycle contract.")]
         public virtual void Stop() { }
         public virtual void Reset() { }
 
@@ -1148,7 +1150,7 @@ namespace BrightIdeasSoftware
         /// This is a simplified form of the Munger from the ObjectListView project
         /// (http://objectlistview.sourceforge.net).
         /// </remarks>
-        protected class SimpleMunger<U>
+        protected class SimpleMunger<TValue>
         {
             public SimpleMunger() {
             }
@@ -1175,10 +1177,10 @@ namespace BrightIdeasSoftware
             /// </summary>
             /// <param name="target">The object that will be peeked</param>
             /// <returns>The value read from the target</returns>
-            public U GetValue(Object target) {
+            public TValue GetValue(Object target) {
                 if (String.IsNullOrEmpty(this.MemberName))
                 {
-                    return default(U);
+                    return default(TValue);
                 }
 
                 const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
@@ -1186,7 +1188,7 @@ namespace BrightIdeasSoftware
 
                 // We specifically don't try to catch errors here. If this don't work, it's 
                 // a programmer error that needs to be fixed.
-                return (U)target.GetType().InvokeMember(this.MemberName, flags, null, target, null, CultureInfo.CurrentCulture);
+                return (TValue)target.GetType().InvokeMember(this.MemberName, flags, null, target, null, CultureInfo.CurrentCulture);
             }
 
             /// <summary>

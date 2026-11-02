@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
@@ -44,6 +45,7 @@ namespace BrightIdeasSoftware {
     /// value for the column/model combination. It could be simply representative of
     /// the appropriate type of value.</param>
     /// <returns>A control which can edit the given value</returns>
+    [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public editor callback.")]
     public delegate Control EditorCreatorDelegate(Object model, OLVColumn column, Object value);
 
     /// <summary>

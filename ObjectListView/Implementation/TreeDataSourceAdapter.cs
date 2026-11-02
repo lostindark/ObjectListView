@@ -162,16 +162,16 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="property"></param>
+        /// <param name="propertyDescriptor"></param>
         /// <returns></returns>
-        protected override bool ShouldCreateColumn(PropertyDescriptor property) {
+        protected override bool ShouldCreateColumn(PropertyDescriptor propertyDescriptor) {
             // If the property is a key column, and we aren't supposed to show keys, don't show it
-            if (!this.ShowKeyColumns && (property.Name == this.KeyAspectName || property.Name == this.ParentKeyAspectName))
+            if (!this.ShowKeyColumns && (propertyDescriptor.Name == this.KeyAspectName || propertyDescriptor.Name == this.ParentKeyAspectName))
             {
                 return false;
             }
 
-            return base.ShouldCreateColumn(property);
+            return base.ShouldCreateColumn(propertyDescriptor);
         }
 
         /// <summary>

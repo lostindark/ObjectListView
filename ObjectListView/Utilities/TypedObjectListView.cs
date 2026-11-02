@@ -37,6 +37,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
@@ -499,6 +500,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="rowObject"></param>
         /// <returns></returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public typed callback.")]
         public delegate Object TypedAspectGetterDelegate(T rowObject);
 
         /// <summary>
@@ -506,6 +508,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="rowObject"></param>
         /// <param name="newValue"></param>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public typed callback.")]
         public delegate void TypedAspectPutterDelegate(T rowObject, Object newValue);
 
         /// <summary>
@@ -513,6 +516,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="rowObject"></param>
         /// <returns></returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public typed callback.")]
         public delegate Object TypedGroupKeyGetterDelegate(T rowObject);
 
         /// <summary>
@@ -520,6 +524,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="rowObject"></param>
         /// <returns></returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public typed callback.")]
         public delegate Object TypedImageGetterDelegate(T rowObject);
 
         /// <summary>

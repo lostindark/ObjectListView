@@ -199,16 +199,16 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="text"></param>
+        /// <param name="value"></param>
         /// <param name="first"></param>
         /// <param name="last"></param>
         /// <param name="column"></param>
         /// <returns></returns>
-        public override int SearchText(string text, int first, int last, OLVColumn column) {
+        public override int SearchText(string value, int first, int last, OLVColumn column) {
             if (first <= last) {
                 for (int i = first; i <= last; i++) {
                     string data = column.GetStringValue(this.listView.GetNthItemInDisplayOrder(i).RowObject);
-                    if (data.StartsWith(text, StringComparison.CurrentCultureIgnoreCase))
+                    if (data.StartsWith(value, StringComparison.CurrentCultureIgnoreCase))
                     {
                         return i;
                     }
@@ -216,7 +216,7 @@ namespace BrightIdeasSoftware
             } else {
                 for (int i = first; i >= last; i--) {
                     string data = column.GetStringValue(this.listView.GetNthItemInDisplayOrder(i).RowObject);
-                    if (data.StartsWith(text, StringComparison.CurrentCultureIgnoreCase))
+                    if (data.StartsWith(value, StringComparison.CurrentCultureIgnoreCase))
                     {
                         return i;
                     }
@@ -230,10 +230,10 @@ namespace BrightIdeasSoftware
         /// 
         /// </summary>
         /// <param name="column"></param>
-        /// <param name="sortOrder"></param>
-        public override void Sort(OLVColumn column, SortOrder sortOrder) {
-            if (sortOrder != SortOrder.None) {
-                ModelObjectComparer comparer = this.listView.CreateModelObjectComparer(column, sortOrder);
+        /// <param name="order"></param>
+        public override void Sort(OLVColumn column, SortOrder order) {
+            if (order != SortOrder.None) {
+                ModelObjectComparer comparer = this.listView.CreateModelObjectComparer(column, order);
                 this.fullObjectList.Sort(comparer);
                 this.filteredObjectList.Sort(comparer);
             }
@@ -362,11 +362,11 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Apply the given filters to this data source. One or both may be null.
         /// </summary>
-        /// <param name="iModelFilter"></param>
-        /// <param name="iListFilter"></param>
-        public override void ApplyFilters(IModelFilter iModelFilter, IListFilter iListFilter) {
-            this.modelFilter = iModelFilter;
-            this.listFilter = iListFilter;
+        /// <param name="modelFilter"></param>
+        /// <param name="listFilter"></param>
+        public override void ApplyFilters(IModelFilter modelFilter, IListFilter listFilter) {
+            this.modelFilter = modelFilter;
+            this.listFilter = listFilter;
             this.SetObjects(this.fullObjectList);
         }
 

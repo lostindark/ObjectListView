@@ -41,16 +41,16 @@ namespace BrightIdeasSoftware {
         #region Static properties
 
         /// <summary>
-        /// This field is the text that will be shown to the user when a cluster
+        /// Gets or sets the text that will be shown to the user when a cluster
         /// key is null. It is exposed so it can be localized.
         /// </summary>
-        static public string NULL_LABEL = "[null]";
+        public static string NULL_LABEL { get; set; } = "[null]";
 
         /// <summary>
-        /// This field is the text that will be shown to the user when a cluster
+        /// Gets or sets the text that will be shown to the user when a cluster
         /// key is empty (i.e. a string of zero length). It is exposed so it can be localized.
         /// </summary>
-        static public string EMPTY_LABEL = "[empty]";
+        public static string EMPTY_LABEL { get; set; } = "[empty]";
 
         /// <summary>
         /// Gets or sets the format that will be used by default for clusters that only

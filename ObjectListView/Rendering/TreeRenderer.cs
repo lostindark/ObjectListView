@@ -11,6 +11,7 @@
  */
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel;
 using System.Collections.Generic;
 using System.Text;
@@ -107,7 +108,8 @@ namespace BrightIdeasSoftware {
             /// <summary>
             /// How many pixels will be reserved for each level of indentation?
             /// </summary>
-            public static int PIXELS_PER_LEVEL = 16 + 1;
+            [SuppressMessage("Design", "CA1000", Justification = "Preserve the independently configurable indentation for each tree model type.")]
+            public static int PIXELS_PER_LEVEL { get; set; } = 16 + 1;
 
             /// <summary>
             /// The real work of drawing the tree is done in this method

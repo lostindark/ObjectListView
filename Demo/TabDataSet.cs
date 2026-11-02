@@ -9,6 +9,9 @@ using BrightIdeasSoftware;
 namespace ObjectListViewDemo
 {
     public partial class TabDataSet : OlvDemoTab {
+        private static readonly string[] salaryTitles = { "Lowly worker", "Middle management", "Rarified elevation" };
+        private static readonly double[] heightThresholds = { 1.50, 1.70, 1.85 };
+        private static readonly string[] heightTitles = { "Shortie", "Normal", "Tall", "Really tall" };
 
         public TabDataSet() {
             InitializeComponent();
@@ -104,11 +107,11 @@ namespace ObjectListViewDemo
 
             this.salaryColumn.MakeGroupies(
                 new UInt32[] {20000, 100000},
-                new string[] {"Lowly worker", "Middle management", "Rarified elevation"});
+                salaryTitles);
 
             this.heightColumn.MakeGroupies(
-                new Double[] {1.50, 1.70, 1.85},
-                new string[] {"Shortie", "Normal", "Tall", "Really tall"});
+                heightThresholds,
+                heightTitles);
         }
 
         private void ReloadDataGridAndListView() {

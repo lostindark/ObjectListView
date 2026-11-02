@@ -183,7 +183,7 @@ namespace BrightIdeasSoftware.Tests
         #region Equality members
 
         protected bool Equals(Person other) {
-            return string.Equals(name, other.name);
+            return string.Equals(name, other.name, StringComparison.Ordinal);
         }
 
         public override bool Equals(object obj) {

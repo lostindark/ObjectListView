@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
@@ -47,13 +48,13 @@ namespace ObjectListViewDemo {
             this.olvFiles.CellToolTipShowing += delegate(object sender, ToolTipShowingEventArgs e) {
                 if (this.showToolTipsOnFiles)
                 {
-                    e.Text = String.Format("Tool tip for '{0}', column '{1}'\r\nValue shown: '{2}'", e.Model, e.Column.Text, e.SubItem.Text);
+                    e.Text = String.Format(CultureInfo.CurrentCulture, "Tool tip for '{0}', column '{1}'\r\nValue shown: '{2}'", e.Model, e.Column.Text, e.SubItem.Text);
                 }
             };
 
             // Show a menu -- but only when the user right clicks on the first column
             this.olvFiles.CellRightClick += delegate(object sender, CellRightClickEventArgs e) {
-                System.Diagnostics.Trace.WriteLine(String.Format("right clicked {0}, {1}). model {2}", e.RowIndex, e.ColumnIndex, e.Model));
+                System.Diagnostics.Trace.WriteLine(String.Format(CultureInfo.CurrentCulture, "right clicked {0}, {1}). model {2}", e.RowIndex, e.ColumnIndex, e.Model));
                 if (e.ColumnIndex == 0)
                 {
                     e.MenuStrip = this.contextMenuStrip2;
@@ -103,7 +104,7 @@ namespace ObjectListViewDemo {
                 return new DateTime(dt.Year, dt.Month, 1);
             };
             this.olvColumnCreated.GroupKeyToTitleConverter = delegate(object x) {
-                return ((DateTime)x).ToString("MMMM yyyy");
+                return ((DateTime)x).ToString("MMMM yyyy", CultureInfo.CurrentCulture);
             };
 
             // Group by month-year, rather than date
@@ -112,7 +113,7 @@ namespace ObjectListViewDemo {
                 return new DateTime(dt.Year, dt.Month, 1);
             };
             this.olvColumnModified.GroupKeyToTitleConverter = delegate(object x) {
-                return ((DateTime)x).ToString("MMMM yyyy");
+                return ((DateTime)x).ToString("MMMM yyyy", CultureInfo.CurrentCulture);
             };
 
             // Show the system description for this object
@@ -160,7 +161,7 @@ namespace ObjectListViewDemo {
             Cursor.Current = Cursors.Default;
 
             float msPerItem = (olvFiles.Items.Count == 0 ? 0 : (float)sw.ElapsedMilliseconds / olvFiles.Items.Count);
-            Coordinator.ToolStripStatus1 = String.Format("Timed build: {0} items in {1}ms ({2:F}ms per item)",
+            Coordinator.ToolStripStatus1 = String.Format(CultureInfo.CurrentCulture, "Timed build: {0} items in {1}ms ({2:F}ms per item)",
                 olvFiles.Items.Count, sw.ElapsedMilliseconds, msPerItem);
         }
 

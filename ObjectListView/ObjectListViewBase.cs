@@ -1905,7 +1905,11 @@ namespace BrightIdeasSoftware
         [Category("ObjectListView"),
          Description("The image list from which group header will take their images"),
          DefaultValue(null)]
+#if NETFRAMEWORK
         public ImageList GroupImageList {
+#else
+        public new ImageList GroupImageList {
+#endif
             get { return this.groupImageList; }
             set {
                 this.groupImageList = value;
@@ -7714,6 +7718,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="columnIndex">The index of the header that was clicked. This
         /// can be -1, indicating that the header was clicked outside of a column</param>
+        /// <param name="menu">The menu to display.</param>
         /// <param name="pt">Where should the menu be shown</param>
         /// <returns>True if a menu was displayed</returns>
         protected virtual bool ShowHeaderRightClickMenu(int columnIndex, ToolStripDropDown menu, Point pt) {
@@ -7910,20 +7915,20 @@ namespace BrightIdeasSoftware
                 strip.Items.Add(new ToolStripSeparator());
             }
 
-            string label = String.Format(this.MenuLabelSortAscending, column.Text);
+            string label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelSortAscending, column.Text);
             if (column.Sortable && !String.IsNullOrEmpty(label)) {
                 strip.Items.Add(label, ObjectListViewBase.SortAscendingImage, (EventHandler)delegate(object sender, EventArgs args) {
                     this.Sort(column, SortOrder.Ascending);
                 });
             }
-            label = String.Format(this.MenuLabelSortDescending, column.Text);
+            label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelSortDescending, column.Text);
             if (column.Sortable && !String.IsNullOrEmpty(label)) {
                 strip.Items.Add(label, ObjectListViewBase.SortDescendingImage, (EventHandler)delegate(object sender, EventArgs args) {
                     this.Sort(column, SortOrder.Descending);
                 });
             }
             if (this.CanShowGroups) {
-                label = String.Format(this.MenuLabelGroupBy, column.Text);
+                label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelGroupBy, column.Text);
                 if (column.Groupable && !String.IsNullOrEmpty(label)) {
                     strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
                         this.ShowGroups = true;
@@ -7935,7 +7940,7 @@ namespace BrightIdeasSoftware
             }
             if (this.ShowGroups) {
                 if (this.AlwaysGroupByColumn == column) {
-                    label = String.Format(this.MenuLabelUnlockGroupingOn, column.Text);
+                    label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelUnlockGroupingOn, column.Text);
                     if (!String.IsNullOrEmpty(label)) {
                         strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
                             this.AlwaysGroupByColumn = null;
@@ -7944,7 +7949,7 @@ namespace BrightIdeasSoftware
                         });
                     }
                 } else {
-                    label = String.Format(this.MenuLabelLockGroupingOn, column.Text);
+                    label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelLockGroupingOn, column.Text);
                     if (column.Groupable && !String.IsNullOrEmpty(label)) {
                         strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
                             this.ShowGroups = true;
@@ -7954,7 +7959,7 @@ namespace BrightIdeasSoftware
                         });
                     }
                 }
-                label = String.Format(this.MenuLabelTurnOffGroups, column.Text);
+                label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelTurnOffGroups, column.Text);
                 if (!String.IsNullOrEmpty(label)) {
                     strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
                         this.ShowGroups = false;
@@ -7962,7 +7967,7 @@ namespace BrightIdeasSoftware
                     });
                 }
             } else {
-                label = String.Format(this.MenuLabelUnsort, column.Text);
+                label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelUnsort, column.Text);
                 if (column.Sortable && !String.IsNullOrEmpty(label) && this.PrimarySortOrder != SortOrder.None) {
                     strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
                         this.Unsort();
@@ -8768,7 +8773,7 @@ namespace BrightIdeasSoftware
         /// </para>
         /// <para>This only works when the list is showing groups (obviously).</para>
         /// <para>This does not work on virtual lists, since virtual lists don't use ListViewGroups
-        /// for grouping. Use <see cref="VirtualObjectListView.EnsureNthGroupVisible"/> instead.</para>
+        /// for grouping. Use <see cref="TypedVirtualObjectListView{T}.EnsureNthGroupVisible"/> instead.</para>
         /// </remarks>
         public virtual void EnsureGroupVisible(ListViewGroup lvg) {
             if (!this.ShowGroups || lvg == null)
@@ -10647,6 +10652,7 @@ namespace BrightIdeasSoftware
         }
 
 #if !NETFRAMEWORK
+        /// <inheritdoc />
         protected override void RescaleConstantsForDpi(int deviceDpiOld, int deviceDpiNew) {
             base.RescaleConstantsForDpi(deviceDpiOld, deviceDpiNew);
             if (this.IsHandleCreated)
@@ -11066,7 +11072,7 @@ namespace BrightIdeasSoftware
             }
 
             try {
-                return control.GetType().InvokeMember("Value", BindingFlags.GetProperty, null, control, null);
+                return control.GetType().InvokeMember("Value", BindingFlags.GetProperty, null, control, null, CultureInfo.CurrentCulture);
             } catch (MissingMethodException) { // Microsoft throws this
                 return control.Text;
             } catch (MissingFieldException) { // Mono throws this

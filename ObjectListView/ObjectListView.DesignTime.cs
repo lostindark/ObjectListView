@@ -41,6 +41,7 @@ using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.Reflection;
 using System.Windows.Forms;
 #if NETFRAMEWORK
@@ -197,7 +198,7 @@ namespace BrightIdeasSoftware.Design
             // Also hid Tooltip properties, since giving a tooltip to the control through the IDE
             // messes up the tooltip handling
             foreach (string propertyName in properties.Keys) {
-                if (propertyName.StartsWith("ToolTip")) {
+                if (propertyName.StartsWith("ToolTip", StringComparison.Ordinal)) {
                     unwantedProperties.Add(propertyName);
                 }
             }
@@ -394,7 +395,7 @@ namespace BrightIdeasSoftware.Design
                 // One more complication. The ListViewActionList classes uses an internal class, EditorServiceContext, to 
                 // edit the items/columns/groups collections. So, we use reflection to bypass the data hiding.
                 Type tEditorServiceContext = Type.GetType("System.Windows.Forms.Design.EditorServiceContext, System.Design");
-                tEditorServiceContext.InvokeMember("EditValue", BindingFlags.InvokeMethod | BindingFlags.Static, null, null, new object[] { componentDesigner, iComponent, propertyName });
+                tEditorServiceContext.InvokeMember("EditValue", BindingFlags.InvokeMethod | BindingFlags.Static, null, null, new object[] { componentDesigner, iComponent, propertyName }, CultureInfo.CurrentCulture);
             }
 
             private void SetValue(object target, string propertyName, object value) {
@@ -449,10 +450,10 @@ namespace BrightIdeasSoftware.Design
             public override ICollection GetCommands(string name) {
                 // Debug.WriteLine("CDDesignerCommandSet.GetCommands:" + name);
                 if (componentDesigner != null) {
-                    if (name.Equals("Verbs")) {
+                    if (name.Equals("Verbs", StringComparison.Ordinal)) {
                         return componentDesigner.Verbs;
                     }
-                    if (name.Equals("ActionLists")) {
+                    if (name.Equals("ActionLists", StringComparison.Ordinal)) {
                         return componentDesigner.ActionLists;
                     }
                 }
@@ -525,7 +526,7 @@ namespace BrightIdeasSoftware.Design
                 return base.GetDisplayText(value);
             }
 
-            return String.Format("{0} ({1})", base.GetDisplayText(value), col.AspectName);
+            return String.Format(CultureInfo.CurrentCulture, "{0} ({1})", base.GetDisplayText(value), col.AspectName);
         }
     }
 

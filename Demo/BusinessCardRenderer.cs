@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
@@ -113,7 +114,7 @@ namespace ObjectListViewDemo {
                     Person person = rowObject as Person;
                     if (person != null) {
                         photoRect.Width = ScaleSize(g, new Size(80, 0)).Width;
-                        string photoFile = String.Format(@".\Photos\{0}.png", person.Photo);
+                        string photoFile = String.Format(CultureInfo.InvariantCulture, @".\Photos\{0}.png", person.Photo);
                         if (File.Exists(photoFile)) {
                             using (Image photo = Image.FromFile(photoFile)) {
                                 photoRect.Height = (int)Math.Round(photo.Height * ((float)photoRect.Width / photo.Width));

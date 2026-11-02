@@ -66,6 +66,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Printing;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace BrightIdeasSoftware
@@ -1207,7 +1208,7 @@ namespace BrightIdeasSoftware
         /// <returns></returns>
         private String[] SplitAndFormat(String text)
         {
-            String s = String.Format(text, this.pageNumber, DateTime.Now);
+            String s = String.Format(CultureInfo.CurrentCulture, text, this.pageNumber, DateTime.Now);
             return s.Split(new Char[] { '\x09' }, 3);
         }
 

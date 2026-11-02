@@ -4,6 +4,9 @@ root = true
 # C# files
 [*.cs]
 
+# Preserve established API names, event handlers, and descriptive test names.
+dotnet_diagnostic.CA1707.severity = none
+
 #### Core EditorConfig Options ####
 
 # Indentation and spacing

@@ -13,6 +13,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
@@ -611,7 +612,7 @@ namespace BrightIdeasSoftware.Tests
                     using (Bitmap withoutIndicators = (Bitmap)bitmap.Clone()) {
                         list.ShowSortIndicators = true;
                         draw.Invoke(header, new object[] { graphics, i, 0 });
-                        string label = (i + 1).ToString();
+                        string label = (i + 1).ToString(CultureInfo.CurrentCulture);
                         TextFormatFlags flags = TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix;
                         int labelWidth = TextRenderer.MeasureText(graphics, label, priorityFont, Size.Empty, flags).Width;
                         Rectangle bounds = header.GetHeaderDrawRect(i);

@@ -334,7 +334,7 @@ namespace ObjectListViewDemo
 
         private const int MAX_PATH = 260;
 
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct SHFILEINFO
         {
             public IntPtr hIcon; 
@@ -348,11 +348,11 @@ namespace ObjectListViewDemo
 
         private const int SW_SHOWNORMAL = 1;
 
-        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        [DllImport("shell32.dll", EntryPoint = "ShellExecuteW", CharSet = CharSet.Unicode, ExactSpelling = true)]
         private static extern IntPtr ShellExecute(int hwnd, string lpOperation, string lpFile, 
             string lpParameters, string lpDirectory, int nShowCmd);
 
-        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        [DllImport("shell32.dll", EntryPoint = "SHGetFileInfoW", CharSet = CharSet.Unicode, ExactSpelling = true)]
         private static extern IntPtr SHGetFileInfo(string pszPath, int dwFileAttributes,
             out SHFILEINFO psfi, int cbFileInfo, int uFlags);
 

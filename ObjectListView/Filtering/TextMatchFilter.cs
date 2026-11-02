@@ -42,6 +42,9 @@ using System.Drawing;
 
 namespace BrightIdeasSoftware {
 
+    /// <summary>
+    /// A model filter that identifies matching text for highlighting.
+    /// </summary>
     public interface ITextMatchFilter: IModelFilter {
         /// <summary>
         /// Find all the ways in which this filter matches the given string.
@@ -404,6 +407,9 @@ namespace BrightIdeasSoftware {
 
         #region Implementation members
 
+        /// <summary>
+        /// The strategies used to find matching text.
+        /// </summary>
         protected List<TextMatchingStrategy> MatchingStrategies = new List<TextMatchingStrategy>();
 
         #endregion

@@ -33,6 +33,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Text;
 using System.Reflection;
 
@@ -366,12 +367,12 @@ namespace BrightIdeasSoftware
                         char c = Convert.ToChar(mid);
                         if (Char.IsUpper(toChar) && Char.IsLower(c))
                         {
-                            c = Char.ToUpper(c);
+                            c = Char.ToUpper(c, CultureInfo.CurrentCulture);
                         }
                         else
                             if (Char.IsLower(toChar) && Char.IsUpper(c))
                             {
-                                c = Char.ToLower(c);
+                                c = Char.ToLower(c, CultureInfo.CurrentCulture);
                             }
 
                         result[i] = c;
@@ -1185,7 +1186,7 @@ namespace BrightIdeasSoftware
 
                 // We specifically don't try to catch errors here. If this don't work, it's 
                 // a programmer error that needs to be fixed.
-                return (U)target.GetType().InvokeMember(this.MemberName, flags, null, target, null);
+                return (U)target.GetType().InvokeMember(this.MemberName, flags, null, target, null, CultureInfo.CurrentCulture);
             }
 
             /// <summary>
@@ -1208,13 +1209,13 @@ namespace BrightIdeasSoftware
                     // Try to set a property or field first, since that's the most common case
                     const BindingFlags flags3 = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
                         BindingFlags.SetProperty | BindingFlags.SetField;
-                    target.GetType().InvokeMember(this.MemberName, flags3, null, target, new Object[] { value });
+                    target.GetType().InvokeMember(this.MemberName, flags3, null, target, new Object[] { value }, CultureInfo.CurrentCulture);
                 } catch (System.MissingMethodException) {
                     // If that failed, it could be method name that we are looking for.
                     // We specifically don't catch errors here.
                     const BindingFlags flags4 = BindingFlags.Public | BindingFlags.NonPublic |
                         BindingFlags.Instance | BindingFlags.InvokeMethod;
-                    target.GetType().InvokeMember(this.MemberName, flags4, null, target, new Object[] { value });
+                    target.GetType().InvokeMember(this.MemberName, flags4, null, target, new Object[] { value }, CultureInfo.CurrentCulture);
                 }
             }
         }

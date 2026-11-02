@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+using System.Globalization;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests {
@@ -75,6 +77,27 @@ namespace BrightIdeasSoftware.Tests {
             cluster.Count = 2;
             string result = strategy.GetClusterDisplayLabel(cluster);
             Assert.AreEqual("FlagValue2 (2 items)", result);
+        }
+
+        [TestMethod]
+        public void Test_GetClusterDisplayLabel_UnknownFlagUsesFormattingCulture() {
+            CultureInfo originalCulture = Thread.CurrentThread.CurrentCulture;
+            CultureInfo originalUICulture = Thread.CurrentThread.CurrentUICulture;
+            try {
+                CultureInfo formattingCulture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+                formattingCulture.NumberFormat.NegativeSign = "~";
+                Thread.CurrentThread.CurrentCulture = formattingCulture;
+                Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
+
+                FlagClusteringStrategy strategy = new FlagClusteringStrategy(typeof(TestFlagEnum));
+                Cluster cluster = new Cluster(-123L);
+                cluster.Count = 1;
+
+                Assert.AreEqual("~123 (1 item)", strategy.GetClusterDisplayLabel(cluster));
+            } finally {
+                Thread.CurrentThread.CurrentCulture = originalCulture;
+                Thread.CurrentThread.CurrentUICulture = originalUICulture;
+            }
         }
 
         [Flags]

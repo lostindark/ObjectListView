@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
@@ -68,7 +69,7 @@ namespace ObjectListViewDemo
             };
 
             treeListView.ModelDropped += delegate(object sender, ModelDropEventArgs e) {
-                String msg = String.Format("{2} items were dropped on '{1}' as a {0} operation.",
+                String msg = String.Format(CultureInfo.CurrentCulture, "{2} items were dropped on '{1}' as a {0} operation.",
                     e.Effect, ((DirectoryInfo) e.TargetModel).Name, e.SourceModels.Count);
                 Coordinator.ShowMessage(msg);
             };

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
 using ObjectListViewDemo.Models;
@@ -59,7 +60,9 @@ namespace ObjectListViewDemo
                     return 0; // star
                 }
 
-                if (person.Name.CompareTo("N") < 0)
+#pragma warning disable CA1309 // Name grouping intentionally follows the user's linguistic ordering.
+                if (String.Compare(person.Name, "N", StringComparison.CurrentCulture) < 0)
+#pragma warning restore CA1309
                 {
                     return 1; // heart
                 }
@@ -116,7 +119,7 @@ namespace ObjectListViewDemo
             this.olvColumn31.Renderer = new MappedImageRenderer(new Object[] {"Little", Resource1.down16, "Medium", Resource1.tick16, "Lots", Resource1.star16});
 
             this.olvColumn32.AspectGetter = delegate(object row) { return DateTime.Now - ((Person) row).BirthDate; };
-            this.olvColumn32.AspectToStringConverter = delegate(object aspect) { return ((TimeSpan) aspect).Days.ToString("#,##0"); };
+            this.olvColumn32.AspectToStringConverter = delegate(object aspect) { return ((TimeSpan) aspect).Days.ToString("#,##0", CultureInfo.CurrentCulture); };
             
             this.olvColumn33.AspectGetter = delegate(object row) { return ((Person) row).CanTellJokes; };
         }
@@ -171,7 +174,7 @@ namespace ObjectListViewDemo
                 this.ListView.DisableObjects(this.ListView.SelectedModelObjects);
             }
 
-            System.Diagnostics.Debug.WriteLine(String.Format("Disable UI action took {0} ms", ts.Elapsed.TotalMilliseconds));
+            System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "Disable UI action took {0} ms", ts.Elapsed.TotalMilliseconds));
         }
 
         private void buttonRemove_Click(object sender, EventArgs e)
@@ -206,7 +209,7 @@ namespace ObjectListViewDemo
             }
 
             Coordinator.ToolStripStatus1 =
-                String.Format("Build time: {0} items in {1}ms, average per item: {2:F}ms",
+                String.Format(CultureInfo.CurrentCulture, "Build time: {0} items in {1}ms, average per item: {2:F}ms",
                     this.olvFast.Items.Count,
                     stopWatch.ElapsedMilliseconds,
                     (float) stopWatch.ElapsedMilliseconds / this.olvFast.Items.Count);

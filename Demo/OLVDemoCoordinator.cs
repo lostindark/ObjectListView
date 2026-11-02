@@ -98,7 +98,7 @@ namespace ObjectListViewDemo
             }
 
             this.ToolStripStatus1 = this.prefixForNextSelectionMessage =
-                String.Format("Build time: {0} items in {1}ms, average per item: {2:F}ms",
+                String.Format(CultureInfo.CurrentCulture, "Build time: {0} items in {1}ms, average per item: {2:F}ms",
                               olv.Items.Count,
                               stopWatch.ElapsedMilliseconds,
                               (float)stopWatch.ElapsedMilliseconds / olv.Items.Count);
@@ -132,13 +132,13 @@ namespace ObjectListViewDemo
             // Most ListViews in the demo handle lists of people, so we try to cast SelectedObject and FocusedObject to be Persons.
 
             Person p = listView.SelectedModelObject as Person;
-            string msg = p == null ? listView.SelectedIndices.Count.ToString(CultureInfo.CurrentCulture) : String.Format("'{0}'", p.Name);
+            string msg = p == null ? listView.SelectedIndices.Count.ToString(CultureInfo.CurrentCulture) : String.Format(CultureInfo.CurrentCulture, "'{0}'", p.Name);
             Person focused = listView.FocusedObject as Person;
-            string focusedMsg = focused == null ? "" : String.Format(". Focused on '{0}'", focused.Name);
+            string focusedMsg = focused == null ? "" : String.Format(CultureInfo.CurrentCulture, ". Focused on '{0}'", focused.Name);
             this.ToolStripStatus1 =
                 String.IsNullOrEmpty(this.prefixForNextSelectionMessage) ?
-                    String.Format("Selected {0} of {1} items" + focusedMsg, msg, listView.GetItemCount())
-                    : String.Format("{2}. Selected {0} of {1} items" + focusedMsg, msg, listView.GetItemCount(), this.prefixForNextSelectionMessage);
+                    String.Format(CultureInfo.CurrentCulture, "Selected {0} of {1} items" + focusedMsg, msg, listView.GetItemCount())
+                    : String.Format(CultureInfo.CurrentCulture, "{2}. Selected {0} of {1} items" + focusedMsg, msg, listView.GetItemCount(), this.prefixForNextSelectionMessage);
             this.prefixForNextSelectionMessage = null;
 
         }
@@ -240,12 +240,12 @@ namespace ObjectListViewDemo
             if (objects == null)
             {
                 this.ToolStripStatus1 = prefixForNextSelectionMessage =
-                    String.Format("Filtered in {0}ms", stopWatch.ElapsedMilliseconds);
+                    String.Format(CultureInfo.CurrentCulture, "Filtered in {0}ms", stopWatch.ElapsedMilliseconds);
             }
             else
             {
                 this.ToolStripStatus1 = prefixForNextSelectionMessage =
-                    String.Format("Filtered {0} items down to {1} items in {2}ms",
+                    String.Format(CultureInfo.CurrentCulture, "Filtered {0} items down to {1} items in {2}ms",
                                   objects.Count,
                                   olv.Items.Count,
                                   stopWatch.ElapsedMilliseconds);
@@ -311,16 +311,16 @@ namespace ObjectListViewDemo
                 case HitTestLocation.Header:
                 case HitTestLocation.HeaderCheckBox:
                 case HitTestLocation.HeaderDivider:
-                    this.Form.toolStripStatusLabel3.Text = String.Format("Over {0} of column #{1}", e.HotCellHitLocation, e.HotColumnIndex);
+                    this.Form.toolStripStatusLabel3.Text = String.Format(CultureInfo.CurrentCulture, "Over {0} of column #{1}", e.HotCellHitLocation, e.HotColumnIndex);
                     break;
                 case HitTestLocation.Group:
-                    this.Form.toolStripStatusLabel3.Text = String.Format("Over group '{0}', {1}", e.HotGroup.Header, e.HotCellHitLocationEx);
+                    this.Form.toolStripStatusLabel3.Text = String.Format(CultureInfo.CurrentCulture, "Over group '{0}', {1}", e.HotGroup.Header, e.HotCellHitLocationEx);
                     break;
                 case HitTestLocation.GroupExpander:
-                    this.Form.toolStripStatusLabel3.Text = String.Format("Over group expander of '{0}'", e.HotGroup.Header);
+                    this.Form.toolStripStatusLabel3.Text = String.Format(CultureInfo.CurrentCulture, "Over group expander of '{0}'", e.HotGroup.Header);
                     break;
                 default:
-                    this.Form.toolStripStatusLabel3.Text = String.Format("Over {0} of ({1}, {2})", e.HotCellHitLocation, e.HotRowIndex, e.HotColumnIndex);
+                    this.Form.toolStripStatusLabel3.Text = String.Format(CultureInfo.CurrentCulture, "Over {0} of ({1}, {2})", e.HotCellHitLocation, e.HotRowIndex, e.HotColumnIndex);
                     break;
             }
         }
@@ -340,11 +340,11 @@ namespace ObjectListViewDemo
             {
                 if (size >= limits[i])
                 {
-                    return String.Format("{0:#,##0.##} " + units[i], ((double)size / limits[i]));
+                    return String.Format(CultureInfo.CurrentCulture, "{0:#,##0.##} " + units[i], ((double)size / limits[i]));
                 }
             }
 
-            return String.Format("{0} bytes", size);
+            return String.Format(CultureInfo.CurrentCulture, "{0} bytes", size);
         }
 
         /// <summary>

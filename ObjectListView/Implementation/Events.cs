@@ -56,6 +56,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace BrightIdeasSoftware {
@@ -2169,7 +2170,7 @@ namespace BrightIdeasSoftware {
         /// </returns>
         /// <filterpriority>2</filterpriority>
         public override string ToString() {
-            return string.Format("NewHotCellHitLocation: {0}, HotCellHitLocationEx: {1}, NewHotColumnIndex: {2}, NewHotRowIndex: {3}, HotGroup: {4}", this.newHotCellHitLocation, this.hotCellHitLocationEx, this.newHotColumnIndex, this.newHotRowIndex, this.hotGroup);
+            return string.Format(CultureInfo.CurrentCulture, "NewHotCellHitLocation: {0}, HotCellHitLocationEx: {1}, NewHotColumnIndex: {2}, NewHotRowIndex: {3}, HotGroup: {4}", this.newHotCellHitLocation, this.hotCellHitLocationEx, this.newHotColumnIndex, this.newHotRowIndex, this.hotGroup);
         }
     }
 
@@ -2596,6 +2597,12 @@ namespace BrightIdeasSoftware {
     /// Tells the world that a column header was right clicked
     /// </summary>
     public class ColumnRightClickEventArgs : ColumnClickEventArgs {
+        /// <summary>
+        /// Create event arguments for a column header context menu.
+        /// </summary>
+        /// <param name="columnIndex">The index of the column that was clicked.</param>
+        /// <param name="menu">The menu to display.</param>
+        /// <param name="location">The screen location where the menu will be displayed.</param>
         public ColumnRightClickEventArgs(int columnIndex, ToolStripDropDown menu, Point location) : base(columnIndex) {
             MenuStrip = menu;
             Location = location;

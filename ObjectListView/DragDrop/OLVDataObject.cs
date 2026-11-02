@@ -33,6 +33,7 @@
 
 using System;
 using System.Collections;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace BrightIdeasSoftware {
@@ -175,17 +176,17 @@ namespace BrightIdeasSoftware {
                 "SourceURL:{4}\r\n" +
                 "{5}";
 
-            int prefixLength = String.Format(MARKER_BLOCK, 0, 0, 0, 0, SOURCE, "").Length;
+            int prefixLength = String.Format(CultureInfo.InvariantCulture, MARKER_BLOCK, 0, 0, 0, 0, SOURCE, "").Length;
 
             const String DEFAULT_HTML_BODY =
                 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">" +
                 "<HTML><HEAD></HEAD><BODY><!--StartFragment-->{0}<!--EndFragment--></BODY></HTML>";
 
-            string html = String.Format(DEFAULT_HTML_BODY, fragment);
+            string html = String.Format(CultureInfo.InvariantCulture, DEFAULT_HTML_BODY, fragment);
             int startFragment = prefixLength + html.IndexOf(fragment, StringComparison.Ordinal);
             int endFragment = startFragment + fragment.Length;
 
-            return String.Format(MARKER_BLOCK, prefixLength, prefixLength + html.Length, startFragment, endFragment, SOURCE, html);
+            return String.Format(CultureInfo.InvariantCulture, MARKER_BLOCK, prefixLength, prefixLength + html.Length, startFragment, endFragment, SOURCE, html);
         }
     }
 }

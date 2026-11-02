@@ -271,7 +271,9 @@ namespace BrightIdeasSoftware
 
                 if (x.DisplayIndex == y.DisplayIndex)
                 {
-                    return x.Text.CompareTo(y.Text);
+#pragma warning disable CA1309 // Displayed column titles sort according to the user's culture.
+                    return String.Compare(x.Text, y.Text, StringComparison.CurrentCulture);
+#pragma warning restore CA1309
                 }
                 else
                 {

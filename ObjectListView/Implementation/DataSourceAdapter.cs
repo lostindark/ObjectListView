@@ -39,6 +39,7 @@
 using System;
 using System.ComponentModel;
 using System.Data;
+using System.Globalization;
 using System.Windows.Forms;
 using System.Diagnostics;
 
@@ -470,7 +471,7 @@ namespace BrightIdeasSoftware
                     break;
             }
             sw.Stop();
-            System.Diagnostics.Debug.WriteLine(String.Format("PERF - Processing {0} event on {1} rows took {2}ms", e.ListChangedType, this.ListView.GetItemCount(), sw.ElapsedMilliseconds));
+            System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "PERF - Processing {0} event on {1} rows took {2}ms", e.ListChangedType, this.ListView.GetItemCount(), sw.ElapsedMilliseconds));
 
         }
 

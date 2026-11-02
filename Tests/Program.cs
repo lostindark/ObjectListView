@@ -13,6 +13,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Globalization;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 
@@ -161,7 +162,9 @@ namespace BrightIdeasSoftware.Tests
 
             properties.Sort(delegate(PropertyInfo x, PropertyInfo y) {
                 if (IsStatic(x) == IsStatic(y)) {
-                    return x.Name.CompareTo(y.Name);
+#pragma warning disable CA1309 // Documentation entries intentionally retain the user's alphabetical ordering.
+                    return String.Compare(x.Name, y.Name, StringComparison.CurrentCulture);
+#pragma warning restore CA1309
                 } else {
                     return IsStatic(x) ? -1 : 1;
                 }
@@ -181,7 +184,7 @@ namespace BrightIdeasSoftware.Tests
                 //OLVDocAttribute docAttr = Attribute.GetCustomAttribute(pinfo, typeof(OLVDocAttribute)) as OLVDocAttribute;
                 values.Add(new string[] {                 
                         GetName(pinfo),
-                        String.Format("* Type: {0}",  GetTypeName(pinfo.PropertyType)),
+                        String.Format(CultureInfo.CurrentCulture, "* Type: {0}",  GetTypeName(pinfo.PropertyType)),
                         (descAttr == null ? "" : descAttr.Description)
                     });
                 DefaultValueAttribute defaultValueAttr = Attribute.GetCustomAttribute(pinfo, typeof(DefaultValueAttribute)) as DefaultValueAttribute;
@@ -189,7 +192,7 @@ namespace BrightIdeasSoftware.Tests
                 {
                     values.Add(new string[] {                 
                             String.Empty,
-                            String.Format("* Default: {0}",  Convert.ToString(defaultValueAttr.Value)),
+                            String.Format(CultureInfo.CurrentCulture, "* Default: {0}",  Convert.ToString(defaultValueAttr.Value, CultureInfo.CurrentCulture)),
                             String.Empty
                         });
                 }
@@ -197,17 +200,17 @@ namespace BrightIdeasSoftware.Tests
                 CategoryAttribute categoryAttr = Attribute.GetCustomAttribute(pinfo, typeof(CategoryAttribute)) as CategoryAttribute;
                 values.Add(new string[] {                 
                         String.Empty,
-                        String.Format("* IDE?: {0}",  (categoryAttr == null || categoryAttr.Category != "ObjectListView" ? "No" : "Yes")),
+                        String.Format(CultureInfo.CurrentCulture, "* IDE?: {0}",  (categoryAttr == null || categoryAttr.Category != "ObjectListView" ? "No" : "Yes")),
                         String.Empty
                     });
                 values.Add(new string[] {                 
                         String.Empty,
-                        String.Format("* Access: {0}",  GetAccessLevel(pinfo)),
+                        String.Format(CultureInfo.CurrentCulture, "* Access: {0}",  GetAccessLevel(pinfo)),
                         String.Empty
                     });
                 values.Add(new string[] {                 
                         String.Empty,
-                        String.Format("* Writeable: {0}",  (pinfo.CanWrite ? "Read-Write" : "Read")),
+                        String.Format(CultureInfo.CurrentCulture, "* Writeable: {0}",  (pinfo.CanWrite ? "Read-Write" : "Read")),
                         String.Empty
                     });
             }
@@ -226,7 +229,9 @@ namespace BrightIdeasSoftware.Tests
             }
 
             events.Sort(delegate(EventInfo x, EventInfo y) {
-                return x.Name.CompareTo(y.Name);
+#pragma warning disable CA1309 // Documentation entries intentionally retain the user's alphabetical ordering.
+                return String.Compare(x.Name, y.Name, StringComparison.CurrentCulture);
+#pragma warning restore CA1309
             });
 
             sb.AppendLine("");
@@ -262,7 +267,9 @@ namespace BrightIdeasSoftware.Tests
             }
 
             methods.Sort(delegate(MethodInfo x, MethodInfo y) {
-                return x.Name.CompareTo(y.Name);
+#pragma warning disable CA1309 // Documentation entries intentionally retain the user's alphabetical ordering.
+                return String.Compare(x.Name, y.Name, StringComparison.CurrentCulture);
+#pragma warning restore CA1309
             });
 
             sb.AppendLine("");
@@ -276,7 +283,7 @@ namespace BrightIdeasSoftware.Tests
                 values.Add(new string[] { }); // marks a new entry
                 DescriptionAttribute descAttr = Attribute.GetCustomAttribute(info, typeof(DescriptionAttribute)) as DescriptionAttribute;
                 values.Add(new string[] {                 
-                        String.Format("``{0} {1} {2}({3})``", 
+                        String.Format(CultureInfo.InvariantCulture, "``{0} {1} {2}({3})``",
                             GetAccessLevel(info), GetTypeName(info.ReturnType), info.Name, MakeParameterList(info)),
                         (descAttr == null ? "" : descAttr.Description)
                     });
@@ -322,7 +329,7 @@ namespace BrightIdeasSoftware.Tests
             
             Match genericTypeMatch = Regex.Match(type.FullName, @"\.([^.]+?)`1\[\[.+?\.(.+?),");
             if (genericTypeMatch.Success) {
-                return String.Format("{0}<{1}>", genericTypeMatch.Groups[1].Value, genericTypeMatch.Groups[2].Value);
+                return String.Format(CultureInfo.InvariantCulture, "{0}<{1}>", genericTypeMatch.Groups[1].Value, genericTypeMatch.Groups[2].Value);
             }
 
 
@@ -421,8 +428,8 @@ namespace BrightIdeasSoftware.Tests
                     }
                 } else {
                     for (int i = 0; i < value.Length; i++) {
-                        string formatString = String.Format("{0}0,-{1}{2} ", "{", valueMaxLength[i], "}");
-                        sb.AppendFormat(formatString, value[i]);
+                        string formatString = String.Format(CultureInfo.InvariantCulture, "{0}0,-{1}{2} ", "{", valueMaxLength[i], "}");
+                        sb.AppendFormat(CultureInfo.CurrentCulture, formatString, value[i]);
                     }
                     sb.AppendLine();
                 }

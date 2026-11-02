@@ -42,6 +42,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 
 namespace BrightIdeasSoftware
@@ -186,7 +187,7 @@ namespace BrightIdeasSoftware
                     return null;
                 }
 
-                return String.Format("'{0}' is not a parameter-less method, property or field of type '{1}'",
+                return String.Format(CultureInfo.CurrentCulture, "'{0}' is not a parameter-less method, property or field of type '{1}'",
                                          ex.Munger.AspectName, ex.Target.GetType());
             }
         }
@@ -311,9 +312,9 @@ namespace BrightIdeasSoftware
         private void ReportPutValueException(MungerException ex) {
             //TODO: How should we report this error?
             System.Diagnostics.Debug.WriteLine("PutValue failed");
-            System.Diagnostics.Debug.WriteLine(String.Format("- Culprit aspect: {0}", ex.Munger.AspectName));
-            System.Diagnostics.Debug.WriteLine(String.Format("- Target: {0} of type {1}", ex.Target, ex.Target.GetType()));
-            System.Diagnostics.Debug.WriteLine(String.Format("- Inner exception: {0}", ex.InnerException));
+            System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "- Culprit aspect: {0}", ex.Munger.AspectName));
+            System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "- Target: {0} of type {1}", ex.Target, ex.Target.GetType()));
+            System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "- Inner exception: {0}", ex.InnerException));
         }
 
         #endregion

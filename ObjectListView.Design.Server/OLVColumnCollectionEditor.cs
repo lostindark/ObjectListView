@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using Microsoft.DotNet.DesignTools.Editors;
 
@@ -35,7 +36,7 @@ namespace BrightIdeasSoftware.Design
         protected override string GetDisplayText(object value) {
             var column = (OLVColumn)value;
             return string.IsNullOrEmpty(column.AspectName) ? column.Text :
-                string.Format("{0} ({1})", column.Text, column.AspectName);
+                string.Format(CultureInfo.CurrentCulture, "{0} ({1})", column.Text, column.AspectName);
         }
 
         [ExportCollectionEditorFactory("ObjectListView.Columns")]

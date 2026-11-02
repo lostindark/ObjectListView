@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
 using ObjectListViewDemo.Models;
@@ -85,7 +86,7 @@ namespace ObjectListViewDemo {
                 OLVColumn column;
                 Point pt = this.olvSimple.PointToClient(Cursor.Position);
                 OLVListItem item = this.olvSimple.GetItemAt(pt.X, pt.Y, out column);
-                System.Diagnostics.Debug.WriteLine(String.Format("Hover: {0}, {1}", item, column));
+                System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "Hover: {0}, {1}", item, column));
             };
         }
 
@@ -99,7 +100,7 @@ namespace ObjectListViewDemo {
                     return;
                 }
 
-                if (p.Name.StartsWith("N"))
+                if (p.Name.StartsWith("N", StringComparison.CurrentCulture))
                 {
                     args.Item.BackColor = Color.LightPink;
                 }

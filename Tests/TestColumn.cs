@@ -13,6 +13,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -268,7 +269,7 @@ namespace BrightIdeasSoftware.Tests
             OLVColumn column = new OLVColumn();
             column.AspectName = "BirthDate";
             column.AspectToStringFormat = "{0:dd-mm-yy}";
-            Assert.AreEqual(String.Format("{0:dd-mm-yy}", this.person1.BirthDate), column.GetStringValue(this.person1));
+            Assert.AreEqual(String.Format(CultureInfo.CurrentCulture, "{0:dd-mm-yy}", this.person1.BirthDate), column.GetStringValue(this.person1));
         }
 
         [TestMethod]

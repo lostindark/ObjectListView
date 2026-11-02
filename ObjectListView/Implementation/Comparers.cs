@@ -192,7 +192,9 @@ namespace BrightIdeasSoftware
         {
             if (StringComparer == null)
             {
+#pragma warning disable CA1309 // Displayed values sort according to the user's culture.
                 return String.Compare(x, y, StringComparison.CurrentCultureIgnoreCase);
+#pragma warning restore CA1309
             }
             else
             {
@@ -237,7 +239,9 @@ namespace BrightIdeasSoftware
             }
             else
             {
+#pragma warning disable CA1309 // Displayed group headers sort according to the user's culture.
                 result = String.Compare(x.Header, y.Header, StringComparison.CurrentCultureIgnoreCase);
+#pragma warning restore CA1309
             }
 
             if (this.sortOrder == SortOrder.Descending)
@@ -386,7 +390,9 @@ namespace BrightIdeasSoftware
         {
             if (StringComparer == null)
             {
+#pragma warning disable CA1309 // Displayed values sort according to the user's culture.
                 return String.Compare(x, y, StringComparison.CurrentCultureIgnoreCase);
+#pragma warning restore CA1309
             }
             else
             {

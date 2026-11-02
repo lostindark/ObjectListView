@@ -37,6 +37,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
 using System.Reflection;
@@ -710,7 +711,7 @@ namespace BrightIdeasSoftware
                 }
                 else
                 {
-                    il.Emit(OpCodes.Ldstr, String.Format("'{0}' is not a parameter-less method, property or field of type '{1}'", pathPart, type.FullName));
+                    il.Emit(OpCodes.Ldstr, String.Format(CultureInfo.CurrentCulture, "'{0}' is not a parameter-less method, property or field of type '{1}'", pathPart, type.FullName));
                 }
 
                 return null;

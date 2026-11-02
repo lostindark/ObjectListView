@@ -35,6 +35,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing.Design;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace BrightIdeasSoftware
@@ -203,7 +204,7 @@ namespace BrightIdeasSoftware
         Description("The parent id value that identifies a row as a root object"),
         DefaultValue(null)]
         public virtual string RootKeyValueString {
-            get { return Convert.ToString(this.Adapter.RootKeyValue); }
+            get { return Convert.ToString(this.Adapter.RootKeyValue, CultureInfo.CurrentCulture); }
             set { this.Adapter.RootKeyValue = value; }
         }
 

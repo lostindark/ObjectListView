@@ -48,9 +48,15 @@ namespace BrightIdeasSoftware
     /// values from ObjectListView
     /// </summary>
     public interface IOlvEditor {
+        /// <summary>
+        /// Gets or sets the value being edited.
+        /// </summary>
         object Value { get; set; }
     }
 
+    /// <summary>
+    /// Provides helpers for configuring cell editor controls.
+    /// </summary>
     public static class ControlUtilities {
 
         /// <summary>

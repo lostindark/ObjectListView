@@ -28,6 +28,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
 using System.Reflection;
@@ -99,7 +100,7 @@ namespace BrightIdeasSoftware {
         /// </example>
         public void Register(Type type, Type controlType) {
             this.Register(type, delegate(Object model, OLVColumn column, Object value) {
-                return controlType.InvokeMember("", BindingFlags.CreateInstance, null, null, null) as Control;
+                return controlType.InvokeMember("", BindingFlags.CreateInstance, null, null, null, CultureInfo.CurrentCulture) as Control;
             });
         }
 

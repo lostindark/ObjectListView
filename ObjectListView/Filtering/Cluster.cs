@@ -116,7 +116,9 @@ namespace BrightIdeasSoftware {
             string keyAsString = this.ClusterKey as string;
             if (keyAsString != null)
             {
+#pragma warning disable CA1309 // Displayed cluster keys sort according to the user's culture.
                 return String.Compare(keyAsString, otherCluster.ClusterKey as string, StringComparison.CurrentCultureIgnoreCase);
+#pragma warning restore CA1309
             }
 
             IComparable keyAsComparable = this.ClusterKey as IComparable;

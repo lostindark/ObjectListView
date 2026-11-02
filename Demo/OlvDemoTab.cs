@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
 
@@ -50,7 +51,7 @@ namespace ObjectListViewDemo {
             };
 
             this.ListView.GroupStateChanged += delegate(object sender, GroupStateChangedEventArgs e) {
-                System.Diagnostics.Debug.WriteLine(String.Format("Group '{0}' was {1}{2}{3}{4}{5}{6}",
+                System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "Group '{0}' was {1}{2}{3}{4}{5}{6}",
                     e.Group.Header,
                     e.Selected ? "Selected" : "",
                     e.Focused ? "Focused" : "",

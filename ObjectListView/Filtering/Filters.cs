@@ -35,6 +35,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Reflection;
 using System.Drawing;
 
@@ -373,7 +374,7 @@ namespace BrightIdeasSoftware
             this.possibleValuesAsUlongs = new List<UInt64>();
             foreach (object x in this.PossibleValues)
             {
-                this.possibleValuesAsUlongs.Add(Convert.ToUInt64(x));
+                this.possibleValuesAsUlongs.Add(Convert.ToUInt64(x, CultureInfo.CurrentCulture));
             }
         }
 
@@ -384,7 +385,7 @@ namespace BrightIdeasSoftware
         /// <returns></returns>
         protected override bool DoesValueMatch(object result) {
             try {
-                UInt64 value = Convert.ToUInt64(result);
+                UInt64 value = Convert.ToUInt64(result, CultureInfo.CurrentCulture);
                 foreach (ulong flag in this.possibleValuesAsUlongs) {
                     if ((value & flag) == flag)
                     {

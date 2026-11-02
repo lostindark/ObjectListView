@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.Data;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
@@ -179,7 +180,7 @@ namespace ObjectListViewDemo
             }
 
             Coordinator.ToolStripStatus1 =
-                String.Format("XML Load: {0} items in {1}ms, average per item: {2:F}ms",
+                String.Format(CultureInfo.CurrentCulture, "XML Load: {0} items in {1}ms, average per item: {2:F}ms",
                     olvData.Items.Count,
                     stopWatch.ElapsedMilliseconds,
                     stopWatch.ElapsedMilliseconds / olvData.Items.Count);

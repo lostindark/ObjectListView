@@ -38,6 +38,7 @@ using System.Drawing;
 using System.Collections;
 using System.Diagnostics;
 using System.Drawing.Design;
+using System.Globalization;
 
 namespace BrightIdeasSoftware {
 
@@ -1592,7 +1593,7 @@ namespace BrightIdeasSoftware {
                 String keyAsString = key as String;
                 if (!String.IsNullOrEmpty(keyAsString))
                 {
-                    return keyAsString.Substring(0, 1).ToUpper();
+                    return keyAsString.Substring(0, 1).ToUpper(CultureInfo.CurrentCulture);
                 }
             }
 
@@ -1773,7 +1774,7 @@ namespace BrightIdeasSoftware {
             }
             else
             {
-                return String.Format(fmt, value);
+                return String.Format(CultureInfo.CurrentCulture, fmt, value);
             }
         }
 

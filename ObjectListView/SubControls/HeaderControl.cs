@@ -53,6 +53,7 @@
 
 using System;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Windows.Forms.VisualStyles;
@@ -945,7 +946,7 @@ namespace BrightIdeasSoftware {
             if (this.HasSortIndicator(column)) {
                 Font font = this.ListView.HeaderUsesThemes ? this.ListView.Font : stateStyle.Font ?? this.ListView.Font;
                 int priority = this.ListView.GetSortPriority(column);
-                string label = priority.ToString();
+                string label = priority.ToString(CultureInfo.CurrentCulture);
                 int width = this.CalculateSortIndicatorWidth(g, column, font);
                 Rectangle indicatorBounds = new Rectangle(r.Right - width, r.Top, width, r.Height);
                 SortOrder order = this.ListView.SortDescriptions[priority - 1].SortOrder;
@@ -991,7 +992,7 @@ namespace BrightIdeasSoftware {
                 return 16;
             }
 
-            string label = this.ListView.GetSortPriority(column).ToString();
+            string label = this.ListView.GetSortPriority(column).ToString(CultureInfo.CurrentCulture);
             using (Font priorityFont = CreateSortPriorityFont(font))
             {
                 return TextRenderer.MeasureText(g, label, priorityFont, Size.Empty,

@@ -24,9 +24,6 @@
     <PackageTags>WinForms;ListView;ObjectListView;Controls</PackageTags>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeModernDesigners</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <WarningLevel>1</WarningLevel>
-  </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="Accessibility" />
     <Reference Include="System.Configuration" />

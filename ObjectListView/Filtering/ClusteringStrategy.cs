@@ -27,6 +27,7 @@
 
 using System;
 using System.Collections;
+using System.Globalization;
 using System.Text;
 
 namespace BrightIdeasSoftware {
@@ -184,7 +185,7 @@ namespace BrightIdeasSoftware {
         /// <returns></returns>
         virtual protected string ApplyDisplayFormat(ICluster cluster, string s) {
             string format = (cluster.Count == 1) ? this.DisplayLabelFormatSingular : this.DisplayLabelFormatPlural;
-            return String.IsNullOrEmpty(format) ? s : String.Format(format, s, cluster.Count);
+            return String.IsNullOrEmpty(format) ? s : String.Format(CultureInfo.CurrentCulture, format, s, cluster.Count);
         }
 
         #endregion

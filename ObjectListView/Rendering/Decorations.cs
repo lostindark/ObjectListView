@@ -308,6 +308,7 @@ namespace BrightIdeasSoftware
 
         #region IOverlay Members
 
+        /// <inheritdoc />
         public override void DrawDecoration(ObjectListViewBase olv, Graphics g, Rectangle r, Rectangle columnBounds) {
             using (Brush brush = new SolidBrush(this.Tint))
             {
@@ -322,7 +323,13 @@ namespace BrightIdeasSoftware
     /// Specify on which side edge the decoration will be drawn
     /// </summary>
     public enum ColumnEdge {
+        /// <summary>
+        /// The left edge of the column.
+        /// </summary>
         Left,
+        /// <summary>
+        /// The right edge of the column.
+        /// </summary>
         Right
     }
 
@@ -384,6 +391,7 @@ namespace BrightIdeasSoftware
 
         #region IOverlay Members
 
+        /// <inheritdoc />
         public override void DrawDecoration(ObjectListViewBase olv, Graphics g, Rectangle r, Rectangle columnBounds) {
             float left = CalculateEdge(columnBounds);
             g.DrawLine(this.Pen, left, columnBounds.Top, left, columnBounds.Bottom);

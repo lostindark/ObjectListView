@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Globalization;
 using BrightIdeasSoftware;
 using ObjectListViewDemo.Properties;
 
@@ -28,7 +29,7 @@ namespace ObjectListViewDemo
 
             // Listen to these events to give feedback as the printing happens
             listViewPrinter1.PrintPage += delegate(object sender, System.Drawing.Printing.PrintPageEventArgs e) {
-                Coordinator.ToolStripStatus1 = String.Format("Printing page #{0}...", this.listViewPrinter1.PageNumber);
+                Coordinator.ToolStripStatus1 = String.Format(CultureInfo.CurrentCulture, "Printing page #{0}...", this.listViewPrinter1.PageNumber);
             };
 
             listViewPrinter1.EndPrint += delegate(object sender, System.Drawing.Printing.PrintEventArgs e) {

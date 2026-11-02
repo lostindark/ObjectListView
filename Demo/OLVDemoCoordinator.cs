@@ -76,7 +76,7 @@ namespace ObjectListViewDemo
             return list2;
         }
 
-        public void ShowMessage(string message)
+        public static void ShowMessage(string message)
         {
             MessageBox.Show(message, "Object List View Demo", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -104,7 +104,7 @@ namespace ObjectListViewDemo
                               (float)stopWatch.ElapsedMilliseconds / olv.Items.Count);
         }
 
-        public void ShowGroupsChecked(ObjectListViewBase olv, CheckBox cb)
+        public static void ShowGroupsChecked(ObjectListViewBase olv, CheckBox cb)
         {
             if (cb.Checked && olv.View == View.List)
             {
@@ -118,7 +118,7 @@ namespace ObjectListViewDemo
             }
         }
 
-        public void ShowLabelsOnGroupsChecked(ObjectListViewBase olv, CheckBox cb)
+        public static void ShowLabelsOnGroupsChecked(ObjectListViewBase olv, CheckBox cb)
         {
             olv.ShowItemCountOnGroups = cb.Checked;
             if (olv.ShowGroups)
@@ -143,7 +143,7 @@ namespace ObjectListViewDemo
 
         }
 
-        public void ChangeView(ObjectListViewBase listview, ComboBox comboBox)
+        public static void ChangeView(ObjectListViewBase listview, ComboBox comboBox)
         {
             // Handle restrictions on Tile view
             if (comboBox.SelectedIndex == 3)
@@ -180,7 +180,7 @@ namespace ObjectListViewDemo
             }
         }
 
-        public void ChangeEditable(ObjectListViewBase objectListView, ComboBox comboBox)
+        public static void ChangeEditable(ObjectListViewBase objectListView, ComboBox comboBox)
         {
             if (comboBox.Text == "No")
             {
@@ -252,7 +252,7 @@ namespace ObjectListViewDemo
             }
         }
 
-        public void ChangeHotItemStyle(ObjectListViewBase olv, ComboBox cb)
+        public static void ChangeHotItemStyle(ObjectListViewBase olv, ComboBox cb)
         {
             olv.UseTranslucentHotItem = false;
             olv.UseHotItem = true;
@@ -331,7 +331,7 @@ namespace ObjectListViewDemo
         /// </summary>
         /// <param name="size"></param>
         /// <returns></returns>
-        public string FormatFileSize(long size)
+        public static string FormatFileSize(long size)
         {
             int[] limits = new int[] { 1024 * 1024 * 1024, 1024 * 1024, 1024 };
             string[] units = new string[] { "GB", "MB", "KB" };
@@ -352,7 +352,7 @@ namespace ObjectListViewDemo
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public DataSet LoadDatasetFromXml(string fileName)
+        public static DataSet LoadDatasetFromXml(string fileName)
         {
             DataSet ds = new DataSet();
             FileStream fs = null;

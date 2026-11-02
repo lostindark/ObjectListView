@@ -120,10 +120,10 @@ namespace ObjectListViewDemo
         }
 
         private DataSet LoadXmlIntoDataGrid() {
-            DataSet ds = Coordinator.LoadDatasetFromXml(@"Data\Persons.xml");
+            DataSet ds = OLVDemoCoordinator.LoadDatasetFromXml(@"Data\Persons.xml");
 
             if (ds.Tables.Count <= 0) {
-                Coordinator.ShowMessage(@"Failed to load data set from Data\Persons.xml");
+                OLVDemoCoordinator.ShowMessage(@"Failed to load data set from Data\Persons.xml");
                 return null;
             }
 
@@ -191,11 +191,11 @@ namespace ObjectListViewDemo
         }
 
         private void checkBoxGroups_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowGroupsChecked(this.ListView, (CheckBox) sender);
+            OLVDemoCoordinator.ShowGroupsChecked(this.ListView, (CheckBox) sender);
         }
 
         private void checkBoxItemCounts_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowLabelsOnGroupsChecked(this.ListView, (CheckBox) sender);
+            OLVDemoCoordinator.ShowLabelsOnGroupsChecked(this.ListView, (CheckBox) sender);
         }
 
         private void checkBoxPause_CheckedChanged(object sender, EventArgs e) {
@@ -203,11 +203,11 @@ namespace ObjectListViewDemo
         }
 
         private void comboBoxView_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeView(this.ListView, (ComboBox) sender);
+            OLVDemoCoordinator.ChangeView(this.ListView, (ComboBox) sender);
         }
 
         private void comboBoxEditable_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeEditable(this.ListView, (ComboBox) sender);
+            OLVDemoCoordinator.ChangeEditable(this.ListView, (ComboBox) sender);
         }
 
         private void rowHeightUpDown_ValueChanged(object sender, EventArgs e) {

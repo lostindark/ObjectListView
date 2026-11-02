@@ -3717,19 +3717,6 @@ namespace BrightIdeasSoftware
         private bool useCellFormatEvents;
 
         /// <summary>
-        /// Should the selected row be drawn with non-standard foreground and background colors?
-        /// </summary>
-        /// <remarks>v2.9 This property is no longer required</remarks>
-        [Category("ObjectListView"),
-         Description("Should the selected row be drawn with non-standard foreground and background colors?"),
-         DefaultValue(false)]
-        public bool UseCustomSelectionColors {
-            get { return false; }
-            // ReSharper disable once ValueParameterNotUsed
-            set { }
-        }
-
-        /// <summary>
         /// Gets or sets whether this ObjectListView will use the same hot item and selection 
         /// mechanism that Vista Explorer does.
         /// </summary>

@@ -787,7 +787,7 @@ namespace BrightIdeasSoftware.Tests {
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1067", Justification = "This test model verifies that IEquatable alone does not change object-based identity semantics.")]
         private sealed class EquatableModel : IEquatable<EquatableModel> {
-            public string Name { get { return "same"; } }
+            public string Name { get; } = "same";
             public bool Equals(EquatableModel other) { return other != null; }
         }
 

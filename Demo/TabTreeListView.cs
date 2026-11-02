@@ -71,7 +71,7 @@ namespace ObjectListViewDemo
             treeListView.ModelDropped += delegate(object sender, ModelDropEventArgs e) {
                 String msg = String.Format(CultureInfo.CurrentCulture, "{2} items were dropped on '{1}' as a {0} operation.",
                     e.Effect, ((DirectoryInfo) e.TargetModel).Name, e.SourceModels.Count);
-                Coordinator.ShowMessage(msg);
+                OLVDemoCoordinator.ShowMessage(msg);
             };
         }
 
@@ -166,7 +166,7 @@ namespace ObjectListViewDemo
                     return "";
                 }
 
-                return Coordinator.FormatFileSize(sizeInBytes);
+                return OLVDemoCoordinator.FormatFileSize(sizeInBytes);
             };
 
             // Show the system description for this object
@@ -215,7 +215,7 @@ namespace ObjectListViewDemo
 
         private void comboBoxHotItemStyle_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Coordinator.ChangeHotItemStyle(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeHotItemStyle(this.ListView, (ComboBox)sender);
         }
 
         private void buttonRefresh_Click(object sender, EventArgs e)

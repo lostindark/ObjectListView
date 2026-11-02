@@ -35,15 +35,9 @@ namespace BrightIdeasSoftware.Tests
             TriStateCheckBoxes = true,
             UseInitialLetterForGroup = true,
             Width = 500)]
-        public string OLVPrimaryColumn {
-            get { return ""; }
-            set { }
-        }
+        public string OLVPrimaryColumn { get; set; } = "";
 
-        public string NotUsedProperty {
-            get { return ""; }
-            set { }
-        }
+        public string NotUsedProperty { get; set; } = "";
 
         [OLVColumn("Secondary",
             AspectToStringFormat = "!AspectToStringFormat",
@@ -65,44 +59,26 @@ namespace BrightIdeasSoftware.Tests
             TriStateCheckBoxes = false,
             UseInitialLetterForGroup = false,
             Width = -1)]
-        public string OLVSecondaryColumn {
-            get { return ""; }
-            set { }
-        }
+        public string OLVSecondaryColumn { get; set; } = "";
 
     }
 
     sealed class GeneratorTestModelSorting
     {
         [OLVColumn("Secondary", DisplayIndex = 1)]
-        public string OLVSecondaryColumn {
-            get { return ""; }
-            set { }
-        }
+        public string OLVSecondaryColumn { get; set; } = "";
 
         [OLVColumn("Primary", DisplayIndex = 0)]
-        public string OLVShouldBeFirst {
-            get { return ""; }
-            set { }
-        }
+        public string OLVShouldBeFirst { get; set; } = "";
 
         [OLVColumn("SecondLast", DisplayIndex = 3)]
-        public string OLVSecondLast {
-            get { return ""; }
-            set { }
-        }
+        public string OLVSecondLast { get; set; } = "";
 
         [OLVColumn("Last")]
-        public string OLVMustBeLast {
-            get { return ""; }
-            set { }
-        }
+        public string OLVMustBeLast { get; set; } = "";
 
         [OLVColumn("Hidden", DisplayIndex = 2, IsVisible=false)]
-        public string OLVMustNotBeVisible {
-            get { return ""; }
-            set { }
-        }
+        public string OLVMustNotBeVisible { get; set; } = "";
     }
 
 

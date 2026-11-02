@@ -91,7 +91,7 @@ namespace ObjectListViewDemo {
                     return "";
                 }
 
-                return Coordinator.FormatFileSize(sizeInBytes);
+                return OLVDemoCoordinator.FormatFileSize(sizeInBytes);
             };
             this.olvColumnSize.MakeGroupies(new long[] {0, 1024 * 1024, 512 * 1024 * 1024},
                 new string[] {"Folders", "Small", "Big", "Disk space chewer"});
@@ -261,7 +261,7 @@ namespace ObjectListViewDemo {
         private TextOverlay nagOverlay;
 
         private void checkBoxGroups_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
+            OLVDemoCoordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
         }
 
         private void checkBoxTooltips_CheckedChanged(object sender, EventArgs e) {
@@ -271,11 +271,11 @@ namespace ObjectListViewDemo {
         private bool showToolTipsOnFiles;
 
         private void comboBoxHotItemStyle_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeHotItemStyle(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeHotItemStyle(this.ListView, (ComboBox)sender);
         }
 
         private void comboBoxView_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeView(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeView(this.ListView, (ComboBox)sender);
         }
 
         private void buttonSaveState_Click(object sender, EventArgs e) {

@@ -2243,7 +2243,7 @@ namespace BrightIdeasSoftware {
         /// <param name="height"></param>
         protected virtual void DrawSubstringFrame(Graphics g, float x, float y, float width, float height) {
             if (this.UseRoundedRectangle) {
-                using (GraphicsPath path = this.GetRoundedRect(x, y, width, height, 3.0f)) {
+                using (GraphicsPath path = GetRoundedRect(x, y, width, height, 3.0f)) {
                     if (this.FillBrush != null)
                     {
                         g.FillPath(this.FillBrush, path);
@@ -2331,7 +2331,7 @@ namespace BrightIdeasSoftware {
         /// <param name="width"></param>
         /// <param name="height"></param>
         /// <param name="diameter"></param>
-        protected GraphicsPath GetRoundedRect(float x, float y, float width, float height, float diameter) {
+        protected static GraphicsPath GetRoundedRect(float x, float y, float width, float height, float diameter) {
             return GetRoundedRect(new RectangleF(x, y, width, height), diameter);
         }
 
@@ -2343,7 +2343,7 @@ namespace BrightIdeasSoftware {
         /// <returns>A round cornered rectangle path</returns>
         /// <remarks>If I could rely on people using C# 3.0+, this should be
         /// an extension method of GraphicsPath.</remarks>
-        protected GraphicsPath GetRoundedRect(RectangleF rect, float diameter) {
+        protected static GraphicsPath GetRoundedRect(RectangleF rect, float diameter) {
             GraphicsPath path = new GraphicsPath();
 
             if (diameter > 0) {

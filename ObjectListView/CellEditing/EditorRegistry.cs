@@ -188,7 +188,7 @@ namespace BrightIdeasSoftware {
             // Enums without other processing get a special editor
             if (value != null && value.GetType().IsEnum)
             {
-                return this.CreateEnumEditor(value.GetType());
+                return CreateEnumEditor(value.GetType());
             }
 
             // Give any default creator a final chance
@@ -204,7 +204,7 @@ namespace BrightIdeasSoftware {
         /// Create and return an editor that will edit values of the given type
         /// </summary>
         /// <param name="type">A enum type</param>
-        protected Control CreateEnumEditor(Type type) {
+        protected static Control CreateEnumEditor(Type type) {
             return new EnumCellEditor(type);
         }
 

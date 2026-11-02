@@ -53,6 +53,19 @@ Widths assigned after initialization and handle creation, and widths in saved
 layouts, remain device-pixel values. Saved layouts are not DPI-independent.
 Framework system-aware windows may still be bitmap-scaled between monitors.
 
+## Custom selection colours
+
+`UseCustomSelectionColors` has been removed. It had no effect since v2.9.
+Remove assignments to it, including any saved in designer code. With `OwnerDraw`
+enabled, configure `SelectedBackColor` and `SelectedForeColor` directly.
+
+## Static utility methods
+
+Stateless helpers are now static. For example, use
+`ColumnComparer.CompareValues(x, y)`, `ModelObjectComparer.CompareValues(x, y)`,
+and `HeaderControl.HasCheckBox(column)` rather than calling them on instances.
+In subclasses, call protected utility methods directly instead of through `this`.
+
 ## Generic control hierarchy
 
 `TypedObjectListView<T>` is now a control with owned `List<T>` storage, not a

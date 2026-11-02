@@ -1,8 +1,6 @@
 using System;
 using System.ComponentModel;
-using System.Drawing;
 using BrightIdeasSoftware;
-using ObjectListViewDemo.Properties;
 
 namespace ObjectListViewDemo.Models {
     public class Person : INotifyPropertyChanged
@@ -37,18 +35,7 @@ namespace ObjectListViewDemo.Models {
         }
 
         [OLVIgnore]
-        public Image ImageAspect {
-            get {
-                return Resource1.folder16;
-            }
-        }
-
-        [OLVIgnore]
-        public string ImageName {
-            get {
-                return "user";
-            }
-        }
+        public string ImageName { get; } = "user";
 
         // Allows tests for properties.
         [OLVColumn(ImageAspectName = "ImageName")]

@@ -560,11 +560,11 @@ namespace ObjectListViewDemo
         }
 
         private void comboBoxHotItemStyle_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeHotItemStyle(this.ListView, (ComboBox) sender);
+            OLVDemoCoordinator.ChangeHotItemStyle(this.ListView, (ComboBox) sender);
         }
 
         private void comboBoxView_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeView(this.ListView, (ComboBox) sender);
+            OLVDemoCoordinator.ChangeView(this.ListView, (ComboBox) sender);
             this.UpdateBusinessCardSize();
 
             // Make the hot item show an overlay when it changes
@@ -589,11 +589,11 @@ namespace ObjectListViewDemo
         }
 
         private void comboBoxEditable_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeEditable(this.ListView, (ComboBox) sender);
+            OLVDemoCoordinator.ChangeEditable(this.ListView, (ComboBox) sender);
         }
 
         private void checkBoxGroups_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowGroupsChecked(this.ListView, (CheckBox) sender);
+            OLVDemoCoordinator.ShowGroupsChecked(this.ListView, (CheckBox) sender);
         }
 
         private void buttonDisable_Click(object sender, EventArgs e) {

@@ -155,7 +155,7 @@ namespace BrightIdeasSoftware {
             }
 
             OLVColumn column = this.ListView.GetColumn(columnIndex);
-            if (!this.HasCheckBox(column))
+            if (!HasCheckBox(column))
             {
                 return false;
             }
@@ -291,7 +291,7 @@ namespace BrightIdeasSoftware {
                 r.Width -= CalculateFilterIndicatorWidth(r);
             }
 
-            if (this.HasCheckBox(column))
+            if (HasCheckBox(column))
             {
                 r.Width -= CalculateCheckBoxBounds(g, r).Width;
             }
@@ -319,7 +319,7 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <param name="column"></param>
         /// <returns></returns>
-        public bool HasCheckBox(OLVColumn column) {
+        public static bool HasCheckBox(OLVColumn column) {
             return column.HeaderCheckBox || column.HeaderTriStateCheckBox;
         }
 
@@ -853,7 +853,7 @@ namespace BrightIdeasSoftware {
                     !column.ShowTextInHeader ||
                     column.IsHeaderVertical || 
                     this.HasFilterIndicator(column) ||
-                    this.HasCheckBox(column) ||
+                    HasCheckBox(column) ||
                     column.TextAlign != column.HeaderTextAlignOrDefault ||
                     (column.Index == 0 && column.HeaderTextAlignOrDefault != HorizontalAlignment.Left) ||
                     NeedsCustomDraw(column.HeaderFormatStyle))
@@ -906,7 +906,7 @@ namespace BrightIdeasSoftware {
         protected void CustomDrawHeaderCell(Graphics g, int columnIndex, int itemState) {
             OLVColumn column = this.ListView.GetColumn(columnIndex);
 
-            bool hasCheckBox = this.HasCheckBox(column);
+            bool hasCheckBox = HasCheckBox(column);
             bool isMouseOverCheckBox = columnIndex == this.lastCheckBoxUnderCursor;
             bool isMouseDownOnCheckBox = isMouseOverCheckBox && Control.MouseButtons == MouseButtons.Left;
             bool isHot = (columnIndex == this.ColumnIndexUnderCursor) && (!(hasCheckBox && isMouseOverCheckBox));

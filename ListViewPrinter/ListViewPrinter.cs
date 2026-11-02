@@ -1310,7 +1310,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// If the given BlockFormat doesn't specify a background, take it from the SubItem or the ListItem.
         /// </summary>
-        protected bool ApplyCellSpecificBackground(BlockFormat fmt, ListViewItem lvi, ListViewItem.ListViewSubItem lvsi)
+        protected static bool ApplyCellSpecificBackground(BlockFormat fmt, ListViewItem lvi, ListViewItem.ListViewSubItem lvsi)
         {
             if (fmt.BackgroundBrush != null)
             {
@@ -1376,7 +1376,7 @@ namespace BrightIdeasSoftware
                 renderer.SubItem = (OLVListSubItem)this.GetSubItem(lvi, column);
 
                 // Use the cell block format to draw the background and border of the cell
-                bool bkChanged = this.ApplyCellSpecificBackground(this.CellFormat, renderer.ListItem, renderer.SubItem);
+                bool bkChanged = ApplyCellSpecificBackground(this.CellFormat, renderer.ListItem, renderer.SubItem);
                 this.CellFormat.Draw(g, cell, "", "", "");
                 if (bkChanged)
                 {

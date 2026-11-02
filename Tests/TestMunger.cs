@@ -226,9 +226,7 @@ namespace BrightIdeasSoftware.Tests
                 get { return this; }
             }
 
-            public object NullProperty {
-                get { return null; }
-            }
+            public object NullProperty { get; }
 
             public string ReadOnlyProperty {
                 get { return readOnlyProperty; }

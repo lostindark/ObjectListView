@@ -233,7 +233,7 @@ namespace ObjectListViewDemo {
         }
 
         private void comboBoxEditable_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeEditable(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeEditable(this.ListView, (ComboBox)sender);
         }
 
         private void checkBoxHotItem_CheckedChanged(object sender, EventArgs e) {
@@ -241,11 +241,11 @@ namespace ObjectListViewDemo {
         }
 
         private void checkBoxItemCount_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowLabelsOnGroupsChecked(this.ListView, (CheckBox)sender);
+            OLVDemoCoordinator.ShowLabelsOnGroupsChecked(this.ListView, (CheckBox)sender);
         }
 
         private void checkBoxGroups_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
+            OLVDemoCoordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
         }
 
         #endregion
@@ -254,17 +254,17 @@ namespace ObjectListViewDemo {
 
 #if WITHOUT_ANIMATION
         private void buttonListAnimation_Click(object sender, EventArgs e) {
-            Coordinator.ShowMessage("Animations do not work on VS 2005");
+            OLVDemoCoordinator.ShowMessage("Animations do not work on VS 2005");
         }
 
         private void buttonRowAnimation_Click(object sender, EventArgs e)
         {
-            Coordinator.ShowMessage("Animations do not work on VS 2005");
+            OLVDemoCoordinator.ShowMessage("Animations do not work on VS 2005");
         }
 
         private void buttonCellAnimation_Click(object sender, EventArgs e)
         {
-            Coordinator.ShowMessage("Animations do not work on VS 2005");
+            OLVDemoCoordinator.ShowMessage("Animations do not work on VS 2005");
         }
 #else
 
@@ -308,7 +308,7 @@ namespace ObjectListViewDemo {
         private void buttonRowAnimation_Click(object sender, EventArgs e) {
             object modelObject = this.olvSimple.GetModelObject(Math.Min(5, this.olvSimple.GetItemCount()));
             if (modelObject == null) {
-                Coordinator.ShowMessage("There aren't any rows to be animated");
+                OLVDemoCoordinator.ShowMessage("There aren't any rows to be animated");
                 return;
             }
             AnimatedDecoration animatedDecoration = new AnimatedDecoration(this.olvSimple, modelObject);
@@ -336,7 +336,7 @@ namespace ObjectListViewDemo {
         private void buttonCellAnimation_Click(object sender, EventArgs e) {
             object modelObject = this.olvSimple.GetModelObject(Math.Min(5, this.olvSimple.GetItemCount()));
             if (modelObject == null || this.olvSimple.Columns.Count < 2) {
-                Coordinator.ShowMessage("There aren't any cells to be animated");
+                OLVDemoCoordinator.ShowMessage("There aren't any cells to be animated");
                 return;
             }
 

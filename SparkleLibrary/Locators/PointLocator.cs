@@ -209,7 +209,7 @@ namespace BrightIdeasSoftware
 
         public PointOnRectangleLocator(IRectangleLocator locator, Corner corner, Point offset) {
             this.RectangleLocator = locator;
-            this.PointProportions = this.ConvertCornerToProportion(corner);
+            this.PointProportions = ConvertCornerToProportion(corner);
             this.Offset = offset;
         }
 
@@ -236,7 +236,7 @@ namespace BrightIdeasSoftware
 
         public override Point GetPoint() {
             Rectangle r = this.RectangleLocator.GetRectangle();
-            Point pt = this.CalculateProportionalPosition(r, this.PointProportions);
+            Point pt = CalculateProportionalPosition(r, this.PointProportions);
 
             return this.OffsetBy(pt);
         }
@@ -249,13 +249,13 @@ namespace BrightIdeasSoftware
 
         #region Calculations
 
-        protected Point CalculateProportionalPosition(Rectangle r, SizeF proportions) {
+        protected static Point CalculateProportionalPosition(Rectangle r, SizeF proportions) {
             return new Point(
                 r.X + (int)(r.Width * proportions.Width),
                 r.Y + (int)(r.Height * proportions.Height));
         }
 
-        protected SizeF ConvertCornerToProportion(Corner corner) {
+        protected static SizeF ConvertCornerToProportion(Corner corner) {
             switch (corner) {
                 case Corner.TopLeft:
                     return new SizeF(0.0f, 0.0f);
@@ -402,14 +402,14 @@ namespace BrightIdeasSoftware
         /// <param name="pt">Where to start.</param>
         /// <param name="targetPoints">The control points in order</param>
         /// <returns>The point where the walk ends</returns>
-        protected Point Walk(int distance, Point pt, Point[] targetPoints) {
+        protected static Point Walk(int distance, Point pt, Point[] targetPoints) {
             int i = 0;
             double remaining = distance;
             while (true) {
-                double distanceToPoint = this.CalculateDistance(pt, targetPoints[i]);
+                double distanceToPoint = CalculateDistance(pt, targetPoints[i]);
                 if (remaining <= distanceToPoint)
                 {
-                    return this.CalculateEndPoint(pt, targetPoints[i], (int)remaining);
+                    return CalculateEndPoint(pt, targetPoints[i], (int)remaining);
                 }
 
                 pt = targetPoints[i];
@@ -426,7 +426,7 @@ namespace BrightIdeasSoftware
         /// <param name="pt2">Line end point</param>
         /// <param name="distance">Distance from start</param>
         /// <returns>The point that is 'distance' from the start</returns>
-        protected Point CalculateEndPoint(Point pt1, Point pt2, int distance) {
+        protected static Point CalculateEndPoint(Point pt1, Point pt2, int distance) {
             int dx = pt2.X - pt1.X;
             int dy = pt2.Y - pt1.Y;
 
@@ -453,7 +453,7 @@ namespace BrightIdeasSoftware
         /// <param name="pt1"></param>
         /// <param name="pt2"></param>
         /// <returns></returns>
-        protected double CalculateDistance(Point pt1, Point pt2) {
+        protected static double CalculateDistance(Point pt1, Point pt2) {
             int dx = pt1.X - pt2.X;
             int dy = pt1.Y - pt2.Y;
 
@@ -519,8 +519,8 @@ namespace BrightIdeasSoftware
 
         public override Point GetPoint() {
             Point[] points = this.GetPoints();
-            int totalDistance = this.CalculateTotalDistance(points);
-            return this.OffsetBy(this.Walk((int)(totalDistance * this.WalkProgress), points[0], points));
+            int totalDistance = CalculateTotalDistance(points);
+            return this.OffsetBy(Walk((int)(totalDistance * this.WalkProgress), points[0], points));
         }
 
         #endregion
@@ -548,11 +548,11 @@ namespace BrightIdeasSoftware
             return points.ToArray();
         }
 
-        private int CalculateTotalDistance(Point[] points) {
+        private static int CalculateTotalDistance(Point[] points) {
             double distance = 0;
             for (int i = 1; i < points.Length; i++)
             {
-                distance += this.CalculateDistance(points[i - 1], points[i]);
+                distance += CalculateDistance(points[i - 1], points[i]);
             }
 
             return (int)Math.Ceiling(distance + 1);
@@ -604,7 +604,7 @@ namespace BrightIdeasSoftware
             int totalLength = r.Width * 2 + r.Height * 2;
             int distanceToWalk = (int)(totalLength * this.WalkProgress);
 
-            Point pt = this.RationalizeStartPoint(r, this.StartPointLocator.GetPoint());
+            Point pt = RationalizeStartPoint(r, this.StartPointLocator.GetPoint());
             int segment = this.DecideSegment(r, pt);
 
             Point[] targetPoints = Array.Empty<Point>();
@@ -641,10 +641,10 @@ namespace BrightIdeasSoftware
                 }
             }
 
-            return this.OffsetBy(this.Walk(distanceToWalk, pt, targetPoints));
+            return this.OffsetBy(Walk(distanceToWalk, pt, targetPoints));
         }
 
-        protected Point RationalizeStartPoint(Rectangle r, Point point) {
+        protected static Point RationalizeStartPoint(Rectangle r, Point point) {
             if (point == Point.Empty)
             {
                 return r.Location;

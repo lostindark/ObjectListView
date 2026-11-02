@@ -320,18 +320,18 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestAspectGetting : AspectTestFixture
     {
-        public void ExecuteAspect(string aspectName, object expectedResult, Person person) {
+        public static void ExecuteAspect(string aspectName, object expectedResult, Person person) {
             OLVColumn column = new OLVColumn();
             column.AspectName = aspectName;
             Assert.AreEqual(expectedResult, column.GetValue(person));
         }
 
         virtual public void ExecuteAspect(string aspectName, object expectedResult) {
-            this.ExecuteAspect(aspectName, expectedResult, this.person1);
+            ExecuteAspect(aspectName, expectedResult, this.person1);
         }
 
         virtual public void ExecuteAspect2(string aspectName, object expectedResult) {
-            this.ExecuteAspect(aspectName, expectedResult, this.person2);
+            ExecuteAspect(aspectName, expectedResult, this.person2);
         }
 
         [TestMethod]
@@ -419,18 +419,18 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestIndexedAspects : TestAspectGetting
     {
-        public void ExecuteAspect(string aspectName, object expectedResult, object source) {
+        public static void ExecuteAspect(string aspectName, object expectedResult, object source) {
             OLVColumn column = new OLVColumn();
             column.AspectName = aspectName;
             Assert.AreEqual(expectedResult, column.GetValue(source));
         }
 
         override public void ExecuteAspect(string aspectName, object expectedResult) {
-            this.ExecuteAspect(aspectName, expectedResult, this.dict1);
+            ExecuteAspect(aspectName, expectedResult, this.dict1);
         }
 
         override public void ExecuteAspect2(string aspectName, object expectedResult) {
-            this.ExecuteAspect(aspectName, expectedResult, this.dict2);
+            ExecuteAspect(aspectName, expectedResult, this.dict2);
         }
 
         [TestMethod]
@@ -470,7 +470,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestAspectGeneration : TestAspectGetting
     {
-        public void Execute<T>(string aspectName, object expectedResult, T person) where T : class {
+        public static void Execute<T>(string aspectName, object expectedResult, T person) where T : class {
             OLVColumn column = new OLVColumn();
             column.AspectName = aspectName;
 
@@ -482,11 +482,11 @@ namespace BrightIdeasSoftware.Tests
         }
 
         override public void ExecuteAspect(string aspectName, object expectedResult) {
-            this.Execute(aspectName, expectedResult, this.person1);
+            Execute(aspectName, expectedResult, this.person1);
         }
 
         override public void ExecuteAspect2(string aspectName, object expectedResult) {
-            this.Execute(aspectName, expectedResult, this.person2);
+            Execute(aspectName, expectedResult, this.person2);
         }
 
         [TestMethod]
@@ -505,7 +505,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestAspectSetting
     {
-        public void ExecuteAspect(string aspectName, object newValue, Person person) {
+        public static void ExecuteAspect(string aspectName, object newValue, Person person) {
             OLVColumn column = new OLVColumn();
             column.AspectName = aspectName;
             column.PutValue(person, newValue);
@@ -513,11 +513,11 @@ namespace BrightIdeasSoftware.Tests
         }
 
         virtual public void ExecuteAspect(string aspectName, object newValue) {
-            this.ExecuteAspect(aspectName, newValue, this.person1);
+            ExecuteAspect(aspectName, newValue, this.person1);
         }
 
         virtual public void ExecuteAspect2(string aspectName, object newValue) {
-            this.ExecuteAspect(aspectName, newValue, this.person2);
+            ExecuteAspect(aspectName, newValue, this.person2);
         }
 
         [TestMethod]
@@ -571,7 +571,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestIndexedAspectSetting
     {
-        public void ExecuteAspect(string aspectName, object newValue, object dict) {
+        public static void ExecuteAspect(string aspectName, object newValue, object dict) {
             OLVColumn column = new OLVColumn();
             column.AspectName = aspectName;
             column.PutValue(dict, newValue);
@@ -579,11 +579,11 @@ namespace BrightIdeasSoftware.Tests
         }
 
         public void ExecuteAspect(string aspectName, object newValue) {
-            this.ExecuteAspect(aspectName, newValue, this.dict1);
+            ExecuteAspect(aspectName, newValue, this.dict1);
         }
 
         public void ExecuteAspect2(string aspectName, object newValue) {
-            this.ExecuteAspect(aspectName, newValue, this.dict2);
+            ExecuteAspect(aspectName, newValue, this.dict2);
         }
 
         [TestMethod]

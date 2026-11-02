@@ -138,7 +138,7 @@ namespace ObjectListViewDemo
 
         private void checkBoxGroups_CheckedChanged(object sender, EventArgs e)
         {
-            Coordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
+            OLVDemoCoordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
         }
 
         private void checkBoxCheckboxes_CheckedChanged(object sender, EventArgs e) {
@@ -147,12 +147,12 @@ namespace ObjectListViewDemo
 
         private void comboBoxEditable_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Coordinator.ChangeEditable(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeEditable(this.ListView, (ComboBox)sender);
         }
 
         private void comboBoxView_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Coordinator.ChangeView(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeView(this.ListView, (ComboBox)sender);
         }
 
         private void buttonCopy_Click(object sender, EventArgs e)

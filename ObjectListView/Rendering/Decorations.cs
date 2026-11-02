@@ -611,7 +611,7 @@ namespace BrightIdeasSoftware
         /// <param name="bounds"></param>
         protected void DrawFilledBorder(Graphics g, Rectangle bounds) {
             bounds.Inflate(this.BoundsPadding);
-            using (GraphicsPath path = this.GetRoundedRect(bounds, this.CornerRounding)) {
+            using (GraphicsPath path = GetRoundedRect(bounds, this.CornerRounding)) {
                 if (this.FillGradientFrom != null && this.FillGradientTo != null) {
                     using (Brush gradient = new LinearGradientBrush(bounds, this.FillGradientFrom.Value, this.FillGradientTo.Value, this.FillGradientMode))
                     {
@@ -633,7 +633,7 @@ namespace BrightIdeasSoftware
         /// <param name="rect"></param>
         /// <param name="diameter">If this is 0 or less, the rectangle will not be rounded.</param>
         /// <returns></returns>
-        protected GraphicsPath GetRoundedRect(RectangleF rect, float diameter) {
+        protected static GraphicsPath GetRoundedRect(RectangleF rect, float diameter) {
             GraphicsPath path = new GraphicsPath();
 
             if (diameter <= 0.0f) {
@@ -803,7 +803,7 @@ namespace BrightIdeasSoftware
             }
 
             bounds.Inflate(this.BoundsPadding);
-            using (GraphicsPath path = this.GetRoundedRect(bounds, this.CornerRounding)) {
+            using (GraphicsPath path = GetRoundedRect(bounds, this.CornerRounding)) {
                 if (this.FillBrush != null) {
                     if (this.UseLightbox) {
                         using (Region newClip = new Region(r))
@@ -871,7 +871,7 @@ namespace BrightIdeasSoftware
             }
 
             bounds.Inflate(this.BoundsPadding);
-            using (GraphicsPath path = this.GetRoundedRect(bounds, this.CornerRounding))
+            using (GraphicsPath path = GetRoundedRect(bounds, this.CornerRounding))
             using (Region newClip = new Region(r))
             using (Region originalClip = g.Clip) {
                 newClip.Exclude(path);

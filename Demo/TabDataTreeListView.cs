@@ -34,10 +34,10 @@ namespace ObjectListViewDemo
         }
 
         private void LoadXmlIntoTreeDataListView() {
-            DataSet ds = Coordinator.LoadDatasetFromXml(@"Data\FamilyTree.xml");
+            DataSet ds = OLVDemoCoordinator.LoadDatasetFromXml(@"Data\FamilyTree.xml");
 
             if (ds.Tables.Count <= 0) {
-                Coordinator.ShowMessage(@"Failed to load data set from Data\FamilyTree.xml");
+                OLVDemoCoordinator.ShowMessage(@"Failed to load data set from Data\FamilyTree.xml");
                 return;
             }
 

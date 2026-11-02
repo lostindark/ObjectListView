@@ -47,7 +47,7 @@ namespace ObjectListViewDemo {
             };
 
             this.ListView.GroupTaskClicked += delegate(object sender, GroupTaskClickedEventArgs args) {
-                Coordinator.ShowMessage("Clicked on group task: " + args.Group.Name);
+                OLVDemoCoordinator.ShowMessage("Clicked on group task: " + args.Group.Name);
             };
 
             this.ListView.GroupStateChanged += delegate(object sender, GroupStateChangedEventArgs e) {

@@ -264,7 +264,7 @@ namespace BrightIdeasSoftware.Tests
         [TestMethod]
         public void TestPreserveSelectionMultiple()
         {
-            this.olv.SelectedObjects = PersonDb.All;
+            this.olv.SelectedModelObjects = PersonDb.All;
             this.olv.Sort(this.olv.GetColumn(1), SortOrder.Ascending);
             Assert.AreEqual(PersonDb.All.Count, this.olv.SelectedObjects.Count);
             foreach (Object x in this.olv.SelectedObjects)
@@ -283,11 +283,11 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual(PersonDb.All[0].Name, ((Person)this.olv.GetModelObject(0)).Name);
         }
 
-        protected virtual ObjectListView GetObjectListView()
+        protected virtual TypedObjectListView<object> GetObjectListView()
         {
             return mainForm.objectListView1;
         }
-        protected ObjectListView olv;
+        protected TypedObjectListView<object> olv;
     }
 
     [STATestClass]
@@ -303,7 +303,7 @@ namespace BrightIdeasSoftware.Tests
             // FastObjectListViews don't really support Unsort()
         }
 
-        protected override ObjectListView GetObjectListView()
+        protected override TypedObjectListView<object> GetObjectListView()
         {
             return mainForm.fastObjectListView1;
         }
@@ -317,7 +317,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(2)]
         [DataRow(3)]
         public void TestPlainHeaderClickReplacesSortAndTogglesAnySortedColumn(int kind) {
-            ObjectListView list = this.CreateList(kind);
+            TypedObjectListView<object> list = this.CreateList(kind);
             foreach (SortOrder currentOrder in new[] { SortOrder.Ascending, SortOrder.Descending }) {
                 foreach (int clickedColumn in new[] { 0, 1, 2 }) {
                     list.Sort(new[] {
@@ -351,7 +351,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(1)]
         [DataRow(2)]
         public void TestFourSortFieldsAndChangingDirections(int kind) {
-            ObjectListView list = this.CreateList(kind);
+            TypedObjectListView<object> list = this.CreateList(kind);
             this.SortFourFields(list);
             this.AssertOrder(list, "d,b,a,c,e");
             CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 },
@@ -387,7 +387,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(2)]
         [DataRow(3)]
         public void TestCanceledAndUnsortableFieldsPreserveTheSort(int kind) {
-            ObjectListView list = this.CreateList(kind);
+            TypedObjectListView<object> list = this.CreateList(kind);
             this.SortFourFields(list);
             EventHandler<BeforeSortingEventArgs> cancel = delegate(object sender, BeforeSortingEventArgs args) {
                 args.Canceled = true;
@@ -410,7 +410,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(2)]
         [DataRow(3)]
         public void TestSortingEventsCanChangeFourthSortField(int kind) {
-            ObjectListView list = this.CreateList(kind);
+            TypedObjectListView<object> list = this.CreateList(kind);
             this.SortFourFields(list);
             IList<OLVSortDescription> reported = null;
             list.BeforeSorting += delegate(object sender, BeforeSortingEventArgs args) {
@@ -433,7 +433,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(2)]
         [DataRow(3)]
         public void TestLegacyPropertiesShareTheOrderedSortCollection(int kind) {
-            ObjectListView list = this.CreateList(kind);
+            TypedObjectListView<object> list = this.CreateList(kind);
             list.SecondarySortOrder = SortOrder.Descending;
             list.SecondarySortColumn = list.GetColumn(1);
             list.PrimarySortOrder = SortOrder.Ascending;
@@ -484,7 +484,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(2)]
         [DataRow(3)]
         public void TestEventCollectionAndLegacyPropertiesStayInSync(int kind) {
-            ObjectListView list = this.CreateList(kind);
+            TypedObjectListView<object> list = this.CreateList(kind);
             IList<OLVSortDescription> reported = null;
             list.BeforeSorting += delegate(object sender, BeforeSortingEventArgs args) {
                 args.SortDescriptions.Clear();
@@ -519,7 +519,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(2)]
         [DataRow(3)]
         public void TestPlainClickRemainsSingleColumnOnResort(int kind) {
-            ObjectListView list = this.CreateList(kind);
+            TypedObjectListView<object> list = this.CreateList(kind);
             this.SortFourFields(list);
             this.ClickHeader(list, 2, Keys.None);
             EventHandler<BeforeSortingEventArgs> assertSingleColumn = delegate(object sender, BeforeSortingEventArgs args) {
@@ -543,7 +543,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(0)]
         [DataRow(1)]
         public void TestGroupedItemsUseAllSortFields(int kind) {
-            ObjectListView list = this.CreateList(kind);
+            TypedObjectListView<object> list = this.CreateList(kind);
             list.ShowGroups = true;
             this.ClickHeader(list, 1, Keys.None);
             this.ClickHeader(list, 2, Keys.Shift);
@@ -554,7 +554,7 @@ namespace BrightIdeasSoftware.Tests
                 OLVGroup group = list.OLVGroups[0];
                 IEnumerable<SortRow> rows = kind == 0
                     ? group.Items.Cast<OLVListItem>().Select(x => (SortRow)x.RowObject)
-                    : group.Contents.Cast<int>().Select(x => (SortRow)((VirtualObjectListView)list).VirtualListDataSource.GetNthObject(x));
+                    : group.Contents.Cast<int>().Select(x => (SortRow)((TypedVirtualObjectListView<object>)list).VirtualListDataSource.GetNthObject(x));
                 Assert.AreEqual("b,a,e,c", String.Join(",", rows.Select(x => x.Name)));
                 list.BuildGroups();
             }
@@ -581,7 +581,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(true, 10)]
         [DataRow(false, 10)]
         public void TestHeadersRenderPriorityBesideEachSortArrow(bool themes, int fieldCount) {
-            ObjectListView list = this.CreateList(0);
+            TypedObjectListView<object> list = this.CreateList(0);
             list.HeaderUsesThemes = themes;
             this.SortFourFields(list);
             if (fieldCount < 4) {
@@ -673,8 +673,8 @@ namespace BrightIdeasSoftware.Tests
             }
         }
 
-        private ObjectListView CreateList(int kind) {
-            ObjectListView list;
+        private TypedObjectListView<object> CreateList(int kind) {
+            TypedObjectListView<object> list;
             if (kind == 2) {
                 list = new TreeListView {
                     CanExpandGetter = x => ((SortRow)x).Children.Count > 0,
@@ -719,7 +719,7 @@ namespace BrightIdeasSoftware.Tests
             return list;
         }
 
-        private void SortFourFields(ObjectListView list) {
+        private void SortFourFields(TypedObjectListView<object> list) {
             this.ClickHeader(list, 0, Keys.None);
             this.ClickHeader(list, 1, Keys.Shift);
             this.ClickHeader(list, 1, Keys.Shift);
@@ -728,13 +728,13 @@ namespace BrightIdeasSoftware.Tests
             this.ClickHeader(list, 3, Keys.Shift);
         }
 
-        private void ClickHeader(ObjectListView list, int columnIndex, Keys modifiers) {
-            typeof(ObjectListView).GetMethod("HandleColumnClick", BindingFlags.Instance | BindingFlags.NonPublic,
+        private void ClickHeader(TypedObjectListView<object> list, int columnIndex, Keys modifiers) {
+            typeof(ObjectListViewBase).GetMethod("HandleColumnClick", BindingFlags.Instance | BindingFlags.NonPublic,
                 null, new[] { typeof(ColumnClickEventArgs), typeof(Keys) }, null)
                 .Invoke(list, new object[] { new ColumnClickEventArgs(columnIndex), modifiers });
         }
 
-        private void AssertOrder(ObjectListView list, string expected) {
+        private void AssertOrder(TypedObjectListView<object> list, string expected) {
             Assert.AreEqual(expected, String.Join(",", Enumerable.Range(0, list.GetItemCount())
                 .Select(i => ((SortRow)list.GetModelObject(i)).Name)));
         }

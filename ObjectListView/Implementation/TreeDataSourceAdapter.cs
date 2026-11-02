@@ -9,7 +9,7 @@ namespace BrightIdeasSoftware
     /// A TreeDataSourceAdapter knows how to build a tree structure from a binding list.
     /// </summary>
     /// <remarks>To build a tree</remarks>
-    public class TreeDataSourceAdapter : DataSourceAdapter
+    public class TreeDataSourceAdapter<T> : DataSourceAdapter where T : class
     {
         #region Life and death
 
@@ -17,11 +17,13 @@ namespace BrightIdeasSoftware
         /// Create a data source adaptor that knows how to build a tree structure
         /// </summary>
         /// <param name="tlv"></param>
-        public TreeDataSourceAdapter(DataTreeListView tlv)
+        public TreeDataSourceAdapter(TypedDataTreeListView<T> tlv)
             : base(tlv) {
             this.treeListView = tlv;
-            this.treeListView.CanExpandGetter = delegate(object model) { return this.CalculateHasChildren(model); };
-            this.treeListView.ChildrenGetter = delegate(object model) { return this.CalculateChildren(model); };
+            this.treeListView.CanExpandGetter = delegate(T model) { return this.CalculateHasChildren(model); };
+            this.treeListView.ChildrenGetter = delegate(T model) {
+                return TypedObjectListView<T>.CreateModelList(this.CalculateChildren(model));
+            };
         }
 
         #endregion
@@ -133,10 +135,10 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets the DataTreeListView that is being managed 
         /// </summary>
-        protected DataTreeListView TreeListView {
+        protected TypedDataTreeListView<T> TreeListView {
             get { return treeListView; }
         }
-        private readonly DataTreeListView treeListView;
+        private readonly TypedDataTreeListView<T> treeListView;
 
         #endregion
 
@@ -154,7 +156,7 @@ namespace BrightIdeasSoftware
         /// 
         /// </summary>
         protected override void SetListContents() {
-            this.TreeListView.Roots = this.CalculateRoots();
+            this.TreeListView.ModelObjects = this.CalculateRoots();
         }
 
         /// <summary>

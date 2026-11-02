@@ -36,7 +36,7 @@ namespace BrightIdeasSoftware.Tests
             this.olv.TriStateCheckBoxes = false;
         }
 
-        protected virtual ObjectListView GetObjectListView() {
+        protected virtual TypedObjectListView<object> GetObjectListView() {
             return mainForm.objectListView1;
         }
 
@@ -49,7 +49,7 @@ namespace BrightIdeasSoftware.Tests
 
         }
 
-        protected ObjectListView olv;
+        protected TypedObjectListView<object> olv;
 
         [TestMethod]
         public void TestCheckObject() {
@@ -76,7 +76,7 @@ namespace BrightIdeasSoftware.Tests
         [TestMethod]
         public void TestUncheckObject() {
             Person p = PersonDb.All[1];
-            this.olv.CheckedObjects = PersonDb.All;
+            this.olv.CheckedModelObjects = PersonDb.All;
             this.olv.UncheckObject(p);
             Assert.IsFalse(this.olv.IsChecked(p));
             Assert.IsFalse(this.olv.IsCheckedIndeterminate(p));
@@ -99,7 +99,7 @@ namespace BrightIdeasSoftware.Tests
 
         [TestMethod]
         public void TestCheckedObjects() {
-            this.olv.CheckedObjects = PersonDb.All;
+            this.olv.CheckedModelObjects = PersonDb.All;
             // We really want to check that the collections contain the same members, but 
             // there is no easy way to do that
             Assert.AreEqual(PersonDb.All.Count, this.olv.CheckedObjects.Count);
@@ -108,7 +108,7 @@ namespace BrightIdeasSoftware.Tests
         [TestMethod]
         public void TestCheckedObjects_SingleUseAndSelfReferentialQueries() {
             this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(3)));
-            IList snapshot = this.olv.CheckedObjects;
+            IList snapshot = this.olv.CheckedModelObjects;
             this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(
                 this.olv.Objects.Cast<Person>().Where(p => this.olv.IsChecked(p)).Take(2)));
             CollectionAssert.AreEquivalent(PersonDb.All.Take(2).ToArray(),
@@ -146,7 +146,7 @@ namespace BrightIdeasSoftware.Tests
             };
             this.olv.SetObjects(PersonDb.All);
             this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(2)));
-            CollectionAssert.AreEquivalent(PersonDb.All.Take(2).ToArray(), this.olv.CheckedObjects);
+            CollectionAssert.AreEquivalent(PersonDb.All.Take(2).ToArray(), this.olv.CheckedModelObjects);
 
             this.olv.CheckedObjectsEnumerable = new SingleUseEnumerable<Person>(PersonDb.All.Skip(2).Take(1));
             Assert.AreEqual(PersonDb.All[2], this.olv.CheckedObjects[0]);
@@ -360,7 +360,7 @@ namespace BrightIdeasSoftware.Tests
         public void TestCheckBoxPersistent()
         {
             this.olv.PersistentCheckBoxes = true;
-            this.olv.CheckedObjects = PersonDb.All;
+            this.olv.CheckedModelObjects = PersonDb.All;
             Assert.AreEqual(this.olv.CheckedObjects.Count, PersonDb.All.Count);
 
             this.olv.BuildList();
@@ -374,7 +374,7 @@ namespace BrightIdeasSoftware.Tests
             // Make sure that persistent check boxes work when we have a filter
 
             this.olv.PersistentCheckBoxes = true;
-            this.olv.CheckedObjects = PersonDb.All;
+            this.olv.CheckedModelObjects = PersonDb.All;
             Assert.AreEqual(this.olv.CheckedObjects.Count, PersonDb.All.Count);
 
             this.olv.UseFiltering = true;
@@ -401,7 +401,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestFastOlvCheckBoxes : TestOlvCheckBoxes
     {
-        protected override ObjectListView GetObjectListView() {
+        protected override TypedObjectListView<object> GetObjectListView() {
             return mainForm.fastObjectListView1;
         }
     }
@@ -409,7 +409,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestTreeListViewCheckBoxes : TestOlvCheckBoxes
     {
-        protected override ObjectListView GetObjectListView() {
+        protected override TypedObjectListView<object> GetObjectListView() {
             return mainForm.treeListView1;
         }
 

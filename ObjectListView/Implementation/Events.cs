@@ -875,7 +875,7 @@ namespace BrightIdeasSoftware {
         #endregion
     }
 
-    public partial class TreeListView {
+    public partial class TypedTreeListView<T> where T : class {
 
         #region Events
 

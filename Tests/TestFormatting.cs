@@ -335,16 +335,16 @@ namespace BrightIdeasSoftware.Tests
             }
         }
 
-        protected virtual ObjectListView GetObjectListView() {
+        protected virtual TypedObjectListView<object> GetObjectListView() {
             return mainForm.objectListView1;
         }
-        protected ObjectListView olv;
+        protected TypedObjectListView<object> olv;
     }
 
     [STATestClass]
     public class TestFastOlvFormatting : TestOlvFormatting
     {
-        protected override ObjectListView GetObjectListView() {
+        protected override TypedObjectListView<object> GetObjectListView() {
             return mainForm.fastObjectListView1;
         }
     }
@@ -352,7 +352,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestTreeListViewFormatting : TestOlvFormatting
     {
-        protected override ObjectListView GetObjectListView() {
+        protected override TypedObjectListView<object> GetObjectListView() {
             return mainForm.treeListView1;
         }
     }

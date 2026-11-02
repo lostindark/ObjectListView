@@ -152,7 +152,7 @@ namespace BrightIdeasSoftware
             // Any changes made here may need to be reflected there
 
             // This strategy can only be used on FastObjectListViews
-            FastObjectListView folv = (FastObjectListView)parameters.ListView;
+            ObjectListViewBase folv = parameters.ListView;
 
             // Separate the list view items into groups, using the group key as the descrimanent
             int objectCount = 0;
@@ -303,13 +303,16 @@ namespace BrightIdeasSoftware
     /// <summary>
     /// A default implementation of the IOwnerDataCallback interface
     /// </summary>
+    /// <remarks>Keep this callback non-generic so it can be exposed through COM.</remarks>
     [Guid("6FC61F50-80E8-49b4-B200-3F38D3865ABD")]
     internal class OwnerDataCallbackImpl : IOwnerDataCallback
     {
-        public OwnerDataCallbackImpl(VirtualObjectListView olv) {
+        public OwnerDataCallbackImpl(ObjectListViewBase olv, Func<IVirtualGroups> groupingStrategy) {
             this.olv = olv;
+            this.groupingStrategy = groupingStrategy;
         }
-        VirtualObjectListView olv;
+        readonly ObjectListViewBase olv;
+        readonly Func<IVirtualGroups> groupingStrategy;
 
         #region IOwnerDataCallback Members
 
@@ -325,13 +328,13 @@ namespace BrightIdeasSoftware
 
         public void GetItemInGroup(int groupIndex, int n, out int itemIndex) {
             //System.Diagnostics.Debug.WriteLine(String.Format("-> GetItemInGroup({0}, {1})", groupIndex, n));
-            itemIndex = this.olv.GroupingStrategy.GetGroupMember(this.olv.OLVGroups[groupIndex], n);
+            itemIndex = this.groupingStrategy().GetGroupMember(this.olv.OLVGroups[groupIndex], n);
             //System.Diagnostics.Debug.WriteLine(String.Format("<- {0}", itemIndex));
         }
 
         public void GetItemGroup(int itemIndex, int occurrenceCount, out int groupIndex) {
             //System.Diagnostics.Debug.WriteLine(String.Format("GetItemGroup({0}, {1})", itemIndex, occurrenceCount));
-            groupIndex = this.olv.GroupingStrategy.GetGroup(itemIndex);
+            groupIndex = this.groupingStrategy().GetGroup(itemIndex);
             //System.Diagnostics.Debug.WriteLine(String.Format("<- {0}", groupIndex));
         }
 
@@ -342,7 +345,7 @@ namespace BrightIdeasSoftware
 
         public void OnCacheHint(NativeMethods.LVITEMINDEX from, NativeMethods.LVITEMINDEX to) {
             //System.Diagnostics.Debug.WriteLine(String.Format("OnCacheHint({0}, {1}, {2}, {3})", from.iGroup, from.iItem, to.iGroup, to.iItem));
-            this.olv.GroupingStrategy.CacheHint(from.iGroup, from.iItem, to.iGroup, to.iItem);
+            this.groupingStrategy().CacheHint(from.iGroup, from.iItem, to.iGroup, to.iItem);
         }
 
         #endregion

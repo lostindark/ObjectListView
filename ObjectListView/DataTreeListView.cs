@@ -61,7 +61,7 @@ namespace BrightIdeasSoftware
     /// </para>
     /// <para>Like a TreeListView, the hierarchy must not contain cycles. Bad things will happen if the data is cyclic.</para>
     /// </remarks>
-    public partial class DataTreeListView : TreeListView
+    public class TypedDataTreeListView<T> : TypedTreeListView<T> where T : class
     {
         #region Public Properties
 
@@ -229,18 +229,18 @@ namespace BrightIdeasSoftware
         /// Gets or sets the DataSourceAdaptor that does the bulk of the work needed
         /// for data binding.
         /// </summary>
-        protected TreeDataSourceAdapter Adapter {
+        protected TreeDataSourceAdapter<T> Adapter {
             get {
                 if (this.adapter == null)
                 {
-                    this.adapter = new TreeDataSourceAdapter(this);
+                    this.adapter = new TreeDataSourceAdapter<T>(this);
                 }
 
                 return adapter;
             }
             set { adapter = value; }
         }
-        private TreeDataSourceAdapter adapter;
+        private TreeDataSourceAdapter<T> adapter;
 
         #endregion
     }

@@ -1422,7 +1422,7 @@ namespace BrightIdeasSoftware {
             Rectangle r = alignedContentRectangle;
 
             // Match tweaking from renderer
-            if (this.ColumnIsPrimary && this.CellHorizontalAlignment == HorizontalAlignment.Left && !(this is TreeListView.TreeRenderer)) {
+            if (this.ColumnIsPrimary && this.CellHorizontalAlignment == HorizontalAlignment.Left && !(this is ITreeRenderer)) {
                 r.X += 3;
                 r.Width -= 1;
             }

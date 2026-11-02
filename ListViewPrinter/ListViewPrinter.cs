@@ -1283,7 +1283,7 @@ namespace BrightIdeasSoftware
         /// <returns>the item</returns>
         override protected ListViewItem GetVirtualItem(ListView lv, int n)
         {
-            return ((VirtualObjectListView)lv).MakeListViewItem(n);
+            return ((IVirtualListView)lv).MakeListViewItem(n);
         }
 
         /// <summary>

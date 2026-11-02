@@ -204,7 +204,7 @@ namespace BrightIdeasSoftware.Design
 
             // If we are looking at a TreeListView, remove group related properties
             // since TreeListViews can't show groups
-            if (this.Control is TreeListView) {
+            if (this.Control is ITreeListView) {
                 unwantedProperties.AddRange(new string[] {
                     "GroupImageList", "GroupWithItemCountFormat", "GroupWithItemCountSingularFormat", "HasCollapsibleGroups", 
                     "SpaceBetweenGroups", "ShowGroups", "SortGroupItemsByPrimaryColumn", "ShowItemCountOnGroups"
@@ -246,7 +246,7 @@ namespace BrightIdeasSoftware.Design
 
             // If we are looking at a TreeListView, remove group related events
             // since TreeListViews can't show groups
-            if (this.Control is TreeListView) {
+            if (this.Control is ITreeListView) {
                 unwanted.AddRange(new string[] {
                     "AboutToCreateGroups",
                     "AfterCreatingGroups",

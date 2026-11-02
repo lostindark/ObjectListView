@@ -179,7 +179,7 @@ namespace BrightIdeasSoftware
         /// <param name="allProperties">Will columns be generated for properties that are not marked with [OLVColumn].</param>
         public virtual void GenerateAndReplaceColumns(ObjectListViewBase olv, Type type, bool allProperties) {
             IList<OLVColumn> columns = this.GenerateColumns(type, allProperties);
-            TreeListView tlv = olv as TreeListView;
+            ITreeListView tlv = olv as ITreeListView;
             if (tlv != null)
             {
                 this.TryGenerateChildrenDelegates(tlv, type);
@@ -433,7 +433,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="tlv"></param>
         /// <param name="type"></param>
-        protected virtual void TryGenerateChildrenDelegates(TreeListView tlv, Type type) {
+        protected virtual void TryGenerateChildrenDelegates(ITreeListView tlv, Type type) {
             foreach (PropertyInfo pinfo in type.GetProperties()) {
                 OLVChildrenAttribute attr = Attribute.GetCustomAttribute(pinfo, typeof(OLVChildrenAttribute)) as OLVChildrenAttribute;
                 if (attr != null) {
@@ -448,7 +448,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="tlv"></param>
         /// <param name="pinfo"></param>
-        protected virtual void GenerateChildrenDelegates(TreeListView tlv, PropertyInfo pinfo) {
+        protected virtual void GenerateChildrenDelegates(ITreeListView tlv, PropertyInfo pinfo) {
             Munger childrenGetter = new Munger(pinfo.Name);
             tlv.CanExpandGetter = delegate(object x) {
                 try {

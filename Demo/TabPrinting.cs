@@ -15,11 +15,11 @@ namespace ObjectListViewDemo
         // Public fields (yuck) to avoid the baggage of wrapping a private field.
         // Necessary until I stop supporting .Net 2.0.
 
-        public ObjectListView SimpleView;
-        public ObjectListView ComplexView;
-        public ObjectListView FileExplorerView;
-        public ObjectListView DataListView;
-        public ObjectListView TreeListView;
+        public ObjectListViewBase SimpleView;
+        public ObjectListViewBase ComplexView;
+        public ObjectListViewBase FileExplorerView;
+        public ObjectListViewBase DataListView;
+        public ObjectListViewBase TreeListView;
 
         protected override void InitializeTab() {
 

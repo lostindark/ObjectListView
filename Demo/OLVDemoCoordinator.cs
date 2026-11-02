@@ -81,7 +81,7 @@ namespace ObjectListViewDemo
             MessageBox.Show(message, "Object List View Demo", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        public void TimedRebuildList(ObjectListView olv)
+        public void TimedRebuildList(ObjectListViewBase olv)
         {
             Stopwatch stopWatch = new Stopwatch();
 
@@ -104,7 +104,7 @@ namespace ObjectListViewDemo
                               (float)stopWatch.ElapsedMilliseconds / olv.Items.Count);
         }
 
-        public void ShowGroupsChecked(ObjectListView olv, CheckBox cb)
+        public void ShowGroupsChecked(ObjectListViewBase olv, CheckBox cb)
         {
             if (cb.Checked && olv.View == View.List)
             {
@@ -118,7 +118,7 @@ namespace ObjectListViewDemo
             }
         }
 
-        public void ShowLabelsOnGroupsChecked(ObjectListView olv, CheckBox cb)
+        public void ShowLabelsOnGroupsChecked(ObjectListViewBase olv, CheckBox cb)
         {
             olv.ShowItemCountOnGroups = cb.Checked;
             if (olv.ShowGroups)
@@ -127,11 +127,11 @@ namespace ObjectListViewDemo
             }
         }
 
-        public void HandleSelectionChanged(ObjectListView listView)
+        public void HandleSelectionChanged(ObjectListViewBase listView)
         {
             // Most ListViews in the demo handle lists of people, so we try to cast SelectedObject and FocusedObject to be Persons.
 
-            Person p = listView.SelectedObject as Person;
+            Person p = listView.SelectedModelObject as Person;
             string msg = p == null ? listView.SelectedIndices.Count.ToString(CultureInfo.CurrentCulture) : String.Format("'{0}'", p.Name);
             Person focused = listView.FocusedObject as Person;
             string focusedMsg = focused == null ? "" : String.Format(". Focused on '{0}'", focused.Name);
@@ -143,7 +143,7 @@ namespace ObjectListViewDemo
 
         }
 
-        public void ChangeView(ObjectListView listview, ComboBox comboBox)
+        public void ChangeView(ObjectListViewBase listview, ComboBox comboBox)
         {
             // Handle restrictions on Tile view
             if (comboBox.SelectedIndex == 3)
@@ -180,7 +180,7 @@ namespace ObjectListViewDemo
             }
         }
 
-        public void ChangeEditable(ObjectListView objectListView, ComboBox comboBox)
+        public void ChangeEditable(ObjectListViewBase objectListView, ComboBox comboBox)
         {
             if (comboBox.Text == "No")
             {
@@ -200,11 +200,11 @@ namespace ObjectListViewDemo
             }
         }
 
-        public void TimedFilter(ObjectListView olv, string txt) {
+        public void TimedFilter(ObjectListViewBase olv, string txt) {
             TimedFilter(olv, txt, 0);
         }
 
-        public void TimedFilter(ObjectListView olv, string txt, int matchKind)
+        public void TimedFilter(ObjectListViewBase olv, string txt, int matchKind)
         {
             TextMatchFilter filter = null;
             if (!String.IsNullOrEmpty(txt))
@@ -236,7 +236,7 @@ namespace ObjectListViewDemo
             //olv.Invalidate();
             stopWatch.Stop();
 
-            IList objects = olv.Objects as IList;
+            IList objects = olv.ModelObjects as IList;
             if (objects == null)
             {
                 this.ToolStripStatus1 = prefixForNextSelectionMessage =
@@ -252,7 +252,7 @@ namespace ObjectListViewDemo
             }
         }
 
-        public void ChangeHotItemStyle(ObjectListView olv, ComboBox cb)
+        public void ChangeHotItemStyle(ObjectListViewBase olv, ComboBox cb)
         {
             olv.UseTranslucentHotItem = false;
             olv.UseHotItem = true;

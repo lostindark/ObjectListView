@@ -185,7 +185,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(false)]
         [DataRow(true)]
         public void Test_FullContentSizing_MeasuresOffscreenRowsWithoutChangingNativeSizing(bool fast) {
-            var list = fast ? mainForm.fastObjectListView1 : CreateVirtualObjectListView();
+            TypedVirtualObjectListView<object> list = fast ? mainForm.fastObjectListView1 : CreateVirtualObjectListView();
             var models = Enumerable.Range(0, 200).Select(i => new Person(i == 199 ? new string('W', 100) : "x")).ToArray();
             list.SetObjects(models);
             int expected = TextRenderer.MeasureText(models[199].Name, list.Font, Size.Empty,

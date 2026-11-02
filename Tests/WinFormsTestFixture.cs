@@ -79,7 +79,7 @@ namespace BrightIdeasSoftware.Tests
         {
             private ArrayList objects = new ArrayList();
 
-            public EnumerableVirtualDataSource(VirtualObjectListView list) : base(list) {
+            public EnumerableVirtualDataSource(ObjectListViewBase list) : base(list) {
             }
 
             public override int GetObjectCount() { return objects.Count; }

@@ -21,11 +21,11 @@ using System.Drawing.Drawing2D;
 
 namespace BrightIdeasSoftware {
 
-    public partial class TreeListView {
+    public partial class TypedTreeListView<T> where T : class {
         /// <summary>
         /// This class handles drawing the tree structure of the primary column.
         /// </summary>
-        public class TreeRenderer : HighlightTextRenderer {
+        public class TreeRenderer : HighlightTextRenderer, ITreeRenderer {
             /// <summary>
             /// Create a TreeRenderer
             /// </summary>
@@ -98,9 +98,9 @@ namespace BrightIdeasSoftware {
             /// <summary>
             /// Return the TreeListView for which the renderer is being used.
             /// </summary>
-            public TreeListView TreeListView {
+            public TypedTreeListView<T> TreeListView {
                 get {
-                    return (TreeListView)this.ListView;
+                    return (TypedTreeListView<T>)this.ListView;
                 }
             }
 

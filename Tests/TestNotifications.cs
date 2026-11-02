@@ -41,9 +41,9 @@ namespace BrightIdeasSoftware.Tests
             this.olv = GetObjectListView();
             this.olv.UseNotifyPropertyChanged = true;
         }
-        protected ObjectListView olv;
+        protected TypedObjectListView<object> olv;
 
-        protected virtual ObjectListView GetObjectListView() {
+        protected virtual TypedObjectListView<object> GetObjectListView() {
             return mainForm.objectListView1;
         }
 
@@ -222,7 +222,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestFastTestNotifications : TestNotifications
     {
-        protected override ObjectListView GetObjectListView() {
+        protected override TypedObjectListView<object> GetObjectListView() {
             return mainForm.fastObjectListView1;
         }
     }
@@ -230,7 +230,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestTreeListViewTestNotifications : TestNotifications
     {
-        protected override ObjectListView GetObjectListView() {
+        protected override TypedObjectListView<object> GetObjectListView() {
             return mainForm.treeListView1;
         }
     }

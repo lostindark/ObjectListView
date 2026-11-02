@@ -39,8 +39,8 @@ namespace BrightIdeasSoftware.Tests
         public void TestSelectedObjects()
         {
             Assert.IsEmpty(this.olv.SelectedObjects);
-            this.olv.SelectedObjects = PersonDb.All;
-            CollectionAssert.AreEqual(PersonDb.All, this.olv.SelectedObjects);
+            this.olv.SelectedModelObjects = PersonDb.All;
+            CollectionAssert.AreEqual(PersonDb.All, this.olv.SelectedModelObjects);
             this.olv.SelectedObjects = null;
             Assert.IsEmpty(this.olv.SelectedObjects);
         }
@@ -48,7 +48,7 @@ namespace BrightIdeasSoftware.Tests
         [TestMethod]
         public void TestSelectedObjects_SingleUseSelfReferentialQuery() {
             this.olv.SelectAll();
-            IList snapshot = this.olv.SelectedObjects;
+            IList snapshot = this.olv.SelectedModelObjects;
             this.olv.SetSelectedObjects(new SingleUseEnumerable<Person>(
                 this.olv.SelectedIndices.Cast<int>().Select(i => (Person)this.olv.GetModelObject(i)).Take(2)));
             CollectionAssert.AreEqual(PersonDb.All.Take(2).ToArray(),
@@ -76,7 +76,7 @@ namespace BrightIdeasSoftware.Tests
         public void TestSelectAll()
         {
             this.olv.SelectAll();
-            CollectionAssert.AreEqual(PersonDb.All, this.olv.SelectedObjects);
+            CollectionAssert.AreEqual(PersonDb.All, this.olv.SelectedModelObjects);
         }
 
         [TestMethod]
@@ -96,7 +96,7 @@ namespace BrightIdeasSoftware.Tests
         [TestMethod]
         public void TestSortingShouldNotRaiseSelectionChangedEvents() {
             this.olv.SelectionChanged += new EventHandler(olv_SelectionChanged);
-            this.olv.SelectedObjects = PersonDb.All;
+            this.olv.SelectedModelObjects = PersonDb.All;
             Application.RaiseIdle(new EventArgs());
             countSelectionChanged = 0;
 
@@ -114,7 +114,7 @@ namespace BrightIdeasSoftware.Tests
         [TestMethod]
         public void TestAddingAColumnShouldNotRaiseSelectionChangedEvents() {
             this.olv.SelectionChanged += new EventHandler(olv_SelectionChanged);
-            this.olv.SelectedObjects = PersonDb.All;
+            this.olv.SelectedModelObjects = PersonDb.All;
             Application.RaiseIdle(new EventArgs());
             countSelectionChanged = 0;
 
@@ -135,7 +135,7 @@ namespace BrightIdeasSoftware.Tests
             countSelectionChanged = 0;
             this.olv.SelectedIndexChanged += new EventHandler(olv_SelectedIndexChanged);
             this.olv.SelectionChanged += new EventHandler(olv_SelectionChanged);
-            this.olv.SelectedObjects = PersonDb.All;
+            this.olv.SelectedModelObjects = PersonDb.All;
             this.olv.SelectedObjects = null;
 
             // Force an idle cycle so the selection changed event is processed
@@ -172,17 +172,17 @@ namespace BrightIdeasSoftware.Tests
         }
         protected int countSelectionChanged;
 
-        protected virtual ObjectListView GetObjectListView()
+        protected virtual TypedObjectListView<object> GetObjectListView()
         {
             return mainForm.objectListView1;
         }
-        protected ObjectListView olv;
+        protected TypedObjectListView<object> olv;
     }
 
     [STATestClass]
     public class TestFastOlvSelection : TestOlvSelection
     {
-        protected override ObjectListView GetObjectListView()
+        protected override TypedObjectListView<object> GetObjectListView()
         {
             return mainForm.fastObjectListView1;
         }
@@ -191,7 +191,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestTreeListViewSelection : TestOlvSelection
     {
-        protected override ObjectListView GetObjectListView()
+        protected override TypedObjectListView<object> GetObjectListView()
         {
             this.treeListView = mainForm.treeListView1;
             this.treeListView.CanExpandGetter = delegate(Object x) {
@@ -206,7 +206,7 @@ namespace BrightIdeasSoftware.Tests
 
         [TestMethod]
         public void TestCollapseExpandShouldNotRaiseSelectionChangedEvents() {
-            this.olv.SelectedObjects = PersonDb.All;
+            this.olv.SelectedModelObjects = PersonDb.All;
             Application.RaiseIdle(new EventArgs());
             this.olv.SelectionChanged += new EventHandler(olv_SelectionChanged);
             countSelectionChanged = 0;

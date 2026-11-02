@@ -1,5 +1,5 @@
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using BrightIdeasSoftware;
 
@@ -56,8 +56,8 @@ namespace ObjectListViewDemo.Models {
             get { return this.AsFile.Length; }
         }
 
-        public IEnumerable GetFileSystemInfos() {
-            ArrayList children = new ArrayList();
+        public IEnumerable<MyFileSystemInfo> GetFileSystemInfos() {
+            List<MyFileSystemInfo> children = new List<MyFileSystemInfo>();
             if (this.IsDirectory) {
                 foreach (FileSystemInfo x in this.AsDirectory.GetFileSystemInfos())
                 {

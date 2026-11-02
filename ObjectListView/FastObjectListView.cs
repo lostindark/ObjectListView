@@ -61,14 +61,19 @@ namespace BrightIdeasSoftware
     /// </list>
     /// </para>
     /// </remarks>
-    public class FastObjectListView : VirtualObjectListView
+    public class TypedFastObjectListView<T> : TypedVirtualObjectListView<T> where T : class
     {
         /// <summary>
         /// Make a FastObjectListView
         /// </summary>
-        public FastObjectListView() {
-            this.VirtualListDataSource = new FastObjectListDataSource(this);
+        public TypedFastObjectListView() {
+            this.VirtualListDataSource = this.CreateDataSource();
             this.GroupingStrategy = new FastListGroupingStrategy();
+        }
+
+        /// <summary>Create the fast source owned by this control.</summary>
+        protected virtual FastObjectListDataSource<T> CreateDataSource() {
+            return new FastObjectListDataSource<T>(this);
         }
 
         /// <summary>
@@ -79,34 +84,13 @@ namespace BrightIdeasSoftware
         public override IEnumerable FilteredObjects {
             get {
                 // This is much faster than the base method
-                return ((FastObjectListDataSource)this.VirtualListDataSource).FilteredObjectList;
+                return ((FastObjectListDataSource<T>)this.VirtualListDataSource).FilteredObjectList;
             }
-        }
-
-        /// <summary>
-        /// Get/set the collection of objects that this list will show
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// The contents of the control will be updated immediately after setting this property.
-        /// </para>
-        /// <para>This method preserves selection, if possible. Use SetObjects() if
-        /// you do not want to preserve the selection. Preserving selection is the slowest part of this
-        /// code and performance is O(n) where n is the number of selected rows.</para>
-        /// <para>This method is not thread safe.</para>
-        /// </remarks>
-        [Browsable(false),
-         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public override IEnumerable Objects {
-            get {
-                return new ArrayList(((FastObjectListDataSource)this.VirtualListDataSource).ObjectList);
-            }
-            set { base.Objects = value; }
         }
 
         /// <inheritdoc/>
         protected override IEnumerable GetModelObjectsCore() {
-            return ArrayList.ReadOnly(((FastObjectListDataSource)this.VirtualListDataSource).ObjectList);
+            return ((FastObjectListDataSource<T>)this.VirtualListDataSource).ObjectList.AsReadOnly();
         }
 
         /// <summary>
@@ -162,13 +146,13 @@ namespace BrightIdeasSoftware
     /// This class isn't intended to be used directly, but it is left as a public
     /// class just in case someone wants to subclass it.
     /// </remarks>
-    public class FastObjectListDataSource : AbstractVirtualListDataSource
+    public class FastObjectListDataSource<T> : AbstractVirtualListDataSource where T : class
     {
         /// <summary>
         /// Create a FastObjectListDataSource
         /// </summary>
         /// <param name="listView"></param>
-        public FastObjectListDataSource(FastObjectListView listView)
+        public FastObjectListDataSource(ObjectListViewBase listView)
             : base(listView) {
         }
 
@@ -261,8 +245,8 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="modelObjects"></param>
         public override void AddObjects(IEnumerable modelObjects) {
-            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(modelObjects, true);
-            foreach (object modelObject in snapshot) {
+            List<T> snapshot = TypedObjectListView<T>.CreateModelList(modelObjects);
+            foreach (T modelObject in snapshot) {
                 if (modelObject != null)
                 {
                     this.fullObjectList.Add(modelObject);
@@ -278,7 +262,7 @@ namespace BrightIdeasSoftware
         /// <param name="index"></param>
         /// <param name="modelObjects"></param>
         public override void InsertObjects(int index, IEnumerable modelObjects) {
-            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(modelObjects, true);
+            List<T> snapshot = TypedObjectListView<T>.CreateModelList(modelObjects);
             this.fullObjectList.InsertRange(index, snapshot);
             this.FilterObjects();
             this.RebuildIndexMap();
@@ -289,7 +273,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="modelObjects"></param>
         public override void RemoveObjects(IEnumerable modelObjects) {
-            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(modelObjects, true);
+            List<T> snapshot = TypedObjectListView<T>.CreateModelList(modelObjects);
 
             // We have to unselect any object that is about to be deleted
             List<int> indicesToRemove = new List<int>();
@@ -313,9 +297,13 @@ namespace BrightIdeasSoftware
             }
 
             // Remove the objects from the unfiltered list
-            foreach (object modelObject in snapshot)
+            foreach (T modelObject in snapshot)
             {
-                this.fullObjectList.Remove(modelObject);
+                int index = this.fullObjectList.FindIndex(model => Object.Equals(model, modelObject));
+                if (index >= 0)
+                {
+                    this.fullObjectList.RemoveAt(index);
+                }
             }
 
             this.FilterObjects();
@@ -327,7 +315,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="collection"></param>
         public override void SetObjects(IEnumerable collection) {
-            ArrayList newObjects = ObjectListViewBase.EnumerableToArray(collection, true);
+            List<T> newObjects = TypedObjectListView<T>.CreateModelList(collection);
 
             this.fullObjectList = newObjects;
             this.FilterObjects();
@@ -340,12 +328,13 @@ namespace BrightIdeasSoftware
         /// <param name="index"></param>
         /// <param name="modelObject"></param>
         public override void UpdateObject(int index, object modelObject) {
+            T replacement = (T)modelObject;
             if (index < 0 || index >= this.filteredObjectList.Count)
             {
                 return;
             }
 
-            int i = this.fullObjectList.IndexOf(this.filteredObjectList[index]);
+            int i = this.fullObjectList.FindIndex(model => Object.Equals(model, this.filteredObjectList[index]));
             if (i < 0)
             {
                 return;
@@ -356,13 +345,13 @@ namespace BrightIdeasSoftware
                 return;
             }
 
-            this.fullObjectList[i] = modelObject;
-            this.filteredObjectList[index] = modelObject;
+            this.fullObjectList[i] = replacement;
+            this.filteredObjectList[index] = replacement;
             this.objectsToIndexMap[modelObject] = index;
         }
 
-        private ArrayList fullObjectList = new ArrayList();
-        private ArrayList filteredObjectList = new ArrayList();
+        private List<T> fullObjectList = new List<T>();
+        private List<T> filteredObjectList = new List<T>();
         private IModelFilter modelFilter;
         private IListFilter listFilter;
 
@@ -389,14 +378,14 @@ namespace BrightIdeasSoftware
         /// Gets the full list of objects being used for this fast list. 
         /// This list is unfiltered.
         /// </summary>
-        public ArrayList ObjectList {
+        public List<T> ObjectList {
             get { return fullObjectList; }
         }
 
         /// <summary>
         /// Gets the list of objects from ObjectList which survive any installed filters.
         /// </summary>
-        public ArrayList FilteredObjectList {
+        public List<T> FilteredObjectList {
             get { return filteredObjectList; }
         }
 
@@ -419,7 +408,7 @@ namespace BrightIdeasSoftware
 
             // If this list isn't filtered, we don't need to do anything else
             if (!this.listView.UseFiltering) {
-                this.filteredObjectList = new ArrayList(this.fullObjectList);
+                this.filteredObjectList = new List<T>(this.fullObjectList);
                 return;
             }
 
@@ -428,7 +417,7 @@ namespace BrightIdeasSoftware
             FilterEventArgs args = new FilterEventArgs(this.fullObjectList);
             this.listView.OnFilter(args);
             if (args.FilteredObjects != null) {
-                this.filteredObjectList = ObjectListViewBase.EnumerableToArray(args.FilteredObjects, false);
+                this.filteredObjectList = TypedObjectListView<T>.CreateModelList(args.FilteredObjects);
                 return;
             }
 
@@ -437,10 +426,10 @@ namespace BrightIdeasSoftware
 
             // Apply the object filter if there is one
             if (this.modelFilter == null) {
-                this.filteredObjectList = ObjectListViewBase.EnumerableToArray(objects, false);
+                this.filteredObjectList = TypedObjectListView<T>.CreateModelList(objects);
             } else {
-                this.filteredObjectList = new ArrayList();
-                foreach (object model in objects) {
+                this.filteredObjectList = new List<T>();
+                foreach (T model in TypedObjectListView<T>.CreateModelList(objects)) {
                     if (this.modelFilter.Filter(model))
                     {
                         this.filteredObjectList.Add(model);

@@ -450,7 +450,7 @@ namespace BrightIdeasSoftware.Tests
 
             ArrayList roots = new ArrayList();
             roots.Add(parent);
-            this.tolv.Objects = roots;
+            this.tolv.ModelObjects = roots;
             this.tolv.ExpandAll();
 
             Assert.AreEqual(5, this.tolv.GetItemCount());
@@ -466,7 +466,7 @@ namespace BrightIdeasSoftware.Tests
 
             ArrayList roots = new ArrayList();
             roots.Add(parent);
-            this.tolv.Objects = roots;
+            this.tolv.ModelObjects = roots;
             this.tolv.ExpandAll();
 
             Assert.AreEqual(3, this.tolv.GetItemCount());

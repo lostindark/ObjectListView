@@ -36,6 +36,12 @@ using System.Windows.Forms;
 
 namespace BrightIdeasSoftware
 {
+    /// <summary>Model-independent access to a virtual control's item factory.</summary>
+    public interface IVirtualListView {
+        /// <summary>Create an item for the displayed row at the given index.</summary>
+        OLVListItem MakeListViewItem(int itemIndex);
+    }
+
     /// <summary>
     /// A VirtualListDataSource is a complete manner to provide functionality to a virtual list.
     /// An object that implements this interface provides a VirtualObjectListView with all the
@@ -154,14 +160,14 @@ namespace BrightIdeasSoftware
         /// Creates an AbstractVirtualListDataSource
         /// </summary>
         /// <param name="listView"></param>
-        public AbstractVirtualListDataSource(VirtualObjectListView listView) {
+        public AbstractVirtualListDataSource(ObjectListViewBase listView) {
             this.listView = listView;
         }
 
         /// <summary>
         /// The list view that this data source is giving information to.
         /// </summary>
-        protected VirtualObjectListView listView;
+        protected ObjectListViewBase listView;
 
         /// <summary>
         /// 
@@ -308,7 +314,7 @@ namespace BrightIdeasSoftware
         /// Creates a VirtualListVersion1DataSource
         /// </summary>
         /// <param name="listView"></param>
-        public VirtualListVersion1DataSource(VirtualObjectListView listView)
+        public VirtualListVersion1DataSource(ObjectListViewBase listView)
             : base(listView) {
         }
 

@@ -1654,7 +1654,7 @@ namespace BrightIdeasSoftware
             get { return this.dragModels; }
             internal set { 
                 this.dragModels = value;
-                TreeListView tlv = this.SourceListView as TreeListView;
+                ITreeListView tlv = this.SourceListView as ITreeListView;
                 if (tlv != null) {
                     foreach (object model in this.SourceModels) {
                         object parent = tlv.GetParent(model);
@@ -1694,7 +1694,7 @@ namespace BrightIdeasSoftware
         public void RefreshObjects() {
 
             toBeRefreshed.AddRange(this.SourceModels);
-            TreeListView tlv = this.SourceListView as TreeListView;
+            ITreeListView tlv = this.SourceListView as ITreeListView;
             if (tlv == null)
             {
                 this.SourceListView.RefreshObjects(toBeRefreshed);
@@ -1704,7 +1704,7 @@ namespace BrightIdeasSoftware
                 tlv.RebuildAll(true);
             }
 
-            TreeListView tlv2 = this.ListView as TreeListView;
+            ITreeListView tlv2 = this.ListView as ITreeListView;
             if (tlv2 == null)
             {
                 this.ListView.RefreshObject(this.TargetModel);

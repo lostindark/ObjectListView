@@ -209,11 +209,11 @@ namespace ObjectListViewDemo {
         }
 
         private void buttonCopy_Click(object sender, EventArgs e) {
-            this.ListView.CopyObjectsToClipboard(this.ListView.SelectedObjects);
+            this.ListView.CopyObjectsToClipboard(this.ListView.SelectedModelObjects);
         }
 
         private void buttonRemove_Click(object sender, EventArgs e) {
-            this.ListView.RemoveObjects(this.ListView.SelectedObjects);
+            this.ListView.RemoveObjects(this.ListView.SelectedModelObjects);
         }
 
         private void buttonAdd_Click(object sender, EventArgs e) {

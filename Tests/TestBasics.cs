@@ -26,11 +26,11 @@ namespace BrightIdeasSoftware.Tests
             this.olv = GetObjectListView();
         }
 
-        protected virtual ObjectListView GetObjectListView() {
+        protected virtual TypedObjectListView<object> GetObjectListView() {
             return mainForm.objectListView1;
         }
 
-        protected ObjectListView olv;
+        protected TypedObjectListView<object> olv;
 
         [TestMethod]
         public void Test_SetObjects_All() {
@@ -265,7 +265,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestFastOlvBasics : TestOlvBasics
     {
-        protected override ObjectListView GetObjectListView() {
+        protected override TypedObjectListView<object> GetObjectListView() {
             return mainForm.fastObjectListView1;
         }
 
@@ -331,7 +331,7 @@ namespace BrightIdeasSoftware.Tests
             var list = CreateVirtualObjectListView();
             list.SetObjects(PersonDb.All);
             list.SetSelectedObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(2)));
-            IList selection = list.SelectedObjects;
+            IList<object> selection = list.SelectedObjects;
             list.SetSelectedObjects(new SingleUseEnumerable<Person>(
                 list.SelectedIndices.Cast<int>().Select(i => (Person)list.GetModelObject(i)).Take(1)));
             Assert.AreSame(PersonDb.All[0], list.SelectedObject);
@@ -339,7 +339,7 @@ namespace BrightIdeasSoftware.Tests
 
             list.CheckBoxes = true;
             list.SetCheckedObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(2)));
-            IList checkedObjects = list.CheckedObjects;
+            IList<object> checkedObjects = list.CheckedObjects;
             list.CheckedObjects = null;
             Assert.IsEmpty(list.CheckedObjects);
             Assert.AreEqual(2, ObjectListView.EnumerableCount(checkedObjects));
@@ -370,7 +370,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestTreeListViewBasics : TestOlvBasics
     {
-        protected override ObjectListView GetObjectListView() {
+        protected override TypedObjectListView<object> GetObjectListView() {
             return mainForm.treeListView1;
         }
 

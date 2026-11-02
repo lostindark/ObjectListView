@@ -97,7 +97,7 @@ namespace BrightIdeasSoftware.Design
                 "LabelEdit", "VirtualListSize", "VirtualMode"
             };
             foreach (string name in properties.Keys.Cast<string>().ToArray()) {
-                bool treeProperty = this.ListView is TreeListView && new[] {
+                bool treeProperty = this.ListView is ITreeListView && new[] {
                     "GroupImageList", "GroupWithItemCountFormat", "GroupWithItemCountSingularFormat",
                     "HasCollapsibleGroups", "SpaceBetweenGroups", "ShowGroups",
                     "SortGroupItemsByPrimaryColumn", "ShowItemCountOnGroups"
@@ -121,7 +121,7 @@ namespace BrightIdeasSoftware.Design
                 "GroupTaskClicked", "GroupExpandingCollapsing", "GroupStateChanged"
             };
             foreach (string name in events.Keys.Cast<string>().ToArray()) {
-                if (hidden.Contains(name) || (this.ListView is TreeListView && treeEvents.Contains(name)))
+                if (hidden.Contains(name) || (this.ListView is ITreeListView && treeEvents.Contains(name)))
                 {
                     events[name] = TypeDescriptor.CreateEvent(typeof(ObjectListViewBase),
                         (EventDescriptor)events[name], BrowsableAttribute.No);

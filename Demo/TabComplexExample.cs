@@ -582,7 +582,7 @@ namespace ObjectListViewDemo
         }
 
         private void buttonRemove_Click(object sender, EventArgs e) {
-            this.ListView.RemoveObjects(this.ListView.SelectedObjects);
+            this.ListView.RemoveObjects(this.ListView.SelectedModelObjects);
         }
 
         private void comboBoxEditable_SelectedIndexChanged(object sender, EventArgs e) {
@@ -602,7 +602,7 @@ namespace ObjectListViewDemo
             }
             else
             {
-                this.ListView.DisableObjects(this.ListView.SelectedObjects);
+                this.ListView.DisableObjects(this.ListView.SelectedModelObjects);
             }
         }
 

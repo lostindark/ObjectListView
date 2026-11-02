@@ -87,8 +87,66 @@ namespace:
 public class PersonListView : TypedObjectListView<Person> { }
 ```
 
-Fast, virtual, tree, and data-bound controls retain their specialized sources;
-they are not converted into generic backing lists.
+Virtual, tree, and data-bound controls retain their specialized source behavior;
+fast list data sources now use owned generic backing lists.
+
+They also have generic control variants: `TypedVirtualObjectListView<T>`,
+`TypedFastObjectListView<T>`, `TypedTreeListView<T>`, `TypedDataListView<T>`,
+`TypedFastDataListView<T>`, and `TypedDataTreeListView<T>`. Each derives from its
+generic base and exposes typed `Objects`, `Rows`, selection, checks, column
+helpers, and enumerable commands. The generic classes own the implementation;
+each non-generic control is a thin `<object>` specialization. Use the same
+concrete-subclass pattern for the designer.
+
+Non-generic controls inherit the generic API directly: `Objects` is
+`IEnumerable<object>`, and `SelectedObjects` / `CheckedObjects` are
+`IList<object>`. The old non-generic collection property shims are removed.
+For sequence inputs, prefer `SetObjects`, `SetSelectedObjects`, and
+`SetCheckedObjects`; these still accept non-generic enumerables such as
+`ArrayList`. The shared untyped integration API keeps its distinct names:
+`ModelObjects`, `SelectedModelObjects`, and `CheckedModelObjects`.
+
+Tree controls likewise inherit object-typed `Roots`, `ExpandedObjects`, and
+child callbacks. Convert an untyped sequence with `Cast<object>()` when
+assigning these properties or returning children.
+
+The generic inheritance chain is:
+
+```text
+TypedObjectListView<T>
+  TypedVirtualObjectListView<T>
+    TypedFastObjectListView<T>
+      TypedFastDataListView<T>
+    TypedTreeListView<T>
+      TypedDataTreeListView<T>
+  TypedDataListView<T>
+```
+
+Non-generic specialized controls are no longer subclasses of `ObjectListView`,
+`VirtualObjectListView`, or `TreeListView`. Use `ObjectListViewBase` for shared
+UI integrations, or the appropriate generic base (including `<object>` for
+non-generic controls). Custom virtual sources now accept `ObjectListViewBase`.
+`IVirtualListView` exposes virtual item creation for printing; `ITreeListView`
+provides model-independent tree access for generators, designers, and drag/drop.
+Fast sources use `FastObjectListDataSource<T>` with owned `List<T>` storage,
+and data-bound trees use `TreeDataSourceAdapter<T>`. Custom tree factories and
+models now accept `TypedTreeListView<T>` (use `<object>` for legacy controls).
+
+```csharp
+var fast = new TypedFastObjectListView<Person>();
+fast.Columns.Add(new OLVColumn("Name", "Name"));
+fast.GetTypedColumn(0).AspectGetter = person => person.Name;
+fast.Objects = people;
+Person selected = fast.SelectedObject;
+```
+
+Typed tree controls additionally expose typed `Roots`, `ExpandedObjects`,
+`CanExpandGetter`, `ChildrenGetter`, `ParentGetter`, `GetChildren`, and `GetParent`.
+Data-bound controls keep their existing
+`DataSource` / `DataMember` contracts: `T` is the row type exposed by the binding
+source (for example, `DataRowView` when binding a `DataTable`). Virtual controls
+still require a virtual data source returning models of type `T`. Shared
+object-based callbacks and direct data-source interfaces are unchanged.
 
 ### Subclass extension points
 
@@ -97,10 +155,11 @@ they are not converted into generic backing lists.
   `SelectedModelObject(s)` / `CheckedModelObject(s)` bridges.
 - Generic `GetModelAt` and selection/check bridges are sealed. Existing
   `ObjectListView` subclasses should keep overriding `GetModelObject`,
-  `SelectedObject(s)`, and `CheckedObject(s)` for legacy customization.
-- Move source logic from public `Objects` overrides into `GetModelObjectsCore`
-  and `SetModelObjectsCore`. **The UI no longer reads its source through the
-  public `Objects` snapshot getter.**
+  `SelectedObject(s)`, and `CheckedObject(s)` using their inherited generic
+  signatures (`object` and `IList<object>` on non-generic controls).
+- Replace public `Objects` overrides with `GetModelObjectsCore` and
+  `SetModelObjectsCore`, and `Roots` overrides with `GetRootsCore` and
+  `SetRootsCore`. Public collection snapshots are not virtual source hooks.
 - Typed enumerable commands are non-virtual entry points that dispatch through
   the existing untyped virtual pipeline. Update those overrides to `IEnumerable`.
 - Custom storage must consistently implement its read and mutation hooks:
@@ -121,7 +180,7 @@ caller-side `ToList()` or `ToArray()`.
 | `AddObjects`, `InsertObjects`, `RemoveObjects` | `IEnumerable` instead of `ICollection` |
 | `RefreshObjects`, `SelectObjects`, `CopyObjectsToClipboard` | `IEnumerable` instead of `IList` |
 | `SetSelectedObjects`, `SetCheckedObjects` | New enumerable methods that replace the current set |
-| `SelectedObjects`, `CheckedObjects` | Still `IList` properties, now returning independent snapshots |
+| `SelectedObjects`, `CheckedObjects` | `IList<T>` snapshots, including `IList<object>` on non-generic controls |
 | Typed `Objects` | `IEnumerable<T>` with a snapshot getter, instead of `IList<T>` |
 | Typed selection/check properties and commands | `IList<T>` snapshots and corresponding `IEnumerable<T>` methods |
 | `IVirtualListDataSource` add/insert/remove methods | `IEnumerable` inputs |
@@ -155,7 +214,7 @@ view.RemoveObjects(view.Objects.Where(person => person.CulinaryRating < 10));
 ```
 
 Import `System.Linq` and `BrightIdeasSoftware` for this example. On non-generic
-controls, use `Cast<Person>()` to query `IList` snapshots.
+controls, use `Cast<Person>()` to query object-typed snapshots.
 
 `Objects`, `SelectedObjects`, and `CheckedObjects` getters return independent
 collections, not live views. Mutating them does not update the control, though
@@ -217,10 +276,11 @@ public override void AddObjects(System.Collections.IEnumerable models) {
 }
 ```
 
-`CheckedObjects` overrides remain `IList`. To customize sequence-based checking,
-override `SetCheckedObjects(IEnumerable)` and route the property setter through
-it. The new method does not automatically invoke an existing property override;
-typed property assignments and the compatibility alias retain that behavior.
+`CheckedObjects` overrides use `IList<T>` (`IList<object>` on non-generic
+controls). To customize sequence-based checking, override
+`SetCheckedObjects(IEnumerable)` and route the property setter through it.
+The method does not automatically invoke a property override; typed property
+assignments and the `CheckedObjectsEnumerable` alias retain that behavior.
 
 For custom `IVirtualListDataSource` implementations, materialize inputs before
 mutation if they refer to the source or require multiple passes:

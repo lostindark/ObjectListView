@@ -154,7 +154,7 @@ namespace ObjectListViewDemo
 
         private void buttonCopy_Click(object sender, EventArgs e)
         {
-            this.ListView.CopyObjectsToClipboard(this.ListView.CheckedObjects);
+            this.ListView.CopyObjectsToClipboard(this.ListView.CheckedModelObjects);
         }
 
         private void buttonDisable_Click(object sender, EventArgs e)
@@ -168,7 +168,7 @@ namespace ObjectListViewDemo
             }
             else
             {
-                this.ListView.DisableObjects(this.ListView.SelectedObjects);
+                this.ListView.DisableObjects(this.ListView.SelectedModelObjects);
             }
 
             System.Diagnostics.Debug.WriteLine(String.Format("Disable UI action took {0} ms", ts.Elapsed.TotalMilliseconds));
@@ -183,7 +183,7 @@ namespace ObjectListViewDemo
             }
             else
             {
-                this.ListView.RemoveObjects(this.ListView.SelectedObjects);
+                this.ListView.RemoveObjects(this.ListView.SelectedModelObjects);
             }
         }
 

@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -104,7 +104,7 @@ namespace ObjectListViewDemo
                         this.treeListView.Collapse(x);
                         MessageBox.Show(this, ex.Message, "ObjectListViewDemo", MessageBoxButtons.OK, MessageBoxIcon.Exclamation); 
                     });
-                    return new ArrayList();
+                    return Array.Empty<MyFileSystemInfo>();
                 }
             };
 
@@ -112,7 +112,7 @@ namespace ObjectListViewDemo
             // after setting the Roots property.
 
             // List all drives as the roots of the tree
-            ArrayList roots = new ArrayList();
+            List<MyFileSystemInfo> roots = new List<MyFileSystemInfo>();
             foreach (DriveInfo di in DriveInfo.GetDrives())
             {
                 if (di.IsReady)
@@ -258,7 +258,7 @@ namespace ObjectListViewDemo
             }
             else
             {
-                this.ListView.DisableObjects(this.ListView.SelectedObjects);
+                this.ListView.DisableObjects(this.ListView.SelectedModelObjects);
             }
         }
 

@@ -21,12 +21,12 @@ namespace ObjectListViewDemo {
             }
         }
         private OLVDemoCoordinator coordinator;
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         protected virtual void InitializeTab() { }
 
         [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return this.listView; }
             protected set { this.listView = value; }
         }

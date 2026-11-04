@@ -78,6 +78,15 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
+        [DataRow(2, "AB", "ABCDE")]
+        [DataRow(3, "ABC", "ABCDE")]
+        [DataRow(4, "ABC", "DABCE")]
+        [DataRow(2, "BA", "BACDE")]
+        public void Test_MoveObjects_MultipleObjectsForward(int index, string toMove, string expected) {
+            this.MoveAndAssert(index, toMove, expected);
+        }
+
+        [TestMethod]
         public void Test_MoveObjects_Backward() {
             this.MoveAndAssert(1, "D", "ADBCE");
         }

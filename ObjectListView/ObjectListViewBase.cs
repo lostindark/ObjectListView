@@ -5224,21 +5224,22 @@ namespace BrightIdeasSoftware
             this.TakeOwnershipOfObjects();
 
             List<int> indicesToRemove = new List<int>();
+            int displacedObjectCount = 0;
             foreach (object modelObject in snapshot) {
                 if (modelObject != null) {
                     int i = this.IndexOf(modelObject);
                     if (i >= 0) {
                         indicesToRemove.Add(i);
                         this.RemoveStoredModelObject(modelObject);
-                        // Only objects strictly before the target shift it. An object already
-                        // at the target index must not move the insertion point.
+                        // Compare against the original target; displayed items are removed after this loop.
                         if (i < index)
                         {
-                            index--;
+                            displacedObjectCount++;
                         }
                     }
                 }
             }
+            index -= displacedObjectCount;
 
             // Remove the objects in reverse order so earlier
             // deletes don't change the index of later ones

@@ -28,10 +28,11 @@ is referenced automatically without copying it into application output.
 ## Documentation
 
 - [Getting started](https://github.com/lostindark/ObjectListView/blob/main/docs/getting-started.md)
+- [Designer support](https://github.com/lostindark/ObjectListView/blob/main/docs/designer-support.md)
 - [Features and examples](https://github.com/lostindark/ObjectListView/blob/main/docs/features.md)
 - [Cookbook](https://github.com/lostindark/ObjectListView/blob/main/docs/recipes.md)
 - [Class reference](https://github.com/lostindark/ObjectListView/blob/main/docs/major-classes.md)
-- [Dark mode](https://github.com/lostindark/ObjectListView#dark-mode)
+- [Dark mode](https://github.com/lostindark/ObjectListView/blob/main/docs/dark-mode.md)
 - [Documentation index](https://github.com/lostindark/ObjectListView/blob/main/docs/README.md)
 - [Source, build instructions, and tests](https://github.com/lostindark/ObjectListView)
 - [Report an issue](https://github.com/lostindark/ObjectListView/issues)

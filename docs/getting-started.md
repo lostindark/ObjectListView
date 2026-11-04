@@ -35,6 +35,8 @@ its non-copy-local reference automatically; source consumers import
 as shown in the [migration guide](v3-migration.md#runtime-targets-designers-and-saved-layouts).
 Modern designer integration is supported through the NuGet package in Visual
 Studio 2026. Project references alone do not install its designer extensions.
+See [Designer support](designer-support.md) for setup, supported configurations,
+and troubleshooting.
 
 The tests use MSTest.TestFramework 4.5.1, MSTest.TestAdapter, and Microsoft.NET.Test.Sdk, declared as package references in *Tests\Tests.csproj*. NuGet restores dependencies into its global cache, not a repository-local *packages* directory. The .NET 10 SDK requires MSBuild 18 or later (Visual Studio 2026). Restore and build from a Visual Studio Developer Command Prompt with:
 

@@ -16,12 +16,6 @@ This repository is a fork of the
 that require updating consumer code. **V3 is not binary compatible with V2:**
 users must fix code affected by the breaking changes and recompile their applications.
 
-The NuGet package includes Visual Studio 2026 designer support, including column
-editing, header-divider resizing with Undo/Redo, and smart-tag View changes.
-Standalone DLL and project references do not install modern designer extensions.
-The classic Framework designer is a separate `ObjectListView.Design.Framework`
-assembly. NuGet wires it automatically; source consumers use the
-[Framework designer import](docs/v3-migration.md#runtime-targets-designers-and-saved-layouts).
 See the [implementation plan](docs/v3-plan.md) for progress and the
 [migration guide](docs/v3-migration.md) before upgrading.
 
@@ -29,6 +23,8 @@ See the [implementation plan](docs/v3-plan.md) for progress and the
 
 - [Installation and package overview](ObjectListView/README.md)
 - [Getting started](docs/getting-started.md)
+- [Designer support](docs/designer-support.md)
+- [Dark mode](docs/dark-mode.md)
 - [Documentation index](docs/README.md) — features, examples, cookbook, and class reference
 - [Report an issue](https://github.com/lostindark/ObjectListView/issues)
 
@@ -53,23 +49,6 @@ to include the required designer assets.
 all projects and target frameworks, both during builds and live in Visual Studio.
 Analyzer diagnostics are warnings by default; no additional analyzer package is
 required. The shared settings are available under Solution Items.
-
-## Dark mode
-
-Configure the palette before creating controls on either runtime:
-
-```csharp
-ObjectListViewTheme.ColorMode = ObjectListViewColorMode.System; // Or Light / Dark
-```
-
-`Default` follows WinForms on .NET 10 and preserves classic Framework behavior.
-`System` samples the Windows preference when assigned; high contrast takes precedence.
-The palette uses stock .NET 10 colors with Framework fallbacks. Explicit colors,
-custom renderers, and unrelated host controls remain application-controlled.
-
-Both main-demo builds offer **Follow system**, **Light**, and **Dark** in the
-status-bar Theme menu. Switching reloads examples and resets edits, preserving
-window position and the selected tab. Native chrome support depends on Windows.
 
 ## Tests
 

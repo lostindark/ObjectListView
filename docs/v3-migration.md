@@ -8,6 +8,9 @@ overrides; v3 is not a drop-in binary replacement.
 
 ## Runtime targets, designers, and saved layouts
 
+See [Designer support](designer-support.md) for the support matrix, setup,
+assembly architecture, and troubleshooting.
+
 Runtime targets are **.NET Framework 4.6.2** and **.NET 10 for Windows**.
 `ObjectListView.dll` on either target does not depend on System.Design,
 WindowsBase, or the Designer SDK.

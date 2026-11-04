@@ -10,8 +10,8 @@ ObjectListView is a C# wrapper around a .NET ListView. It makes the ListView muc
 
 | Topic | Guides |
 | --- | --- |
-| Start here | [Getting started](getting-started.md), [features](features.md), [FAQ](faq.md) |
-| Customization | [Cookbook](recipes.md), [cell editing](cell-editing.md), [owner drawing](owner-draw.md), [drag and drop](drag-and-drop.md), [filtering](filtering.md), [overlays](overlays.md) |
+| Start here | [Getting started](getting-started.md), [designer support](designer-support.md), [features](features.md), [FAQ](faq.md) |
+| Customization | [Cookbook](recipes.md), [dark mode](dark-mode.md), [cell editing](cell-editing.md), [owner drawing](owner-draw.md), [drag and drop](drag-and-drop.md), [filtering](filtering.md), [overlays](overlays.md) |
 | Examples | [Samples](samples.md), [Sparkle animations](animations.md) |
 | Reference | [Major classes](major-classes.md), [downloads](download.md) |
 | Development | [v3 implementation plan](v3-plan.md), [v3 migration guide](v3-migration.md) |

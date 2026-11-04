@@ -16,6 +16,17 @@ This repository is a fork of the
 that require updating consumer code. **V3 is not binary compatible with V2:**
 users must fix code affected by the breaking changes and recompile their applications.
 
+Implemented V3 highlights:
+
+- **Modern runtime support:** .NET 10 for Windows alongside .NET Framework 4.6.2.
+- **Typed controls and enumerable APIs:** generic list, virtual, tree, and data-bound
+  variants, sequence inputs, and snapshot getters.
+- **[Designer support](docs/designer-support.md):** Visual Studio 2026 integration,
+  column editors, smart tags, and header resizing with Undo/Redo; modern support is NuGet-only.
+- **[Dark mode](docs/dark-mode.md) and DPI improvements:** configurable palettes,
+  column scaling, and updated demo layouts.
+- **Saved layouts without BinaryFormatter:** one versioned format shared by both runtimes.
+
 See the [implementation plan](docs/v3-plan.md) for progress and the
 [migration guide](docs/v3-migration.md) before upgrading.
 

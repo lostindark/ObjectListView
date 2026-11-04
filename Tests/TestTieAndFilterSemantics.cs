@@ -23,8 +23,8 @@ namespace BrightIdeasSoftware.Tests
     public class TestSortTiesAndNulls : WinFormsTestFixture
     {
         // Column 0 is Name. All rows except "a" tie on Group "x".
-        private ObjectListView CreateList(bool fast) {
-            ObjectListView list = fast ? new FastObjectListView() : new ObjectListView();
+        private ObjectListViewBase CreateList(bool fast) {
+            ObjectListViewBase list = fast ? new FastObjectListView() : new ObjectListView();
             list.View = View.Details;
             list.ShowGroups = false;
             list.Columns.Add(new OLVColumn("Name", "Name"));
@@ -41,7 +41,7 @@ namespace BrightIdeasSoftware.Tests
             return list;
         }
 
-        private static List<string> Names(ObjectListView list) {
+        private static List<string> Names(ObjectListViewBase list) {
             var names = new List<string>();
             for (int i = 0; i < list.GetItemCount(); i++)
             {
@@ -57,7 +57,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(true, SortOrder.Ascending)]
         [DataRow(true, SortOrder.Descending)]
         public void Test_Sort_NoImplicitFirstColumnTieBreaker(bool fast, SortOrder order) {
-            ObjectListView list = this.CreateList(fast);
+            ObjectListViewBase list = this.CreateList(fast);
             IList<OLVSortDescription> seen = null;
             list.BeforeSorting += delegate(object sender, BeforeSortingEventArgs args) {
                 seen = args.SortDescriptions;
@@ -79,7 +79,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(true, SortOrder.Ascending, "b,c,d,e,a")]
         [DataRow(true, SortOrder.Descending, "a,e,d,c,b")]
         public void Test_Sort_SecondarySortColumnBreaksTies(bool fast, SortOrder order, string expected) {
-            ObjectListView list = this.CreateList(fast);
+            ObjectListViewBase list = this.CreateList(fast);
             list.SecondarySortColumn = list.GetColumn(0);
             list.SecondarySortOrder = order;
 
@@ -103,7 +103,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(true, SortOrder.Ascending, "<null>,a,b")]
         [DataRow(true, SortOrder.Descending, "b,a,<null>")]
         public void Test_Sort_NullPlacement(bool fast, SortOrder order, string expected) {
-            ObjectListView list = fast ? new FastObjectListView() : new ObjectListView();
+            ObjectListViewBase list = fast ? new FastObjectListView() : new ObjectListView();
             list.View = View.Details;
             list.ShowGroups = false;
             list.Columns.Add(new OLVColumn("Name", "Name"));
@@ -150,7 +150,7 @@ namespace BrightIdeasSoftware.Tests
             this.olv.ModelFilter = null;
             this.olv.UseFiltering = false;
             Assert.HasCount(3, this.olv.CheckedObjects);
-            CollectionAssert.Contains(this.olv.CheckedObjects, hidden);
+            Assert.IsTrue(this.olv.CheckedObjects.Contains(hidden));
         }
 
         [TestMethod]

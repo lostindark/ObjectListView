@@ -212,6 +212,9 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Return the list of all the checked model objects
         /// </summary>
+        /// <remarks>The getter only reports rows that are currently shown. Checked models
+        /// hidden by a filter are not returned, but they keep their check state.
+        /// See <see cref="ObjectListViewBase.CheckedModelObjects"/>.</remarks>
         [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual IList<T> CheckedObjects {
             get { return this.GetCheckedObjectsCore(); }

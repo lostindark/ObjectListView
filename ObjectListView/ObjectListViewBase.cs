@@ -1336,6 +1336,12 @@ namespace BrightIdeasSoftware
         /// </para>
         /// <para>The getter returns a materialized snapshot. Use
         /// <see cref="SetCheckedObjects"/> to assign an enumerable sequence.</para>
+        /// <para>On non-virtual lists the getter only reports rows that are currently
+        /// shown. While a filter is active, checked models that are filtered out are not
+        /// returned, although they keep their check state when
+        /// <see cref="PersistentCheckBoxes"/> is true and reappear checked once the filter
+        /// is removed. The setter, <see cref="CheckAll"/> and <see cref="UncheckAll"/>
+        /// apply to all models, including filtered-out ones.</para>
         /// <para>
         /// The performance of the get method is O(n), where n is the number of items
         /// in the control. The performance of the set method is
@@ -3017,7 +3023,11 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Get/set the column that will be used to resolve comparisons that are equal when sorting.
         /// </summary>
-        /// <remarks>Shift-click a column header to add a secondary or subsequent sort field.</remarks>
+        /// <remarks><para>Shift-click a column header to add a secondary or subsequent sort field.</para>
+        /// <para>When this is null, rows that compare equal on the primary sort column are not
+        /// ordered by any other column. Unlike a v2.x ObjectListView, the first column is no
+        /// longer used as an implicit tie-breaker. Set this property (or use multi-column
+        /// sorting) to get a deterministic order for tied rows.</para></remarks>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public virtual OLVColumn SecondarySortColumn {
@@ -5207,19 +5217,22 @@ namespace BrightIdeasSoftware
             this.TakeOwnershipOfObjects();
 
             List<int> indicesToRemove = new List<int>();
+            int displacedObjectCount = 0;
             foreach (object modelObject in snapshot) {
                 if (modelObject != null) {
                     int i = this.IndexOf(modelObject);
                     if (i >= 0) {
                         indicesToRemove.Add(i);
                         this.RemoveStoredModelObject(modelObject);
-                        if (i <= index)
+                        // Compare against the original target; displayed items are removed after this loop.
+                        if (i < index)
                         {
-                            index--;
+                            displacedObjectCount++;
                         }
                     }
                 }
             }
+            index -= displacedObjectCount;
 
             // Remove the objects in reverse order so earlier
             // deletes don't change the index of later ones
@@ -8246,6 +8259,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Check all rows
         /// </summary>
+        /// <remarks>This checks every model, including models hidden by a filter.</remarks>
         public virtual void CheckAll()
         {
             this.CheckedModelObjects = EnumerableToArray(this.ModelObjects, false);
@@ -8581,6 +8595,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Uncheck all rows
         /// </summary>
+        /// <remarks>This unchecks every model, including models hidden by a filter.</remarks>
         public virtual void UncheckAll()
         {
             this.CheckedModelObjects = null;

@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
@@ -102,7 +103,7 @@ namespace ObjectListViewDemo {
                     Size spacing = ScaleSize(g, new Size(Spacing, Spacing));
                     Size inset = ScaleSize(g, new Size(BorderInset, BorderInset));
                     itemBounds.Inflate(-inset.Width, -inset.Height);
-                    using (GraphicsPath path = this.GetRoundedRect(itemBounds, ScaleSize(g, new Size(20, 20)).Width)) {
+                    using (GraphicsPath path = GetRoundedRect(itemBounds, ScaleSize(g, new Size(20, 20)).Width)) {
                         g.FillPath(backBrush, path);
                         g.DrawPath(borderPen, path);
                     }
@@ -113,7 +114,7 @@ namespace ObjectListViewDemo {
                     Person person = rowObject as Person;
                     if (person != null) {
                         photoRect.Width = ScaleSize(g, new Size(80, 0)).Width;
-                        string photoFile = String.Format(@".\Photos\{0}.png", person.Photo);
+                        string photoFile = String.Format(CultureInfo.InvariantCulture, @".\Photos\{0}.png", person.Photo);
                         if (File.Exists(photoFile)) {
                             using (Image photo = Image.FromFile(photoFile)) {
                                 photoRect.Height = (int)Math.Round(photo.Height * ((float)photoRect.Width / photo.Width));
@@ -131,7 +132,7 @@ namespace ObjectListViewDemo {
                         SizeF size = g.MeasureString(item.Text, font, (int)textBounds.Width, format);
                         RectangleF titleBounds = textBounds;
                         titleBounds.Height = size.Height;
-                        using (GraphicsPath path = this.GetRoundedRect(titleBounds, ScaleSize(g, new Size(15, 15)).Width))
+                        using (GraphicsPath path = GetRoundedRect(titleBounds, ScaleSize(g, new Size(15, 15)).Width))
                         {
                             g.FillPath(headerBackBrush, path);
                         }
@@ -156,7 +157,7 @@ namespace ObjectListViewDemo {
             }
         }
 
-        private GraphicsPath GetRoundedRect(RectangleF rect, float diameter)
+        private static GraphicsPath GetRoundedRect(RectangleF rect, float diameter)
         {
             GraphicsPath path = new GraphicsPath();
 

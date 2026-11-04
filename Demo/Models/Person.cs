@@ -1,13 +1,11 @@
 using System;
 using System.ComponentModel;
-using System.Drawing;
 using BrightIdeasSoftware;
-using ObjectListViewDemo.Properties;
 
 namespace ObjectListViewDemo.Models {
     public class Person : INotifyPropertyChanged
     {
-        public bool IsActive = true;
+        public bool IsActive { get; set; } = true;
 
         public Person(string name) {
             this.name = name;
@@ -37,18 +35,7 @@ namespace ObjectListViewDemo.Models {
         }
 
         [OLVIgnore]
-        public Image ImageAspect {
-            get {
-                return Resource1.folder16;
-            }
-        }
-
-        [OLVIgnore]
-        public string ImageName {
-            get {
-                return "user";
-            }
-        }
+        public string ImageName { get; } = "user";
 
         // Allows tests for properties.
         [OLVColumn(ImageAspectName = "ImageName")]
@@ -108,14 +95,13 @@ namespace ObjectListViewDemo.Models {
             this.hourlyRate = value;
         }
 
-        // Allows tests for fields.
-        public string Photo;
-        public string Comments;
-        public int serialNumber;
-        public bool? CanTellJokes;
+        public string Photo { get; set; }
+        public string Comments { get; set; }
+        public int serialNumber { get; set; }
+        public bool? CanTellJokes { get; set; }
 
         // Allow tests for enums
-        public MaritalStatus MaritalStatus = MaritalStatus.Single;
+        public MaritalStatus MaritalStatus { get; set; } = MaritalStatus.Single;
 
         #region Implementation of INotifyPropertyChanged
 

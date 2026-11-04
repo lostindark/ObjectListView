@@ -96,7 +96,7 @@ namespace ObjectListViewDemo
             }
             this.treeView = treeView;
         }
-        protected TreeView treeView;
+        protected TreeView treeView { get; set; }
 
         /// <summary>
         /// Create a SysImageListHelper that will fetch images for the given listview control.
@@ -106,7 +106,7 @@ namespace ObjectListViewDemo
         /// This means that the image for an item must occur at the same index in the two lists. 
         /// SysImageListHelper instances handle this requirement. However, if the listview already
         /// has image lists installed, they <b>must</b> be of the same length.</remarks>
-        public SysImageListHelper(ObjectListView listView)
+        public SysImageListHelper(ObjectListViewBase listView)
         {
             if (listView.SmallImageList == null) {
                 listView.SmallImageList = new ImageList();
@@ -125,7 +125,7 @@ namespace ObjectListViewDemo
 
             this.listView = listView;
         }
-        protected ObjectListView listView;
+        protected ObjectListViewBase listView { get; set; }
 
         /// <summary>
         /// Return the index of the image that has the Shell Icon for the given file/directory.
@@ -155,14 +155,14 @@ namespace ObjectListViewDemo
                     Trace.TraceWarning("The Windows shell could not supply an icon for '{0}'.", path);
                     return -1;
                 }
-                this.AddImageToCollection(path, this.SmallImageList, smallIcon);
-                this.AddImageToCollection(path, this.LargeImageList, largeIcon);
+                AddImageToCollection(path, this.SmallImageList, smallIcon);
+                AddImageToCollection(path, this.LargeImageList, largeIcon);
             }
 
             return this.SmallImageCollection.IndexOfKey(path);
         }
 
-        private void AddImageToCollection(string key, ImageList imageList, Icon image) {
+        private static void AddImageToCollection(string key, ImageList imageList, Icon image) {
             if (imageList == null)
             {
                 return;
@@ -334,7 +334,7 @@ namespace ObjectListViewDemo
 
         private const int MAX_PATH = 260;
 
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct SHFILEINFO
         {
             public IntPtr hIcon; 
@@ -348,11 +348,11 @@ namespace ObjectListViewDemo
 
         private const int SW_SHOWNORMAL = 1;
 
-        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        [DllImport("shell32.dll", EntryPoint = "ShellExecuteW", CharSet = CharSet.Unicode, ExactSpelling = true)]
         private static extern IntPtr ShellExecute(int hwnd, string lpOperation, string lpFile, 
             string lpParameters, string lpDirectory, int nShowCmd);
 
-        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        [DllImport("shell32.dll", EntryPoint = "SHGetFileInfoW", CharSet = CharSet.Unicode, ExactSpelling = true)]
         private static extern IntPtr SHGetFileInfo(string pszPath, int dwFileAttributes,
             out SHFILEINFO psfi, int cbFileInfo, int uFlags);
 

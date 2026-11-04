@@ -8,7 +8,11 @@ using System.Windows.Forms;
 
 //TODO: Allow alpha
 
+#if OLV_DESIGN_CLIENT
+namespace BrightIdeasSoftware.Design.Client.Printing
+#else
 namespace BrightIdeasSoftware
+#endif
 {
     internal partial class BrushForm : Form
     {
@@ -85,7 +89,7 @@ namespace BrightIdeasSoftware
                     g.DrawString("No brush", new Font("Tahoma", 14), Brushes.DarkGray, r, fmt);
                 } else {
                     g.DrawString("Through a mirror darkly", new Font("Tahoma", 14), Brushes.Black, r, fmt);
-                    g.FillRectangle(BlockFormat.PrepareBrushForDrawing(b, r), r);
+                    g.FillRectangle(BrushPenDrawing.PrepareBrush(b, r), r);
                 }
             }
         }
@@ -106,7 +110,7 @@ namespace BrightIdeasSoftware
         }
     }
 
-    internal class PenForm : BrushForm
+    internal sealed class PenForm : BrushForm
     {
         public PenData GetPenData()
         {
@@ -138,7 +142,11 @@ namespace BrightIdeasSoftware
         protected override void HandlePaintEvent(Graphics g, Rectangle r)
         {
             using (Pen p = this.GetPen()) {
+#if OLV_DESIGN_CLIENT
+                g.SmoothingMode = SmoothingMode.HighQuality;
+#else
                 g.SmoothingMode = ObjectListView.SmoothingMode;
+#endif
                 StringFormat fmt = new StringFormat();
                 fmt.Alignment = StringAlignment.Center;
                 fmt.LineAlignment = StringAlignment.Center;
@@ -153,7 +161,7 @@ namespace BrightIdeasSoftware
                     pts[1] = new Point(r.X + r.Width / 2, r.Bottom);
                     pts[2] = new Point(r.X + r.Width / 2, r.Top);
                     pts[3] = new Point(r.Right, r.Bottom);
-                    g.DrawLines(BlockFormat.PreparePenForDrawing(p, r), pts);
+                    g.DrawLines(BrushPenDrawing.PreparePen(p, r), pts);
                 }
             }
         }

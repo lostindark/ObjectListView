@@ -28,6 +28,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
 using System.Reflection;
@@ -43,6 +45,7 @@ namespace BrightIdeasSoftware {
     /// value for the column/model combination. It could be simply representative of
     /// the appropriate type of value.</param>
     /// <returns>A control which can edit the given value</returns>
+    [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public editor callback.")]
     public delegate Control EditorCreatorDelegate(Object model, OLVColumn column, Object value);
 
     /// <summary>
@@ -99,7 +102,7 @@ namespace BrightIdeasSoftware {
         /// </example>
         public void Register(Type type, Type controlType) {
             this.Register(type, delegate(Object model, OLVColumn column, Object value) {
-                return controlType.InvokeMember("", BindingFlags.CreateInstance, null, null, null) as Control;
+                return controlType.InvokeMember("", BindingFlags.CreateInstance, null, null, null, CultureInfo.CurrentCulture) as Control;
             });
         }
 
@@ -187,7 +190,7 @@ namespace BrightIdeasSoftware {
             // Enums without other processing get a special editor
             if (value != null && value.GetType().IsEnum)
             {
-                return this.CreateEnumEditor(value.GetType());
+                return CreateEnumEditor(value.GetType());
             }
 
             // Give any default creator a final chance
@@ -203,7 +206,7 @@ namespace BrightIdeasSoftware {
         /// Create and return an editor that will edit values of the given type
         /// </summary>
         /// <param name="type">A enum type</param>
-        protected Control CreateEnumEditor(Type type) {
+        protected static Control CreateEnumEditor(Type type) {
             return new EnumCellEditor(type);
         }
 

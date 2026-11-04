@@ -60,7 +60,7 @@ namespace BrightIdeasSoftware {
             List<long> flags = new List<long>();
             foreach (object x in Enum.GetValues(enumType))
             {
-                flags.Add(Convert.ToInt64(x));
+                flags.Add(Convert.ToInt64(x, CultureInfo.CurrentCulture));
             }
 
             List<string> flagLabels = new List<string>();
@@ -136,7 +136,7 @@ namespace BrightIdeasSoftware {
         public override object GetClusterKey(object model) {
             List<long> flags = new List<long>();
             try {
-                long modelValue = Convert.ToInt64(this.Column.GetValue(model));
+                long modelValue = Convert.ToInt64(this.Column.GetValue(model), CultureInfo.CurrentCulture);
                 foreach (long x in this.Values) {
                     if ((x & modelValue) == x)
                     {
@@ -161,14 +161,14 @@ namespace BrightIdeasSoftware {
         /// <param name="cluster"></param>
         /// <returns></returns>
         public override string GetClusterDisplayLabel(ICluster cluster) {
-            long clusterKeyAsUlong = Convert.ToInt64(cluster.ClusterKey);
+            long clusterKeyAsUlong = Convert.ToInt64(cluster.ClusterKey, CultureInfo.CurrentCulture);
             for (int i = 0; i < this.Values.Length; i++ ) {
                 if (clusterKeyAsUlong == this.Values[i])
                 {
                     return this.ApplyDisplayFormat(cluster, this.Labels[i]);
                 }
             }
-            return this.ApplyDisplayFormat(cluster, clusterKeyAsUlong.ToString(CultureInfo.CurrentUICulture));
+            return this.ApplyDisplayFormat(cluster, clusterKeyAsUlong.ToString(CultureInfo.CurrentCulture));
         }
 
         /// <summary>

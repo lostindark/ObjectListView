@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
 
@@ -21,12 +22,12 @@ namespace ObjectListViewDemo {
             }
         }
         private OLVDemoCoordinator coordinator;
-        private ObjectListView listView;
+        private ObjectListViewBase listView;
 
         protected virtual void InitializeTab() { }
 
         [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ObjectListView ListView {
+        public ObjectListViewBase ListView {
             get { return this.listView; }
             protected set { this.listView = value; }
         }
@@ -46,11 +47,11 @@ namespace ObjectListViewDemo {
             };
 
             this.ListView.GroupTaskClicked += delegate(object sender, GroupTaskClickedEventArgs args) {
-                Coordinator.ShowMessage("Clicked on group task: " + args.Group.Name);
+                OLVDemoCoordinator.ShowMessage("Clicked on group task: " + args.Group.Name);
             };
 
             this.ListView.GroupStateChanged += delegate(object sender, GroupStateChangedEventArgs e) {
-                System.Diagnostics.Debug.WriteLine(String.Format("Group '{0}' was {1}{2}{3}{4}{5}{6}",
+                System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "Group '{0}' was {1}{2}{3}{4}{5}{6}",
                     e.Group.Header,
                     e.Selected ? "Selected" : "",
                     e.Focused ? "Focused" : "",

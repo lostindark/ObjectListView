@@ -55,7 +55,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace BrightIdeasSoftware {
@@ -66,6 +68,7 @@ namespace BrightIdeasSoftware {
     /// We could replace this with EventHandler&lt;CellEditEventArgs&gt; but that would break all
     /// cell editing event code from v1.x.
     /// </remarks>
+    [SuppressMessage("Naming", "CA1711", Justification = "This public delegate is the event-handler type for cell editing.")]
     public delegate void CellEditEventHandler(object sender, CellEditEventArgs e);
 
     public partial class ObjectListViewBase {
@@ -875,7 +878,7 @@ namespace BrightIdeasSoftware {
         #endregion
     }
 
-    public partial class TreeListView {
+    public partial class TypedTreeListView<T> where T : class {
 
         #region Events
 
@@ -993,7 +996,7 @@ namespace BrightIdeasSoftware {
         /// cancelled the edit operation and that the handler should perform cleanup only. Setting this to true,
         /// will prevent the ObjectListView from trying to write the new value into the model object.</para>
         /// </remarks>
-        public bool Cancel;
+        public bool Cancel { get; set; }
 
         /// <summary>
         /// During the CellEditStarting event, this can be modified to be the control that you want
@@ -1003,7 +1006,7 @@ namespace BrightIdeasSoftware {
         /// entered and commit that value to the model. Changing the control during the finishing
         /// event has no effect.
         /// </summary>
-        public Control Control;
+        public Control Control { get; set; }
 
         /// <summary>
         /// The column of the cell that is going to be or has been edited.
@@ -1091,7 +1094,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Has this event been cancelled by the event handler?
         /// </summary>
-        public bool Canceled;
+        public bool Canceled { get; set; }
     }
 
     /// <summary>
@@ -1134,17 +1137,17 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Did the event handler already do the sorting for us?
         /// </summary>
-        public bool Handled;
+        public bool Handled { get; set; }
 
         /// <summary>
         /// What column will be used for grouping
         /// </summary>
-        public OLVColumn ColumnToGroupBy;
+        public OLVColumn ColumnToGroupBy { get; set; }
 
         /// <summary>
         /// How will groups be ordered
         /// </summary>
-        public SortOrder GroupByOrder;
+        public SortOrder GroupByOrder { get; set; }
 
         /// <summary>
         /// What column will be used for sorting
@@ -1293,12 +1296,12 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets or sets what objects are being filtered
         /// </summary>
-        public IEnumerable Objects;
+        public IEnumerable Objects { get; set; }
 
         /// <summary>
         /// Gets or sets what objects survived the filtering
         /// </summary>
-        public IEnumerable FilteredObjects;
+        public IEnumerable FilteredObjects { get; set; }
     }
 
     /// <summary>
@@ -1365,12 +1368,12 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets or sets where the collection is going to be inserted.
         /// </summary>
-        public int Index;
+        public int Index { get; set; }
 
         /// <summary>
         /// Gets or sets the objects to be added to the list
         /// </summary>
-        public ICollection ObjectsToAdd;
+        public ICollection ObjectsToAdd { get; set; }
     }
 
     /// <summary>
@@ -1403,7 +1406,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets or sets the objects that will be in the list after it changes.
         /// </summary>
-        public IEnumerable NewObjects;
+        public IEnumerable NewObjects { get; set; }
     }
 
     /// <summary>
@@ -1421,7 +1424,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets or sets the objects that will be removed
         /// </summary>
-        public ICollection ObjectsToRemove;
+        public ICollection ObjectsToRemove { get; set; }
     }
 
     /// <summary>
@@ -1450,7 +1453,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets or sets whether an the event handler already handled this event
         /// </summary>
-        public bool Handled;
+        public bool Handled { get; set; }
 
         /// <summary>
         /// Gets the index of the row that was selected by the search.
@@ -1483,12 +1486,12 @@ namespace BrightIdeasSoftware {
         /// <remarks>Modifying this value does not modify the memory of what the user has typed. 
         /// When the user next presses a character, the search string will revert to what 
         /// the user has actually typed.</remarks>
-        public string StringToFind;
+        public string StringToFind { get; set; }
 
         /// <summary>
         /// Gets or sets the index of the first row that will be considered to matching.
         /// </summary>
-        public int StartSearchFrom;
+        public int StartSearchFrom { get; set; }
     }
 
     /// <summary>
@@ -1605,7 +1608,7 @@ namespace BrightIdeasSoftware {
         /// Gets or set if this event completely handled. If it was, no further processing
         /// will be done for it.
         /// </summary>
-        public bool Handled;
+        public bool Handled { get; set; }
     }
 
     /// <summary>
@@ -1632,7 +1635,7 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <remarks>The menu will be positioned at Location, so changing that property changes
         /// where the menu will be displayed.</remarks>
-        public ContextMenuStrip MenuStrip;
+        public ContextMenuStrip MenuStrip { get; set; }
     }
 
     /// <summary>
@@ -1682,51 +1685,51 @@ namespace BrightIdeasSoftware {
         /// Gets or sets the text should be shown on the tooltip for this event
         /// </summary>
         /// <remarks>Setting this to empty or null prevents any tooltip from showing</remarks>
-        public string Text;
+        public string Text { get; set; }
 
         /// <summary>
         /// In what direction should the text for this tooltip be drawn?
         /// </summary>
-        public RightToLeft RightToLeft;
+        public RightToLeft RightToLeft { get; set; }
 
         /// <summary>
         /// Should the tooltip for this event been shown in bubble style?
         /// </summary>
         /// <remarks>This doesn't work reliable under Vista</remarks>
-        public bool? IsBalloon;
+        public bool? IsBalloon { get; set; }
 
         /// <summary>
         /// What color should be used for the background of the tooltip
         /// </summary>
         /// <remarks>Setting this does nothing under Vista</remarks>
-        public Color? BackColor;
+        public Color? BackColor { get; set; }
 
         /// <summary>
         /// What color should be used for the foreground of the tooltip
         /// </summary>
         /// <remarks>Setting this does nothing under Vista</remarks>
-        public Color? ForeColor;
+        public Color? ForeColor { get; set; }
 
         /// <summary>
         /// What string should be used as the title for the tooltip for this event?
         /// </summary>
-        public string Title;
+        public string Title { get; set; }
 
         /// <summary>
         /// Which standard icon should be used for the tooltip for this event
         /// </summary>
-        public ToolTipControl.StandardIcons? StandardIcon;
+        public ToolTipControl.StandardIcons? StandardIcon { get; set; }
 
         /// <summary>
         /// How many milliseconds should the tooltip remain before it automatically
         /// disappears.
         /// </summary>
-        public int? AutoPopDelay;
+        public int? AutoPopDelay { get; set; }
 
         /// <summary>
         /// What font should be used to draw the text of the tooltip?
         /// </summary>
-        public Font Font;
+        public Font Font { get; set; }
     }
 
     /// <summary>
@@ -1891,7 +1894,7 @@ namespace BrightIdeasSoftware {
         /// Gets or sets the url that should be invoked when this cell is clicked.
         /// </summary>
         /// <remarks>Setting this to None or String.Empty means that this cell is not a hyperlink</remarks>
-        public string Url;
+        public string Url { get; set; }
     }
 
     /// <summary>
@@ -2073,6 +2076,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets an extended indication of the part of item/subitem/group that the mouse is currently over
         /// </summary>
+        [SuppressMessage("Naming", "CA1711", Justification = "Ex distinguishes extended native hit-test flags from the simplified hit location.")]
         public virtual HitTestLocationEx HotCellHitLocationEx {
             get { return this.hotCellHitLocationEx; }
             internal set { this.hotCellHitLocationEx = value; }
@@ -2124,6 +2128,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets an extended indication of the part of item/subitem/group that the mouse used to be over
         /// </summary>
+        [SuppressMessage("Naming", "CA1711", Justification = "Ex distinguishes extended native hit-test flags from the simplified hit location.")]
         public virtual HitTestLocationEx OldHotCellHitLocationEx {
             get { return this.oldHotCellHitLocationEx; }
             internal set { this.oldHotCellHitLocationEx = value; }
@@ -2169,7 +2174,7 @@ namespace BrightIdeasSoftware {
         /// </returns>
         /// <filterpriority>2</filterpriority>
         public override string ToString() {
-            return string.Format("NewHotCellHitLocation: {0}, HotCellHitLocationEx: {1}, NewHotColumnIndex: {2}, NewHotRowIndex: {3}, HotGroup: {4}", this.newHotCellHitLocation, this.hotCellHitLocationEx, this.newHotColumnIndex, this.newHotRowIndex, this.hotGroup);
+            return string.Format(CultureInfo.CurrentCulture, "NewHotCellHitLocation: {0}, HotCellHitLocationEx: {1}, NewHotColumnIndex: {2}, NewHotRowIndex: {3}, HotGroup: {4}", this.newHotCellHitLocation, this.hotCellHitLocationEx, this.newHotColumnIndex, this.newHotRowIndex, this.hotGroup);
         }
     }
 
@@ -2596,6 +2601,12 @@ namespace BrightIdeasSoftware {
     /// Tells the world that a column header was right clicked
     /// </summary>
     public class ColumnRightClickEventArgs : ColumnClickEventArgs {
+        /// <summary>
+        /// Create event arguments for a column header context menu.
+        /// </summary>
+        /// <param name="columnIndex">The index of the column that was clicked.</param>
+        /// <param name="menu">The menu to display.</param>
+        /// <param name="location">The screen location where the menu will be displayed.</param>
         public ColumnRightClickEventArgs(int columnIndex, ToolStripDropDown menu, Point location) : base(columnIndex) {
             MenuStrip = menu;
             Location = location;
@@ -2604,19 +2615,19 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Set this to true to cancel the right click operation.
         /// </summary>
-        public bool Cancel;
+        public bool Cancel { get; set; }
 
         /// <summary>
         /// Gets or sets the menu that should be displayed as a result of this event.
         /// </summary>
         /// <remarks>The menu will be positioned at Location, so changing that property changes
         /// where the menu will be displayed.</remarks>
-        public ToolStripDropDown MenuStrip;
+        public ToolStripDropDown MenuStrip { get; set; }
 
         /// <summary>
         /// Gets the location of the mouse at the time of the event
         /// </summary>
-        public Point Location;
+        public Point Location { get; set; }
     }
 
     #endregion

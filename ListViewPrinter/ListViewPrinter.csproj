@@ -6,6 +6,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <!-- Preserve the wildcard assembly version in Properties\AssemblyInfo.cs. -->
     <Deterministic>false</Deterministic>
+    <EmbeddedResourceUseDependentUponConvention>false</EmbeddedResourceUseDependentUponConvention>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System.Design" Condition="'$(TargetFramework)' == 'net462'" />
@@ -15,6 +16,6 @@
     <Compile Update="BrushForm.cs" SubType="Form" />
     <Compile Update="BrushForm.Designer.cs" DependentUpon="BrushForm.cs" />
     <Compile Update="ListViewPrinter.cs" SubType="Component" />
-    <EmbeddedResource Update="BrushForm.resx" DependentUpon="BrushForm.cs" SubType="Designer" />
+    <EmbeddedResource Update="BrushForm.resx" SubType="Designer" LogicalName="BrightIdeasSoftware.BrushForm.resources" ManifestResourceName="BrightIdeasSoftware.BrushForm" />
   </ItemGroup>
 </Project>

@@ -62,14 +62,14 @@ namespace BrightIdeasSoftware
     /// behavior). This means that the model objects in the DataListView are DataRowView objects. If you write your own AspectGetters/Setters,
     /// they will be given DataRowView objects.</para>
     /// </remarks>
-    public class DataListView : ObjectListView
+    public class TypedDataListView<T> : TypedObjectListView<T> where T : class
     {
         #region Life and death
 
         /// <summary>
         /// Make a DataListView
         /// </summary>
-        public DataListView()
+        public TypedDataListView()
         {
             this.Adapter = new DataSourceAdapter(this);
         }

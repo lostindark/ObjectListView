@@ -10,13 +10,17 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Design;
 using System.ComponentModel.Design.Serialization;
 
+#if OLV_DESIGN_CLIENT
+namespace BrightIdeasSoftware.Design.Client.Printing
+#else
 namespace BrightIdeasSoftware
+#endif
 {
 #if NETFRAMEWORK
     /// <summary>
     /// Editor for use within the IDE when changing BrushFactory values
     /// </summary>
-    internal class BrushDataEditor : UITypeEditor
+    internal sealed class BrushDataEditor : UITypeEditor
     {
         public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext context)
         {
@@ -64,7 +68,7 @@ namespace BrightIdeasSoftware
             }
             else
             {
-                e.Graphics.FillRectangle(BlockFormat.PrepareBrushForDrawing(bd.GetBrush(), e.Bounds), e.Bounds);
+                e.Graphics.FillRectangle(BrushPenDrawing.PrepareBrush(bd.GetBrush(), e.Bounds), e.Bounds);
             }
         }
     }
@@ -72,7 +76,7 @@ namespace BrightIdeasSoftware
     /// <summary>
     /// Editor for use within the IDE when changing BrushFactory values
     /// </summary>
-    internal class PenDataEditor : UITypeEditor
+    internal sealed class PenDataEditor : UITypeEditor
     {
         public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext context)
         {
@@ -133,7 +137,7 @@ namespace BrightIdeasSoftware
     /// This class can convert BrushFactories to and from string representations, and can convert
     /// to InstanceDescriptor (which are used to convert an object into source code).
     /// </summary>
-    internal class BrushDataConverter : ExpandableObjectConverter
+    internal sealed class BrushDataConverter : ExpandableObjectConverter
     {
         /// <summary>
         /// Indicate that we can convert to a string or to an InstanceDescriptor (these
@@ -204,7 +208,7 @@ namespace BrightIdeasSoftware
     /// This class can convert BrushFactories to and from string representations, and can convert
     /// to InstanceDescriptor (which are used to convert an object into source code).
     /// </summary>
-    internal class PenDataConverter : ExpandableObjectConverter
+    internal sealed class PenDataConverter : ExpandableObjectConverter
     {
         /// <summary>
         /// Indicate that we can convert to a string or to an InstanceDescriptor (these
@@ -220,6 +224,7 @@ namespace BrightIdeasSoftware
             return base.CanConvertTo(context, destinationType);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1845", Justification = "Span-based String.Concat is unavailable on net462; retain the shared, infrequent design-time conversion without target-specific scaffolding.")]
         public override object ConvertTo(ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value, Type destinationType)
         {
             if (destinationType == typeof(string)) {

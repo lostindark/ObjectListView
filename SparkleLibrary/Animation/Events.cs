@@ -44,7 +44,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets if the tick event was completely handled
         /// </summary>
-        public bool Handled;
+        public bool Handled { get; set; }
     }
 
     public class RedrawEventArgs : EventArgs
@@ -58,9 +58,9 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Gets the area of the animation that was damaged
+        /// Gets or sets the area of the animation that was damaged
         /// </summary>
-        public Rectangle Damage;
+        public Rectangle Damage { get; set; }
     }
 
     public class StopAnimationEventArgs : EventArgs

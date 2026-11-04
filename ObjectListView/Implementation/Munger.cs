@@ -42,6 +42,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Reflection;
 
 namespace BrightIdeasSoftware
@@ -179,14 +181,14 @@ namespace BrightIdeasSoftware
             }
 
             try {
-                return this.EvaluateParts(target, this.Parts);
+                return EvaluateParts(target, this.Parts);
             } catch (MungerException ex) {
                 if (Munger.IgnoreMissingAspects)
                 {
                     return null;
                 }
 
-                return String.Format("'{0}' is not a parameter-less method, property or field of type '{1}'",
+                return String.Format(CultureInfo.CurrentCulture, "'{0}' is not a parameter-less method, property or field of type '{1}'",
                                          ex.Munger.AspectName, ex.Target.GetType());
             }
         }
@@ -198,13 +200,14 @@ namespace BrightIdeasSoftware
         /// <remarks>If the aspect name is null or empty, this will return null.</remarks>
         /// <param name="target">The object that will be peeked</param>
         /// <returns>The value read from the target</returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "GetValueEx is the exception-propagating counterpart of GetValue.")]
         public Object GetValueEx(Object target) {
             if (this.Parts.Count == 0)
             {
                 return null;
             }
 
-            return this.EvaluateParts(target, this.Parts);
+            return EvaluateParts(target, this.Parts);
         }
 
         /// <summary>
@@ -238,9 +241,9 @@ namespace BrightIdeasSoftware
                 List<SimpleMunger> parts = new List<SimpleMunger>(this.Parts);
                 parts.RemoveAt(parts.Count - 1);
                 try {
-                    target = this.EvaluateParts(target, parts);
+                    target = EvaluateParts(target, parts);
                 } catch (MungerException ex) {
-                    this.ReportPutValueException(ex);
+                    ReportPutValueException(ex);
                     return false;
                 }
             }
@@ -249,7 +252,7 @@ namespace BrightIdeasSoftware
                 try {
                     return lastPart.PutValue(target, value);
                 } catch (MungerException ex) {
-                    this.ReportPutValueException(ex);
+                    ReportPutValueException(ex);
                 }
             }
 
@@ -263,7 +266,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets the list of SimpleMungers that match our AspectName
         /// </summary>
-        private IList<SimpleMunger> Parts {
+        private List<SimpleMunger> Parts {
             get {
                 if (aspectParts == null)
                 {
@@ -273,14 +276,14 @@ namespace BrightIdeasSoftware
                 return aspectParts;
             }
         }
-        private IList<SimpleMunger> aspectParts;
+        private List<SimpleMunger> aspectParts;
 
         /// <summary>
         /// Convert a possibly dotted AspectName into a list of SimpleMungers
         /// </summary>
         /// <param name="aspect"></param>
         /// <returns></returns>
-        private IList<SimpleMunger> BuildParts(string aspect) {
+        private static List<SimpleMunger> BuildParts(string aspect) {
             List<SimpleMunger> parts = new List<SimpleMunger>();
             if (!String.IsNullOrEmpty(aspect)) {
                 foreach (string part in aspect.Split('.')) {
@@ -296,7 +299,7 @@ namespace BrightIdeasSoftware
         /// <param name="target"></param>
         /// <param name="parts"></param>
         /// <returns></returns>
-        private object EvaluateParts(object target, IList<SimpleMunger> parts) {
+        private static object EvaluateParts(object target, List<SimpleMunger> parts) {
             foreach (SimpleMunger part in parts) {
                 if (target == null)
                 {
@@ -308,12 +311,12 @@ namespace BrightIdeasSoftware
             return target;
         }
 
-        private void ReportPutValueException(MungerException ex) {
+        private static void ReportPutValueException(MungerException ex) {
             //TODO: How should we report this error?
             System.Diagnostics.Debug.WriteLine("PutValue failed");
-            System.Diagnostics.Debug.WriteLine(String.Format("- Culprit aspect: {0}", ex.Munger.AspectName));
-            System.Diagnostics.Debug.WriteLine(String.Format("- Target: {0} of type {1}", ex.Target, ex.Target.GetType()));
-            System.Diagnostics.Debug.WriteLine(String.Format("- Inner exception: {0}", ex.InnerException));
+            System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "- Culprit aspect: {0}", ex.Munger.AspectName));
+            System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "- Target: {0} of type {1}", ex.Target, ex.Target.GetType()));
+            System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "- Inner exception: {0}", ex.InnerException));
         }
 
         #endregion

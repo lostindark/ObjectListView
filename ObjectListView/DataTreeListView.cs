@@ -35,6 +35,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing.Design;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace BrightIdeasSoftware
@@ -61,7 +62,7 @@ namespace BrightIdeasSoftware
     /// </para>
     /// <para>Like a TreeListView, the hierarchy must not contain cycles. Bad things will happen if the data is cyclic.</para>
     /// </remarks>
-    public partial class DataTreeListView : TreeListView
+    public class TypedDataTreeListView<T> : TypedTreeListView<T> where T : class
     {
         #region Public Properties
 
@@ -203,7 +204,7 @@ namespace BrightIdeasSoftware
         Description("The parent id value that identifies a row as a root object"),
         DefaultValue(null)]
         public virtual string RootKeyValueString {
-            get { return Convert.ToString(this.Adapter.RootKeyValue); }
+            get { return Convert.ToString(this.Adapter.RootKeyValue, CultureInfo.CurrentCulture); }
             set { this.Adapter.RootKeyValue = value; }
         }
 
@@ -229,18 +230,18 @@ namespace BrightIdeasSoftware
         /// Gets or sets the DataSourceAdaptor that does the bulk of the work needed
         /// for data binding.
         /// </summary>
-        protected TreeDataSourceAdapter Adapter {
+        protected TreeDataSourceAdapter<T> Adapter {
             get {
                 if (this.adapter == null)
                 {
-                    this.adapter = new TreeDataSourceAdapter(this);
+                    this.adapter = new TreeDataSourceAdapter<T>(this);
                 }
 
                 return adapter;
             }
             set { adapter = value; }
         }
-        private TreeDataSourceAdapter adapter;
+        private TreeDataSourceAdapter<T> adapter;
 
         #endregion
     }

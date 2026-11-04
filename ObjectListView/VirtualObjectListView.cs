@@ -106,12 +106,12 @@ namespace BrightIdeasSoftware
     /// <para>To enable grouping, you must provide an implementation of IVirtualGroups interface, via the GroupingStrategy property.</para>
     /// <para>Similarly, to enable filtering on the list, your VirtualListDataSource must also implement the IFilterableDataSource interface.</para>
     /// </remarks>
-    public class VirtualObjectListView : ObjectListView
+    public class TypedVirtualObjectListView<T> : TypedObjectListView<T>, IVirtualListView where T : class
     {
         /// <summary>
         /// Create a VirtualObjectListView
         /// </summary>
-        public VirtualObjectListView()
+        public TypedVirtualObjectListView()
             : base() {
             this.VirtualMode = true; // Virtual lists have to be virtual -- no prizes for guessing that :)
 
@@ -169,43 +169,43 @@ namespace BrightIdeasSoftware
         /// With a CheckStateGetter installed, the performance of this method is O(n) where n is the size 
         /// of the list. This could be painfully slow.</para>
         /// </remarks>
-        [Browsable(false),
-         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public override IList CheckedObjects {
-            get {
-                // If we aren't should checkboxes, then no objects can be checked
-                if (!this.CheckBoxes)
-                {
-                    return new ArrayList();
-                }
-
-                // If the data source has somehow vanished, we can't do anything
-                if (this.VirtualListDataSource == null)
-                {
-                    return new ArrayList();
-                }
-
-                // If a custom check state getter is install, we can't use our check state management
-                // We have to use the (slower) base version.
-                if (this.CheckStateGetter != null)
-                {
-                    return base.CheckedObjects;
-                }
-
-                // Collect items that are checked AND that still exist in the list.
-                ArrayList objects = new ArrayList();
-                foreach (KeyValuePair<Object, CheckState> kvp in this.CheckStateMap)
-                {
-                    if (kvp.Value == CheckState.Checked && 
-                        (!this.CheckedObjectsMustStillExistInList ||
-                         this.VirtualListDataSource.GetObjectIndex(kvp.Key) >= 0))
-                    {
-                        objects.Add(kvp.Key);
-                    }
-                }
-                return objects;
+        protected override IList<T> GetCheckedObjectsCore() {
+            // If we aren't should checkboxes, then no objects can be checked
+            if (!this.CheckBoxes)
+            {
+                return new List<T>();
             }
-            set { this.SetCheckedObjects(value); }
+
+            // If the data source has somehow vanished, we can't do anything
+            if (this.VirtualListDataSource == null)
+            {
+                return new List<T>();
+            }
+
+            // If a custom check state getter is install, we can't use our check state management
+            // We have to use the (slower) base version.
+            if (this.CheckStateGetter != null)
+            {
+                return base.GetCheckedObjectsCore();
+            }
+
+            // Collect items that are checked AND that still exist in the list.
+            List<T> objects = new List<T>();
+            foreach (KeyValuePair<Object, CheckState> kvp in this.CheckStateMap)
+            {
+                if (kvp.Value == CheckState.Checked &&
+                    (!this.CheckedObjectsMustStillExistInList ||
+                     this.VirtualListDataSource.GetObjectIndex(kvp.Key) >= 0))
+                {
+                    objects.Add((T)kvp.Key);
+                }
+            }
+            return objects;
+        }
+
+        /// <inheritdoc/>
+        protected override void SetCheckedObjectsCore(IList<T> value) {
+            ((ObjectListViewBase)this).SetCheckedObjects(value);
         }
 
         /// <inheritdoc/>
@@ -220,12 +220,11 @@ namespace BrightIdeasSoftware
                 return;
             }
 
+            ICollection snapshot = this.MaterializeModelObjects(modelObjects);
             Hashtable table = new Hashtable(this.GetItemCount());
-            if (modelObjects != null) {
-                foreach (object x in modelObjects)
-                {
-                    table[x] = true;
-                }
+            foreach (object x in snapshot)
+            {
+                table[x] = true;
             }
 
             this.BeginUpdate();
@@ -303,27 +302,6 @@ namespace BrightIdeasSoftware
             get {
                 return base.IsFiltering && (this.VirtualListDataSource is IFilterableDataSource);
             }
-        }
-
-        /// <summary>
-        /// Get/set the collection of objects that this list will show
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// The contents of the control will be updated immediately after setting this property.
-        /// </para>
-        /// <para>Setting this property preserves selection, if possible. Use SetObjects() if
-        /// you do not want to preserve the selection. Preserving selection is the slowest part of this
-        /// code -- performance is O(n) where n is the number of selected rows.</para>
-        /// <para>This method is not thread safe.</para>
-        /// <para>The property DOES work on virtual lists, but if you try to iterate through a list 
-        /// of 10 million objects, it may take some time :)</para>
-        /// </remarks>
-        [Browsable(false),
-         DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public override IEnumerable Objects {
-            get { return this.GetUnfilteredObjects(); }
-            set { base.Objects = value; }
         }
 
         /// <inheritdoc/>
@@ -488,10 +466,10 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="index">Index of the model object to be returned</param>
         /// <returns>A model object</returns>
-        public override object GetModelObject(int index) {
+        public override T GetModelObject(int index) {
             if (this.VirtualListDataSource != null && index >= 0 && index < this.GetItemCount())
             {
-                return this.VirtualListDataSource.GetNthObject(index);
+                return (T)this.VirtualListDataSource.GetNthObject(index);
             }
             else
             {
@@ -636,14 +614,14 @@ namespace BrightIdeasSoftware
 
             // Give the world a chance to cancel or change the added objects
             ItemsAddingEventArgs args = new ItemsAddingEventArgs(
-                modelObjects == null ? null : ObjectListViewBase.EnumerableToArray(modelObjects, true));
+                modelObjects == null ? null : this.MaterializeModelObjects(modelObjects));
             this.OnItemsAdding(args);
             if (args.Canceled)
             {
                 return;
             }
 
-            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(args.ObjectsToAdd, true);
+            ICollection snapshot = this.MaterializeModelObjects(args.ObjectsToAdd);
             try
             {
                 this.BeginUpdate();
@@ -729,14 +707,14 @@ namespace BrightIdeasSoftware
 
             // Give the world a chance to cancel or change the added objects
             ItemsAddingEventArgs args = new ItemsAddingEventArgs(index,
-                modelObjects == null ? null : ObjectListViewBase.EnumerableToArray(modelObjects, true));
+                modelObjects == null ? null : this.MaterializeModelObjects(modelObjects));
             this.OnItemsAdding(args);
             if (args.Canceled)
             {
                 return;
             }
 
-            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(args.ObjectsToAdd, true);
+            ICollection snapshot = this.MaterializeModelObjects(args.ObjectsToAdd);
             try
             {
                 this.BeginUpdate();
@@ -768,7 +746,7 @@ namespace BrightIdeasSoftware
 
             ArgumentNullException.ThrowIfNull(modelObjects, nameof(modelObjects));
 
-            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(modelObjects, true);
+            ICollection snapshot = this.MaterializeModelObjects(modelObjects);
             try {
                 this.BeginUpdate();
                 this.InvalidateModelRows();
@@ -821,14 +799,14 @@ namespace BrightIdeasSoftware
 
             // Give the world a chance to cancel or change the removed objects
             ItemsRemovingEventArgs args = new ItemsRemovingEventArgs(
-                modelObjects == null ? null : ObjectListViewBase.EnumerableToArray(modelObjects, true));
+                modelObjects == null ? null : this.MaterializeModelObjects(modelObjects));
             this.OnItemsRemoving(args);
             if (args.Canceled)
             {
                 return;
             }
 
-            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(args.ObjectsToRemove, true);
+            ICollection snapshot = this.MaterializeModelObjects(args.ObjectsToRemove);
             try {
                 this.BeginUpdate();
                 this.VirtualListDataSource.RemoveObjects(snapshot);
@@ -887,7 +865,7 @@ namespace BrightIdeasSoftware
                 return;
             }
 
-            ArrayList snapshot = ObjectListViewBase.EnumerableToArray(modelObjects, true);
+            ICollection snapshot = this.MaterializeModelObjects(modelObjects);
             this.SelectedIndices.Clear();
 
             foreach (object modelObject in snapshot) {
@@ -915,19 +893,21 @@ namespace BrightIdeasSoftware
                 return;
             }
 
+            ICollection snapshot = collection == null ? null : this.MaterializeModelObjects(collection);
             // Give the world a chance to cancel or change the assigned collection
-            ItemsChangingEventArgs args = new ItemsChangingEventArgs(null, collection);
+            ItemsChangingEventArgs args = new ItemsChangingEventArgs(null, snapshot);
             this.OnItemsChanging(args);
             if (args.Canceled)
             {
                 return;
             }
 
+            snapshot = args.NewObjects == null ? null : this.MaterializeModelObjects(args.NewObjects);
             this.BeginUpdate();
             try {
-                this.VirtualListDataSource.SetObjects(args.NewObjects);
+                this.VirtualListDataSource.SetObjects(snapshot);
                 this.BuildList();
-                this.UpdateNotificationSubscriptions(args.NewObjects);
+                this.UpdateNotificationSubscriptions(snapshot);
             }
             finally {
                 this.EndUpdate();
@@ -1013,7 +993,7 @@ namespace BrightIdeasSoftware
         /// <remarks>
         /// Invalidate any cached information when we rebuild the list.
         /// </remarks>
-        public override void BuildList(bool shouldPreserveSelection) {
+        public override void BuildList(bool shouldPreserveState) {
             this.InvalidateModelRows();
             this.UpdateVirtualListSize();
             this.ClearCachedInfo();
@@ -1081,7 +1061,7 @@ namespace BrightIdeasSoftware
             // We need to implement the IOwnerDataCallback interface
             if (this.ownerDataCallbackImpl == null)
             {
-                this.ownerDataCallbackImpl = new OwnerDataCallbackImpl(this);
+                this.ownerDataCallbackImpl = new OwnerDataCallbackImpl(this, () => this.GroupingStrategy);
             }
 
             const int LVM_SETOWNERDATACALLBACK = 0x10BB;

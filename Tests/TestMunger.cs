@@ -226,9 +226,7 @@ namespace BrightIdeasSoftware.Tests
                 get { return this; }
             }
 
-            public object NullProperty {
-                get { return null; }
-            }
+            public object NullProperty { get; }
 
             public string ReadOnlyProperty {
                 get { return readOnlyProperty; }
@@ -240,7 +238,7 @@ namespace BrightIdeasSoftware.Tests
             private string readOnlyProperty;
         }
 
-        private class TestSubClass : TestBaseClass
+        private sealed class TestSubClass : TestBaseClass
         {
             public new string NonVirtualTestProperty {
                 get { return subTestProperty1; }

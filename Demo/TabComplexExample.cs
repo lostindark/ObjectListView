@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
 using ObjectListViewDemo.Models;
@@ -10,6 +11,19 @@ using ContentAlignment = System.Drawing.ContentAlignment;
 namespace ObjectListViewDemo
 {
     public partial class TabComplexExample : OlvDemoTab {
+        private static readonly string[] cookingSkillTitles = {
+            "Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef"
+        };
+        private static readonly string[] cookingSkillImages = { "not", "hamburger", "toast", "beef", "chef" };
+        private static readonly string[] cookingSkillSubtitles = {
+            "Pay good money -- or flee the house -- rather than eat their home-cooked food",
+            "Offer to buy takeaway rather than risk what may appear on your plate",
+            "Neither spectacular nor dangerous",
+            "Try to visit at dinner time to wrangle an invitation to dinner",
+            "Do whatever is necessary to procure their services"
+        };
+        private static readonly string[] cookingSkillTasks = { "Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance" };
+        private static readonly string[] hourlyRateTitles = { "Less than $100", "$100-$1000", "Megabucks" };
 
         public TabComplexExample() {
             InitializeComponent();
@@ -84,7 +98,7 @@ namespace ObjectListViewDemo
                 ObjectListViewBase olv = cellRightClickEventArgs.ListView;
                 if (olv.ShowGroups) {
                     foreach (ListViewGroup lvg in olv.Groups) {
-                        ToolStripMenuItem mi = new ToolStripMenuItem(String.Format("Jump to group '{0}'", lvg.Header));
+                        ToolStripMenuItem mi = new ToolStripMenuItem(String.Format(CultureInfo.CurrentCulture, "Jump to group '{0}'", lvg.Header));
                         mi.Tag = lvg;
                         ms.Items.Add(mi);
                     }
@@ -155,7 +169,9 @@ namespace ObjectListViewDemo
                     return "star";
                 }
 
-                if (name.CompareTo("T") < 0)
+#pragma warning disable CA1309 // Name grouping intentionally follows the user's linguistic ordering.
+                if (String.Compare(name, "T", StringComparison.CurrentCulture) < 0)
+#pragma warning restore CA1309
                 {
                     return 2; // person
                 }
@@ -166,23 +182,17 @@ namespace ObjectListViewDemo
             // Setup some fancy grouping formatting on the Cooking skill columns
             this.columnCookingSkill.MakeGroupies(
                 new object[] {10, 20, 30, 40},
-                new string[] {"Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef"},
-                new string[] {"not", "hamburger", "toast", "beef", "chef"},
-                new string[] {
-                    "Pay good money -- or flee the house -- rather than eat their home-cooked food",
-                    "Offer to buy takeaway rather than risk what may appear on your plate",
-                    "Neither spectacular nor dangerous",
-                    "Try to visit at dinner time to wrangle an invitation to dinner",
-                    "Do whatever is necessary to procure their services"
-                },
-                new string[] {"Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance"}
+                cookingSkillTitles,
+                cookingSkillImages,
+                cookingSkillSubtitles,
+                cookingSkillTasks
                 );
 
             // Setup grouping on the Hourly rate column
             // This uses the simpler form of MakeGroupies, that just produces a title for each group
             this.hourlyRateColumn.MakeGroupies(
                 new Double[] {100, 1000},
-                new string[] {"Less than $100", "$100-$1000", "Megabucks"});
+                hourlyRateTitles);
             this.hourlyRateColumn.AspectPutter = delegate(object x, object newValue) { ((Person) x).SetRate((double) newValue); };
 
             // The salary indicator column shows an image based on the person's salary.
@@ -218,7 +228,7 @@ namespace ObjectListViewDemo
             // of the groups would have been alphabetical (April, August, December, February...), 
             // rather than chronological (January, February, March...).
             this.birthdayColumn.GroupKeyGetter = delegate(object row) { return ((Person) row).BirthDate.Month; };
-            this.birthdayColumn.GroupKeyToTitleConverter = delegate(object key) { return (new DateTime(1, (int) key, 1)).ToString("MMMM"); };
+            this.birthdayColumn.GroupKeyToTitleConverter = delegate(object key) { return (new DateTime(1, (int) key, 1)).ToString("MMMM", CultureInfo.CurrentCulture); };
             this.birthdayColumn.ImageGetter = delegate(object row) {
                 Person p = (Person) row;
                 // People born in leap years get an asterisk (yes, the leap year calculation is wrong).
@@ -235,7 +245,7 @@ namespace ObjectListViewDemo
 
             // Use this column to test sorting and group on TimeSpan objects
             this.daysSinceBirthColumn.AspectGetter = delegate(object row) { return DateTime.Now - ((Person) row).BirthDate; };
-            this.daysSinceBirthColumn.AspectToStringConverter = delegate(object aspect) { return ((TimeSpan) aspect).Days.ToString(); };
+            this.daysSinceBirthColumn.AspectToStringConverter = delegate(object aspect) { return ((TimeSpan) aspect).Days.ToString(CultureInfo.CurrentCulture); };
 
             // Give the Tells Jokes? column better grouping labels
             this.olvJokeColumn.GroupKeyToTitleConverter = delegate(object groupKey) {
@@ -385,7 +395,7 @@ namespace ObjectListViewDemo
                 e.Title = "Information";
                 e.StandardIcon = ToolTipControl.StandardIcons.Info;
                 e.AutoPopDelay = 10000;
-                e.Text = String.Format("More details about the '{0}' column\r\n\r\nThis only shows when the control key is down.",
+                e.Text = String.Format(CultureInfo.CurrentCulture, "More details about the '{0}' column\r\n\r\nThis only shows when the control key is down.",
                     e.Column.Text);
             };
 
@@ -413,7 +423,7 @@ namespace ObjectListViewDemo
                              "On no account should members of the public attempt to pronounce this word without " +
                              "the assistance of trained vocalization specialists.";
                 } else {
-                    e.Text = String.Format("Tool tip for '{0}', column '{1}'\r\nValue shown: '{2}'",
+                    e.Text = String.Format(CultureInfo.CurrentCulture, "Tool tip for '{0}', column '{1}'\r\nValue shown: '{2}'",
                         ((Person) e.Model).Name, col.Text, stringValue);
                 }
             };
@@ -497,7 +507,7 @@ namespace ObjectListViewDemo
             // Disallow professions from starting with "a" or "z" -- just to be arbitrary
             if (e.Column.Text == "Occupation") {
                 string newValue = ((TextBox)e.Control).Text.ToLowerInvariant();
-                if (newValue.StartsWith("a") || newValue.StartsWith("z")) {
+                if (newValue.StartsWith("a", StringComparison.CurrentCulture) || newValue.StartsWith("z", StringComparison.CurrentCulture)) {
                     e.Cancel = true;
                     MessageBox.Show(this, "Occupations cannot begin with 'a' or 'z' (just to show cell edit validation at work).", "ObjectListViewDemo",
                         MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
@@ -557,11 +567,11 @@ namespace ObjectListViewDemo
         }
 
         private void comboBoxHotItemStyle_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeHotItemStyle(this.ListView, (ComboBox) sender);
+            OLVDemoCoordinator.ChangeHotItemStyle(this.ListView, (ComboBox) sender);
         }
 
         private void comboBoxView_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeView(this.ListView, (ComboBox) sender);
+            OLVDemoCoordinator.ChangeView(this.ListView, (ComboBox) sender);
             this.UpdateBusinessCardSize();
 
             // Make the hot item show an overlay when it changes
@@ -582,15 +592,15 @@ namespace ObjectListViewDemo
         }
 
         private void buttonRemove_Click(object sender, EventArgs e) {
-            this.ListView.RemoveObjects(this.ListView.SelectedObjects);
+            this.ListView.RemoveObjects(this.ListView.SelectedModelObjects);
         }
 
         private void comboBoxEditable_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeEditable(this.ListView, (ComboBox) sender);
+            OLVDemoCoordinator.ChangeEditable(this.ListView, (ComboBox) sender);
         }
 
         private void checkBoxGroups_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowGroupsChecked(this.ListView, (CheckBox) sender);
+            OLVDemoCoordinator.ShowGroupsChecked(this.ListView, (CheckBox) sender);
         }
 
         private void buttonDisable_Click(object sender, EventArgs e) {
@@ -602,7 +612,7 @@ namespace ObjectListViewDemo
             }
             else
             {
-                this.ListView.DisableObjects(this.ListView.SelectedObjects);
+                this.ListView.DisableObjects(this.ListView.SelectedModelObjects);
             }
         }
 
@@ -636,7 +646,9 @@ namespace ObjectListViewDemo
                 yValue = yValue.Substring(1);
             }
 
+#pragma warning disable CA1309 // Displayed names intentionally retain culture-aware, case-insensitive sorting.
             int result = String.Compare(xValue, yValue, StringComparison.CurrentCultureIgnoreCase);
+#pragma warning restore CA1309
 
             if (this.sortOrder == SortOrder.Descending)
             {
@@ -679,7 +691,9 @@ namespace ObjectListViewDemo
                 yValue = yValue.Substring(1);
             }
 
+#pragma warning disable CA1309 // Displayed names intentionally retain culture-aware, case-insensitive sorting.
             int result = String.Compare(xValue, yValue, StringComparison.CurrentCultureIgnoreCase);
+#pragma warning restore CA1309
 
             if (this.sortOrder == SortOrder.Descending)
             {

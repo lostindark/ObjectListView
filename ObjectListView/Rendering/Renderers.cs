@@ -239,7 +239,7 @@ namespace BrightIdeasSoftware {
     /// This class provides compatibility for v1 RendererDelegates
     /// </summary>
     [ToolboxItem(false)]
-    internal class Version1Renderer : AbstractRenderer {
+    internal sealed class Version1Renderer : AbstractRenderer {
         public Version1Renderer(RenderDelegate renderDelegate) {
             this.RenderDelegate = renderDelegate;
         }
@@ -1169,10 +1169,10 @@ namespace BrightIdeasSoftware {
         /// <param name="e"></param>
         /// <param name="g"></param>
         /// <param name="itemBounds"></param>
-        /// <param name="model"></param>
+        /// <param name="rowObject"></param>
         /// <returns></returns>
-        public override bool RenderItem(DrawListViewItemEventArgs e, Graphics g, Rectangle itemBounds, object model) {
-            this.ConfigureItem(e, itemBounds, model);
+        public override bool RenderItem(DrawListViewItemEventArgs e, Graphics g, Rectangle itemBounds, object rowObject) {
+            this.ConfigureItem(e, itemBounds, rowObject);
             return this.OptionalRender(g, itemBounds);
         }
 
@@ -1203,10 +1203,10 @@ namespace BrightIdeasSoftware {
         /// <param name="e"></param>
         /// <param name="g"></param>
         /// <param name="cellBounds"></param>
-        /// <param name="model"></param>
+        /// <param name="rowObject"></param>
         /// <returns></returns>
-        public override bool RenderSubItem(DrawListViewSubItemEventArgs e, Graphics g, Rectangle cellBounds, object model) {
-            this.ConfigureSubItem(e, cellBounds, model);
+        public override bool RenderSubItem(DrawListViewSubItemEventArgs e, Graphics g, Rectangle cellBounds, object rowObject) {
+            this.ConfigureSubItem(e, cellBounds, rowObject);
             return this.OptionalRender(g, cellBounds);
         }
 
@@ -1422,7 +1422,7 @@ namespace BrightIdeasSoftware {
             Rectangle r = alignedContentRectangle;
 
             // Match tweaking from renderer
-            if (this.ColumnIsPrimary && this.CellHorizontalAlignment == HorizontalAlignment.Left && !(this is TreeListView.TreeRenderer)) {
+            if (this.ColumnIsPrimary && this.CellHorizontalAlignment == HorizontalAlignment.Left && !(this is ITreeRenderer)) {
                 r.X += 3;
                 r.Width -= 1;
             }
@@ -2243,7 +2243,7 @@ namespace BrightIdeasSoftware {
         /// <param name="height"></param>
         protected virtual void DrawSubstringFrame(Graphics g, float x, float y, float width, float height) {
             if (this.UseRoundedRectangle) {
-                using (GraphicsPath path = this.GetRoundedRect(x, y, width, height, 3.0f)) {
+                using (GraphicsPath path = GetRoundedRect(x, y, width, height, 3.0f)) {
                     if (this.FillBrush != null)
                     {
                         g.FillPath(this.FillBrush, path);
@@ -2331,7 +2331,7 @@ namespace BrightIdeasSoftware {
         /// <param name="width"></param>
         /// <param name="height"></param>
         /// <param name="diameter"></param>
-        protected GraphicsPath GetRoundedRect(float x, float y, float width, float height, float diameter) {
+        protected static GraphicsPath GetRoundedRect(float x, float y, float width, float height, float diameter) {
             return GetRoundedRect(new RectangleF(x, y, width, height), diameter);
         }
 
@@ -2343,7 +2343,7 @@ namespace BrightIdeasSoftware {
         /// <returns>A round cornered rectangle path</returns>
         /// <remarks>If I could rely on people using C# 3.0+, this should be
         /// an extension method of GraphicsPath.</remarks>
-        protected GraphicsPath GetRoundedRect(RectangleF rect, float diameter) {
+        protected static GraphicsPath GetRoundedRect(RectangleF rect, float diameter) {
             GraphicsPath path = new GraphicsPath();
 
             if (diameter > 0) {
@@ -2944,7 +2944,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Instances of this class kept track of the animation state of a single image.
         /// </summary>
-        internal class AnimationState {
+        internal sealed class AnimationState {
             private const int PropertyTagTypeShort = 3;
             private const int PropertyTagTypeLong = 4;
             private const int PropertyTagFrameDelay = 0x5100;
@@ -4250,11 +4250,11 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <param name="g"></param>
         /// <param name="hti"></param>
-        /// <param name="bounds"></param>
+        /// <param name="alignedContentRectangle"></param>
         /// <param name="x"></param>
         /// <param name="y"></param>
-        protected override void StandardHitTest(Graphics g, OlvListViewHitTestInfo hti, Rectangle bounds, int x, int y) {
-            Rectangle r = ApplyCellPadding(bounds);
+        protected override void StandardHitTest(Graphics g, OlvListViewHitTestInfo hti, Rectangle alignedContentRectangle, int x, int y) {
+            Rectangle r = ApplyCellPadding(alignedContentRectangle);
             if (r.Contains(x, y))
             {
                 hti.HitTestLocation = HitTestLocation.Button;

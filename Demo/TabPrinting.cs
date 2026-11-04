@@ -1,6 +1,8 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Globalization;
 using BrightIdeasSoftware;
 using ObjectListViewDemo.Properties;
 
@@ -12,14 +14,20 @@ namespace ObjectListViewDemo
             DemoTheme.ApplyInformationBanner(this.label12);
         }
 
-        // Public fields (yuck) to avoid the baggage of wrapping a private field.
-        // Necessary until I stop supporting .Net 2.0.
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ObjectListViewBase SimpleView { get; set; }
 
-        public ObjectListView SimpleView;
-        public ObjectListView ComplexView;
-        public ObjectListView FileExplorerView;
-        public ObjectListView DataListView;
-        public ObjectListView TreeListView;
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ObjectListViewBase ComplexView { get; set; }
+
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ObjectListViewBase FileExplorerView { get; set; }
+
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ObjectListViewBase DataListView { get; set; }
+
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public ObjectListViewBase TreeListView { get; set; }
 
         protected override void InitializeTab() {
 
@@ -28,7 +36,7 @@ namespace ObjectListViewDemo
 
             // Listen to these events to give feedback as the printing happens
             listViewPrinter1.PrintPage += delegate(object sender, System.Drawing.Printing.PrintPageEventArgs e) {
-                Coordinator.ToolStripStatus1 = String.Format("Printing page #{0}...", this.listViewPrinter1.PageNumber);
+                Coordinator.ToolStripStatus1 = String.Format(CultureInfo.CurrentCulture, "Printing page #{0}...", this.listViewPrinter1.PageNumber);
             };
 
             listViewPrinter1.EndPrint += delegate(object sender, System.Drawing.Printing.PrintEventArgs e) {

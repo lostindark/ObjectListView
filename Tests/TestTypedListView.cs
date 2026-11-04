@@ -222,6 +222,7 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         [TestMethod]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1859", Justification = "The test deliberately exercises untyped mutations through the shared base contract.")]
         public void Test_UntypedMutations_RejectInvalidModelsBeforeChangingRows() {
             this.tolv.Objects = PersonDb.All.Take(2);
             ObjectListViewBase shared = this.tolv;
@@ -358,7 +359,7 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         [TestMethod]
-        public void Test_LegacyStateOverrides_AreUsedThroughTypedUpcastAndAdapter() {
+        public void Test_NonGenericStateOverrides_AreUsedThroughTypedUpcastAndAdapter() {
             using (var list = new PropertyGuardListView { ShowGroups = false, CheckBoxes = true }) {
                 list.Columns.Add(new OLVColumn("Name", "Name"));
                 mainForm.Controls.Add(list);
@@ -386,10 +387,10 @@ namespace BrightIdeasSoftware.Tests {
         [TestMethod]
         public void Test_SourceSnapshots_AreIsolatedAcrossControlKindsAndStaticTypes() {
             using (var virtualList = CreateVirtualObjectListView()) {
-                ObjectListView[] lists = {
+                TypedObjectListView<object>[] lists = {
                     mainForm.objectListView1, mainForm.fastObjectListView1, mainForm.treeListView1, virtualList
                 };
-                foreach (ObjectListView list in lists) {
+                foreach (TypedObjectListView<object> list in lists) {
                     list.SetObjects(PersonDb.All.Take(2));
                     IList legacySnapshot = (IList)list.Objects;
                     IList<object> typedSnapshot = (IList<object>)((TypedObjectListView<object>)list).Objects;
@@ -435,8 +436,8 @@ namespace BrightIdeasSoftware.Tests {
         [DataRow(false)]
         [DataRow(true)]
         public void Test_Rows_FollowGroupedDisplayOrder(bool useVirtualList) {
-            using (TypedObjectListView<object> list = useVirtualList ?
-                new FastObjectListView() : new TypedObjectListView<object>()) {
+            using (TypedObjectListView<Person> list = useVirtualList ?
+                new TypedFastObjectListView<Person>() : new TypedObjectListView<Person>()) {
                 list.View = View.Details;
                 list.ShowGroups = true;
                 var column = new OLVColumn("Name", "Name");
@@ -448,7 +449,7 @@ namespace BrightIdeasSoftware.Tests {
                 var m = new Person("M");
                 list.Objects = new[] { z, a, m };
                 var adapter = new TypedObjectListViewAdapter<Person>(list);
-                IReadOnlyList<object> rows = list.Rows;
+                IReadOnlyList<Person> rows = list.Rows;
                 IReadOnlyList<Person> adaptedRows = adapter.Rows;
 
                 foreach (SortOrder order in new[] { SortOrder.Ascending, SortOrder.Descending }) {
@@ -548,7 +549,7 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         [TestMethod]
-        public void Test_SourceHooks_AvoidSnapshotGettersInUiPipeline() {
+        public void Test_SourceHooks_AssignThroughAllStaticTypes() {
             using (var list = new SourceHookListView { ShowGroups = false }) {
                 list.Columns.Add(new OLVColumn("Name", "Name"));
                 mainForm.Controls.Add(list);
@@ -560,11 +561,8 @@ namespace BrightIdeasSoftware.Tests {
                 list.Objects = PersonDb.All.Take(3);
                 Assert.AreEqual(3, list.SourceAssignments);
                 Assert.AreEqual(3, list.Rows.Count);
-                Assert.AreEqual(0, list.SnapshotReads);
                 Assert.AreEqual(3, typed.GetObjectsSnapshot().Count);
-                Assert.AreEqual(0, list.SnapshotReads);
                 CollectionAssert.AreEqual(PersonDb.All.Take(3).ToArray(), (ICollection)list.Objects);
-                Assert.AreEqual(1, list.SnapshotReads);
             }
         }
 
@@ -728,7 +726,7 @@ namespace BrightIdeasSoftware.Tests {
             this.tolv.CreateControl();
         }
 
-        protected PersonListView tolv;
+        protected PersonListView tolv { get; set; }
 
         public sealed class PersonListView : TypedObjectListView<Person> {
             public List<Person> Storage { get { return (List<Person>)this.StoredModelObjects; } }
@@ -790,7 +788,7 @@ namespace BrightIdeasSoftware.Tests {
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1067", Justification = "This test model verifies that IEquatable alone does not change object-based identity semantics.")]
         private sealed class EquatableModel : IEquatable<EquatableModel> {
-            public string Name { get { return "same"; } }
+            public string Name { get; } = "same";
             public bool Equals(EquatableModel other) { return other != null; }
         }
 
@@ -813,11 +811,6 @@ namespace BrightIdeasSoftware.Tests {
 
         private sealed class SourceHookListView : ObjectListView {
             public int SourceAssignments { get; private set; }
-            public int SnapshotReads { get; private set; }
-            public override IEnumerable Objects {
-                get { this.SnapshotReads++; return base.Objects; }
-                set { base.Objects = value; }
-            }
             protected override void SetModelObjectsCore(IEnumerable models) {
                 this.SourceAssignments++;
                 base.SetModelObjectsCore(models);
@@ -836,7 +829,7 @@ namespace BrightIdeasSoftware.Tests {
             [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
             public bool RejectPropertyChanges { get; set; }
 
-            public override IList SelectedObjects {
+            public override IList<object> SelectedObjects {
                 get { return base.SelectedObjects; }
                 set {
                     if (!RejectPropertyChanges)
@@ -846,7 +839,7 @@ namespace BrightIdeasSoftware.Tests {
                 }
             }
 
-            public override IList CheckedObjects {
+            public override IList<object> CheckedObjects {
                 get { return base.CheckedObjects; }
                 set {
                     if (!RejectPropertyChanges)

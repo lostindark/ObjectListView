@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.Data;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
@@ -8,6 +9,9 @@ using BrightIdeasSoftware;
 namespace ObjectListViewDemo
 {
     public partial class TabDataSet : OlvDemoTab {
+        private static readonly string[] salaryTitles = { "Lowly worker", "Middle management", "Rarified elevation" };
+        private static readonly double[] heightThresholds = { 1.50, 1.70, 1.85 };
+        private static readonly string[] heightTitles = { "Shortie", "Normal", "Tall", "Really tall" };
 
         public TabDataSet() {
             InitializeComponent();
@@ -103,11 +107,11 @@ namespace ObjectListViewDemo
 
             this.salaryColumn.MakeGroupies(
                 new UInt32[] {20000, 100000},
-                new string[] {"Lowly worker", "Middle management", "Rarified elevation"});
+                salaryTitles);
 
             this.heightColumn.MakeGroupies(
-                new Double[] {1.50, 1.70, 1.85},
-                new string[] {"Shortie", "Normal", "Tall", "Really tall"});
+                heightThresholds,
+                heightTitles);
         }
 
         private void ReloadDataGridAndListView() {
@@ -119,10 +123,10 @@ namespace ObjectListViewDemo
         }
 
         private DataSet LoadXmlIntoDataGrid() {
-            DataSet ds = Coordinator.LoadDatasetFromXml(@"Data\Persons.xml");
+            DataSet ds = OLVDemoCoordinator.LoadDatasetFromXml(@"Data\Persons.xml");
 
             if (ds.Tables.Count <= 0) {
-                Coordinator.ShowMessage(@"Failed to load data set from Data\Persons.xml");
+                OLVDemoCoordinator.ShowMessage(@"Failed to load data set from Data\Persons.xml");
                 return null;
             }
 
@@ -179,7 +183,7 @@ namespace ObjectListViewDemo
             }
 
             Coordinator.ToolStripStatus1 =
-                String.Format("XML Load: {0} items in {1}ms, average per item: {2:F}ms",
+                String.Format(CultureInfo.CurrentCulture, "XML Load: {0} items in {1}ms, average per item: {2:F}ms",
                     olvData.Items.Count,
                     stopWatch.ElapsedMilliseconds,
                     stopWatch.ElapsedMilliseconds / olvData.Items.Count);
@@ -190,11 +194,11 @@ namespace ObjectListViewDemo
         }
 
         private void checkBoxGroups_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowGroupsChecked(this.ListView, (CheckBox) sender);
+            OLVDemoCoordinator.ShowGroupsChecked(this.ListView, (CheckBox) sender);
         }
 
         private void checkBoxItemCounts_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowLabelsOnGroupsChecked(this.ListView, (CheckBox) sender);
+            OLVDemoCoordinator.ShowLabelsOnGroupsChecked(this.ListView, (CheckBox) sender);
         }
 
         private void checkBoxPause_CheckedChanged(object sender, EventArgs e) {
@@ -202,11 +206,11 @@ namespace ObjectListViewDemo
         }
 
         private void comboBoxView_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeView(this.ListView, (ComboBox) sender);
+            OLVDemoCoordinator.ChangeView(this.ListView, (ComboBox) sender);
         }
 
         private void comboBoxEditable_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeEditable(this.ListView, (ComboBox) sender);
+            OLVDemoCoordinator.ChangeEditable(this.ListView, (ComboBox) sender);
         }
 
         private void rowHeightUpDown_ValueChanged(object sender, EventArgs e) {

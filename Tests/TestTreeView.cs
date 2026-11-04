@@ -41,7 +41,7 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         private const int NumberOfRoots = 2;
-        protected TreeListView olv;
+        protected TreeListView olv { get; set; }
 
         [TestMethod]
         public void TestInitialConditions() {
@@ -295,7 +295,7 @@ namespace BrightIdeasSoftware.Tests {
 
             this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(firstRoot.Children.Where(p => p != null)));
 
-            ArrayList checkedObjects = new ArrayList(this.olv.CheckedObjects);
+            IList<object> checkedObjects = this.olv.CheckedObjects;
             Assert.AreEqual(firstRoot.Children.Count, checkedObjects.Count);
         }
 
@@ -309,7 +309,7 @@ namespace BrightIdeasSoftware.Tests {
 
             this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(firstRoot.Children.Where(p => p != null)));
 
-            ArrayList checkedObjects = new ArrayList(this.olv.CheckedObjects);
+            IList<object> checkedObjects = this.olv.CheckedObjects;
             Assert.AreEqual(firstRoot.Children.Count, checkedObjects.Count);
         }
 
@@ -467,7 +467,7 @@ namespace BrightIdeasSoftware.Tests {
             this.olv.HierarchicalCheckboxes = true;
             this.olv.CheckObject(firstRoot);
 
-            ArrayList checkedObjects = new ArrayList(this.olv.CheckedObjects);
+            IList<object> checkedObjects = this.olv.CheckedObjects;
             Assert.AreEqual(1, checkedObjects.Count);
             Assert.IsTrue(checkedObjects.Contains(firstRoot));
         }
@@ -483,7 +483,7 @@ namespace BrightIdeasSoftware.Tests {
             this.olv.Expand(firstRoot);
             this.olv.CheckObject(firstRoot);
 
-            ArrayList checkedObjects = new ArrayList(this.olv.CheckedObjects);
+            IList<object> checkedObjects = this.olv.CheckedObjects;
             Assert.AreEqual(1 + firstRoot.Children.Count, checkedObjects.Count);
             Assert.IsTrue(checkedObjects.Contains(firstRoot));
             foreach (Person child in firstRoot.Children)
@@ -505,7 +505,7 @@ namespace BrightIdeasSoftware.Tests {
             Person newGuy = new Person("someone new");
             this.olv.CheckObject(newGuy);
 
-            ArrayList checkedObjects = new ArrayList(this.olv.CheckedObjects);
+            IList<object> checkedObjects = this.olv.CheckedObjects;
             Assert.AreEqual(1, checkedObjects.Count);
             Assert.AreEqual(((Person)checkedObjects[0]).Name, newGuy.Name);
         }
@@ -521,7 +521,7 @@ namespace BrightIdeasSoftware.Tests {
 
             this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(firstRoot.Children.Where(p => p != null)));
 
-            ArrayList checkedObjects = new ArrayList(this.olv.CheckedObjects);
+            IList<object> checkedObjects = this.olv.CheckedObjects;
             Assert.AreEqual(1 + firstRoot.Children.Count, checkedObjects.Count);
             Assert.IsTrue(checkedObjects.Contains(firstRoot));
             foreach (Person child in firstRoot.Children)
@@ -563,9 +563,9 @@ namespace BrightIdeasSoftware.Tests {
 
             ArrayList toBeChecked = new ArrayList();
             toBeChecked.Add(last);
-            this.olv.CheckedObjects = toBeChecked;
+            this.olv.SetCheckedObjects(toBeChecked);
 
-            ArrayList checkedObjects = new ArrayList(this.olv.CheckedObjects);
+            IList<object> checkedObjects = this.olv.CheckedObjects;
             Assert.AreEqual(3, checkedObjects.Count);
             Assert.IsTrue(checkedObjects.Contains(last));
             Assert.IsTrue(checkedObjects.Contains(P1));
@@ -591,7 +591,7 @@ namespace BrightIdeasSoftware.Tests {
             this.olv.HierarchicalCheckboxes = true;
             this.olv.CheckObject(secondRoot);
 
-            this.olv.CheckedObjects = ObjectListView.EnumerableToArray(firstRoot.Children, true);
+            this.olv.CheckedObjects = firstRoot.Children.Cast<object>().ToArray();
 
             Assert.IsFalse(this.olv.IsChecked(secondRoot));
         }
@@ -611,7 +611,7 @@ namespace BrightIdeasSoftware.Tests {
             grandchild.AddChild(new Person("ggrandchild2"));
             grandchild.AddChild(new Person("ggrandchild3"));
 
-            this.olv.Roots = new ArrayList(new object[] {root});
+            this.olv.Roots = new[] { root };
             this.olv.ExpandAll();
 
             Assert.AreEqual(3, ObjectListView.EnumerableCount(this.olv.GetChildren(grandchild)));

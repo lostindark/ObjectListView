@@ -1,8 +1,9 @@
 ﻿using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
@@ -68,9 +69,9 @@ namespace ObjectListViewDemo
             };
 
             treeListView.ModelDropped += delegate(object sender, ModelDropEventArgs e) {
-                String msg = String.Format("{2} items were dropped on '{1}' as a {0} operation.",
+                String msg = String.Format(CultureInfo.CurrentCulture, "{2} items were dropped on '{1}' as a {0} operation.",
                     e.Effect, ((DirectoryInfo) e.TargetModel).Name, e.SourceModels.Count);
-                Coordinator.ShowMessage(msg);
+                OLVDemoCoordinator.ShowMessage(msg);
             };
         }
 
@@ -104,7 +105,7 @@ namespace ObjectListViewDemo
                         this.treeListView.Collapse(x);
                         MessageBox.Show(this, ex.Message, "ObjectListViewDemo", MessageBoxButtons.OK, MessageBoxIcon.Exclamation); 
                     });
-                    return new ArrayList();
+                    return Array.Empty<MyFileSystemInfo>();
                 }
             };
 
@@ -112,7 +113,7 @@ namespace ObjectListViewDemo
             // after setting the Roots property.
 
             // List all drives as the roots of the tree
-            ArrayList roots = new ArrayList();
+            List<MyFileSystemInfo> roots = new List<MyFileSystemInfo>();
             foreach (DriveInfo di in DriveInfo.GetDrives())
             {
                 if (di.IsReady)
@@ -165,7 +166,7 @@ namespace ObjectListViewDemo
                     return "";
                 }
 
-                return Coordinator.FormatFileSize(sizeInBytes);
+                return OLVDemoCoordinator.FormatFileSize(sizeInBytes);
             };
 
             // Show the system description for this object
@@ -214,7 +215,7 @@ namespace ObjectListViewDemo
 
         private void comboBoxHotItemStyle_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Coordinator.ChangeHotItemStyle(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeHotItemStyle(this.ListView, (ComboBox)sender);
         }
 
         private void buttonRefresh_Click(object sender, EventArgs e)
@@ -258,7 +259,7 @@ namespace ObjectListViewDemo
             }
             else
             {
-                this.ListView.DisableObjects(this.ListView.SelectedObjects);
+                this.ListView.DisableObjects(this.ListView.SelectedModelObjects);
             }
         }
 

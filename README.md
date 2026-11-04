@@ -6,14 +6,22 @@
 ObjectListView is a Windows Forms control that presents model objects in a .NET
 `ListView`, with sorting, grouping, filtering, cell editing, and tree views.
 
+This repository is a fork of the
+[original ObjectListView](https://objectlistview.sourceforge.net/cs/index.html).
+
 ## Version 3 development
 
 **V3 is a work in progress, not a completed release.** It targets
 **.NET Framework 4.6.2 and .NET 10 for Windows** and introduces breaking API changes
-that require recompiling consumers.
+that require updating consumer code. **V3 is not binary compatible with V2:**
+users must fix code affected by the breaking changes and recompile their applications.
 
-Modern Visual Studio designer support remains a preview. Native header-divider
-dragging is a known limitation; use the Columns editor or Properties instead.
+The NuGet package includes Visual Studio 2026 designer support, including column
+editing, header-divider resizing with Undo/Redo, and smart-tag View changes.
+Standalone DLL and project references do not install modern designer extensions.
+The classic Framework designer is a separate `ObjectListView.Design.Framework`
+assembly. NuGet wires it automatically; source consumers use the
+[Framework designer import](docs/v3-migration.md#runtime-targets-designers-and-saved-layouts).
 See the [implementation plan](docs/v3-plan.md) for progress and the
 [migration guide](docs/v3-migration.md) before upgrading.
 
@@ -74,12 +82,12 @@ dotnet test Tests\Tests.csproj --configuration Release --framework net10.0-windo
 ```
 
 Add `--filter "FullyQualifiedName~TestMunger"` to run a focused group.
-CI also checks package contents and fresh consumers with
+CI also checks package contents and fresh consumers with PowerShell 7 and
 `.github\scripts\Test-Package.ps1`. Modern designer acceptance still requires
-interactive Visual Studio checks.
+interactive Visual Studio checks. The script leaves a reopenable, version-pinned
+consumer solution under `artifacts\PackageSmoke\consumer`; see the
+[designer acceptance steps](docs/v3-plan.md#continuing-an-iteration).
 
 ## License
 
 See [LICENSE](LICENSE) for the GNU General Public License, version 3.
-
-[Original ObjectListView website](https://objectlistview.sourceforge.net/cs/index.html)

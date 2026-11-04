@@ -17,14 +17,14 @@ namespace ObjectListViewDemo {
             };
         }
 
-        protected override void OnPaintBackground(PaintEventArgs e) {
+        protected override void OnPaintBackground(PaintEventArgs pevent) {
             if (!this.GetStyle(ControlStyles.UserPaint)) {
-                base.OnPaintBackground(e);
+                base.OnPaintBackground(pevent);
                 return;
             }
             using (Brush brush = new SolidBrush(this.BackColor))
             {
-                e.Graphics.FillRectangle(brush, e.ClipRectangle);
+                pevent.Graphics.FillRectangle(brush, pevent.ClipRectangle);
             }
         }
 

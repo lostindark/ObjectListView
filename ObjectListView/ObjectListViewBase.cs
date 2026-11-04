@@ -593,6 +593,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
@@ -658,7 +659,7 @@ namespace BrightIdeasSoftware
     /// </list>
     /// </remarks>
 #if NETFRAMEWORK
-    [Designer(typeof(BrightIdeasSoftware.Design.ObjectListViewDesigner))]
+    [Designer("BrightIdeasSoftware.Design.ObjectListViewDesigner, ObjectListView.Design.Framework")]
 #else
     [Designer("ObjectListViewDesigner")]
 #endif
@@ -1427,7 +1428,7 @@ namespace BrightIdeasSoftware
         /// a specialised editor with it.
         /// </summary>
 #if NETFRAMEWORK
-        [Editor("BrightIdeasSoftware.Design.OLVColumnCollectionEditor", "System.Drawing.Design.UITypeEditor")]
+        [Editor("BrightIdeasSoftware.Design.OLVColumnCollectionEditor, ObjectListView.Design.Framework", typeof(System.Drawing.Design.UITypeEditor))]
 #else
         [Editor("OLVColumnCollectionEditor", "System.Drawing.Design.UITypeEditor")]
 #endif
@@ -1758,7 +1759,7 @@ namespace BrightIdeasSoftware
         /// <see cref="EditorRegistry"/>
         /// <remarks>All instances of ObjectListView share the same editor registry.</remarks>
 // ReSharper disable FieldCanBeMadeReadOnly.Global
-        public static EditorRegistry EditorRegistry = new EditorRegistry();
+        public static EditorRegistry EditorRegistry { get; set; } = new EditorRegistry();
 // ReSharper restore FieldCanBeMadeReadOnly.Global
 
         /// <summary>
@@ -1911,7 +1912,11 @@ namespace BrightIdeasSoftware
         [Category("ObjectListView"),
          Description("The image list from which group header will take their images"),
          DefaultValue(null)]
+#if NETFRAMEWORK
         public ImageList GroupImageList {
+#else
+        public new ImageList GroupImageList {
+#endif
             get { return this.groupImageList; }
             set {
                 this.groupImageList = value;
@@ -2201,6 +2206,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [SuppressMessage("Naming", "CA1711", Justification = "Ex distinguishes extended native hit-test flags from the simplified hit location.")]
         public virtual HitTestLocationEx HotCellHitLocationEx
         {
             get { return this.hotCellHitLocationEx; }
@@ -3489,7 +3495,7 @@ namespace BrightIdeasSoftware
             }
 
             NativeMethods.LVGROUPMETRICS metrics = new NativeMethods.LVGROUPMETRICS();
-            metrics.cbSize = ((uint)Marshal.SizeOf(typeof(NativeMethods.LVGROUPMETRICS)));
+            metrics.cbSize = (uint)Marshal.SizeOf<NativeMethods.LVGROUPMETRICS>();
             metrics.mask = (uint)GroupMetricsMask.LVGMF_BORDERSIZE;
             metrics.Bottom = (uint)this.SpaceBetweenGroups;
             NativeMethods.SetGroupMetrics(this, metrics);
@@ -3721,19 +3727,6 @@ namespace BrightIdeasSoftware
             set { useCellFormatEvents = value; }
         }
         private bool useCellFormatEvents;
-
-        /// <summary>
-        /// Should the selected row be drawn with non-standard foreground and background colors?
-        /// </summary>
-        /// <remarks>v2.9 This property is no longer required</remarks>
-        [Category("ObjectListView"),
-         Description("Should the selected row be drawn with non-standard foreground and background colors?"),
-         DefaultValue(false)]
-        public bool UseCustomSelectionColors {
-            get { return false; }
-            // ReSharper disable once ValueParameterNotUsed
-            set { }
-        }
 
         /// <summary>
         /// Gets or sets whether this ObjectListView will use the same hot item and selection 
@@ -7355,8 +7348,8 @@ namespace BrightIdeasSoftware
                     //System.Diagnostics.Debug.WriteLine("LVN_ITEMCHANGED");
                     NativeMethods.NMLISTVIEW nmlistviewPtr2 = (NativeMethods.NMLISTVIEW)m.GetLParam(typeof(NativeMethods.NMLISTVIEW));
                     if ((nmlistviewPtr2.uChanged & LVIF_STATE) != 0) {
-                        CheckState currentValue = this.CalculateCheckState(nmlistviewPtr2.uOldState);
-                        CheckState newCheckValue = this.CalculateCheckState(nmlistviewPtr2.uNewState);
+                        CheckState currentValue = CalculateCheckState(nmlistviewPtr2.uOldState);
+                        CheckState newCheckValue = CalculateCheckState(nmlistviewPtr2.uNewState);
                         if (currentValue != newCheckValue)
                         {
                             // Remove the state indices so that we don't trigger the OnItemChecked method
@@ -7406,8 +7399,8 @@ namespace BrightIdeasSoftware
                     //System.Diagnostics.Debug.WriteLine("LVN_ITEMCHANGING");
                     NativeMethods.NMLISTVIEW nmlistviewPtr = (NativeMethods.NMLISTVIEW)m.GetLParam(typeof(NativeMethods.NMLISTVIEW));
                     if ((nmlistviewPtr.uChanged & LVIF_STATE) != 0) {
-                        CheckState currentValue = this.CalculateCheckState(nmlistviewPtr.uOldState);
-                        CheckState newCheckValue = this.CalculateCheckState(nmlistviewPtr.uNewState);
+                        CheckState currentValue = CalculateCheckState(nmlistviewPtr.uOldState);
+                        CheckState newCheckValue = CalculateCheckState(nmlistviewPtr.uNewState);
 
                         if (currentValue != newCheckValue) {
                             // Prevent the base method from seeing the state change,
@@ -7438,7 +7431,7 @@ namespace BrightIdeasSoftware
         }
         private bool skipNextHitTest;
 
-        private CheckState CalculateCheckState(int state) {
+        private static CheckState CalculateCheckState(int state) {
             switch ((state & 0xf000) >> 12) {
                 case 1:
                     return CheckState.Unchecked;
@@ -7540,7 +7533,7 @@ namespace BrightIdeasSoftware
                 case HDN_TRACKA:
                 case HDN_TRACKW:
                     if (nmheader.iItem >= 0 && nmheader.iItem < this.Columns.Count) {
-                        NativeMethods.HDITEM hditem = (NativeMethods.HDITEM)Marshal.PtrToStructure(nmheader.pHDITEM, typeof(NativeMethods.HDITEM));
+                        NativeMethods.HDITEM hditem = Marshal.PtrToStructure<NativeMethods.HDITEM>(nmheader.pHDITEM);
                         OLVColumn column = this.GetColumn(nmheader.iItem);
                         if (hditem.cxy < column.MinimumWidth)
                         {
@@ -7559,7 +7552,7 @@ namespace BrightIdeasSoftware
                 case HDN_ITEMCHANGINGW:
                     nmheader = (NativeMethods.NMHEADER)m.GetLParam(typeof(NativeMethods.NMHEADER));
                     if (nmheader.iItem >= 0 && nmheader.iItem < this.Columns.Count) {
-                        NativeMethods.HDITEM hditem = (NativeMethods.HDITEM)Marshal.PtrToStructure(nmheader.pHDITEM, typeof(NativeMethods.HDITEM));
+                        NativeMethods.HDITEM hditem = Marshal.PtrToStructure<NativeMethods.HDITEM>(nmheader.pHDITEM);
                         OLVColumn column = this.GetColumn(nmheader.iItem);
                         // Check the mask to see if the width field is valid, and if it is, make sure it's within range
                         if ((hditem.mask & 1) == 1) {
@@ -7727,6 +7720,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="columnIndex">The index of the header that was clicked. This
         /// can be -1, indicating that the header was clicked outside of a column</param>
+        /// <param name="menu">The menu to display.</param>
         /// <param name="pt">Where should the menu be shown</param>
         /// <returns>True if a menu was displayed</returns>
         protected virtual bool ShowHeaderRightClickMenu(int columnIndex, ToolStripDropDown menu, Point pt) {
@@ -7898,12 +7892,12 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the image that will be place next to the Sort Ascending command
         /// </summary>
-        public static Bitmap SortAscendingImage = BrightIdeasSoftware.Properties.Resources.SortAscending;
+        public static Bitmap SortAscendingImage { get; set; } = BrightIdeasSoftware.Properties.Resources.SortAscending;
 
         /// <summary>
         /// Gets or sets the image that will be placed next to the Sort Descending command
         /// </summary>
-        public static Bitmap SortDescendingImage = BrightIdeasSoftware.Properties.Resources.SortDescending;
+        public static Bitmap SortDescendingImage { get; set; } = BrightIdeasSoftware.Properties.Resources.SortDescending;
 
         /// <summary>
         /// Append the column selection menu items to the given menu strip.
@@ -7923,20 +7917,20 @@ namespace BrightIdeasSoftware
                 strip.Items.Add(new ToolStripSeparator());
             }
 
-            string label = String.Format(this.MenuLabelSortAscending, column.Text);
+            string label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelSortAscending, column.Text);
             if (column.Sortable && !String.IsNullOrEmpty(label)) {
                 strip.Items.Add(label, ObjectListViewBase.SortAscendingImage, (EventHandler)delegate(object sender, EventArgs args) {
                     this.Sort(column, SortOrder.Ascending);
                 });
             }
-            label = String.Format(this.MenuLabelSortDescending, column.Text);
+            label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelSortDescending, column.Text);
             if (column.Sortable && !String.IsNullOrEmpty(label)) {
                 strip.Items.Add(label, ObjectListViewBase.SortDescendingImage, (EventHandler)delegate(object sender, EventArgs args) {
                     this.Sort(column, SortOrder.Descending);
                 });
             }
             if (this.CanShowGroups) {
-                label = String.Format(this.MenuLabelGroupBy, column.Text);
+                label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelGroupBy, column.Text);
                 if (column.Groupable && !String.IsNullOrEmpty(label)) {
                     strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
                         this.ShowGroups = true;
@@ -7948,7 +7942,7 @@ namespace BrightIdeasSoftware
             }
             if (this.ShowGroups) {
                 if (this.AlwaysGroupByColumn == column) {
-                    label = String.Format(this.MenuLabelUnlockGroupingOn, column.Text);
+                    label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelUnlockGroupingOn, column.Text);
                     if (!String.IsNullOrEmpty(label)) {
                         strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
                             this.AlwaysGroupByColumn = null;
@@ -7957,7 +7951,7 @@ namespace BrightIdeasSoftware
                         });
                     }
                 } else {
-                    label = String.Format(this.MenuLabelLockGroupingOn, column.Text);
+                    label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelLockGroupingOn, column.Text);
                     if (column.Groupable && !String.IsNullOrEmpty(label)) {
                         strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
                             this.ShowGroups = true;
@@ -7967,7 +7961,7 @@ namespace BrightIdeasSoftware
                         });
                     }
                 }
-                label = String.Format(this.MenuLabelTurnOffGroups, column.Text);
+                label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelTurnOffGroups, column.Text);
                 if (!String.IsNullOrEmpty(label)) {
                     strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
                         this.ShowGroups = false;
@@ -7975,7 +7969,7 @@ namespace BrightIdeasSoftware
                     });
                 }
             } else {
-                label = String.Format(this.MenuLabelUnsort, column.Text);
+                label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelUnsort, column.Text);
                 if (column.Sortable && !String.IsNullOrEmpty(label) && this.PrimarySortOrder != SortOrder.None) {
                     strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
                         this.Unsort();
@@ -8783,7 +8777,7 @@ namespace BrightIdeasSoftware
         /// </para>
         /// <para>This only works when the list is showing groups (obviously).</para>
         /// <para>This does not work on virtual lists, since virtual lists don't use ListViewGroups
-        /// for grouping. Use <see cref="VirtualObjectListView.EnsureNthGroupVisible"/> instead.</para>
+        /// for grouping. Use <see cref="TypedVirtualObjectListView{T}.EnsureNthGroupVisible"/> instead.</para>
         /// </remarks>
         public virtual void EnsureGroupVisible(ListViewGroup lvg) {
             if (!this.ShowGroups || lvg == null)
@@ -9133,7 +9127,7 @@ namespace BrightIdeasSoftware
         /// Implementation only class that suspends and resumes selection
         /// events on instance creation and disposal.
         /// </summary>
-        private class SuspendSelectionDisposable : IDisposable {
+        private sealed class SuspendSelectionDisposable : IDisposable {
             public SuspendSelectionDisposable(ObjectListViewBase objectListView) {
                 this.objectListView = objectListView;
                 this.objectListView.SuspendSelectionEvents();
@@ -9430,20 +9424,20 @@ namespace BrightIdeasSoftware
                 Point pt1 = new Point(midX - deltaX, midY + deltaY);
                 Point pt2 = new Point(midX, midY - deltaY - 1);
                 Point pt3 = new Point(midX + deltaX, midY + deltaY);
-                il.Images.Add(SORT_INDICATOR_UP_KEY, this.MakeTriangleBitmap(il.ImageSize, new Point[] { pt1, pt2, pt3 }));
+                il.Images.Add(SORT_INDICATOR_UP_KEY, MakeTriangleBitmap(il.ImageSize, new Point[] { pt1, pt2, pt3 }));
             }
 
             if (il.Images.IndexOfKey(SORT_INDICATOR_DOWN_KEY) == -1) {
                 Point pt1 = new Point(midX - deltaX, midY - deltaY);
                 Point pt2 = new Point(midX, midY + deltaY);
                 Point pt3 = new Point(midX + deltaX, midY - deltaY);
-                il.Images.Add(SORT_INDICATOR_DOWN_KEY, this.MakeTriangleBitmap(il.ImageSize, new Point[] { pt1, pt2, pt3 }));
+                il.Images.Add(SORT_INDICATOR_DOWN_KEY, MakeTriangleBitmap(il.ImageSize, new Point[] { pt1, pt2, pt3 }));
             }
 
             this.SmallImageList = il;
         }
 
-        private Bitmap MakeTriangleBitmap(Size sz, Point[] pts) {
+        private static Bitmap MakeTriangleBitmap(Size sz, Point[] pts) {
             Bitmap bm = new Bitmap(sz.Width, sz.Height);
             Graphics g = Graphics.FromImage(bm);
             g.FillPolygon(new SolidBrush(Color.Gray), pts);
@@ -10001,7 +9995,7 @@ namespace BrightIdeasSoftware
                     this.View == View.Details &&
                     (this.shadowedImageList == null || this.shadowedImageList.ImageSize.Height != rowHeight)) {
                     int width = (this.shadowedImageList == null ? 16 : this.shadowedImageList.ImageSize.Width);
-                    resized = this.MakeResizedImageList(width, rowHeight, shadowedImageList);
+                    resized = MakeResizedImageList(width, rowHeight, shadowedImageList);
                     replacement = resized;
                 }
                 this.BaseSmallImageList = replacement;
@@ -10034,7 +10028,7 @@ namespace BrightIdeasSoftware
         /// <param name="height">Height and width of the new images</param>
         /// <param name="source">Source of the images (can be null)</param>
         /// <returns>A new image list</returns>
-        private ImageList MakeResizedImageList(int width, int height, ImageList source) {
+        private static ImageList MakeResizedImageList(int width, int height, ImageList source) {
             ImageList il = new ImageList();
             bool complete = false;
             try {
@@ -10046,7 +10040,7 @@ namespace BrightIdeasSoftware
                     var keys = source.Images.Keys;
                     for (int i = 0; i < source.Images.Count; i++) {
                         using (Image image = source.Images[i])
-                        using (Bitmap bitmap = this.MakeResizedImage(width, height, image, source.TransparentColor))
+                        using (Bitmap bitmap = MakeResizedImage(width, height, image, source.TransparentColor))
                         {
                             il.Images.Add(keys[i], bitmap);
                         }
@@ -10070,7 +10064,7 @@ namespace BrightIdeasSoftware
         /// <param name="image">Image to be centred</param>
         /// <param name="transparent">The background color</param>
         /// <returns>A new bitmap</returns>
-        private Bitmap MakeResizedImage(int width, int height, Image image, Color transparent) {
+        private static Bitmap MakeResizedImage(int width, int height, Image image, Color transparent) {
             Bitmap bm = new Bitmap(width, height);
             bool complete = false;
             try {
@@ -10123,17 +10117,17 @@ namespace BrightIdeasSoftware
             // image list.
             if (this.StateImageList.Images.Count == 0)
             {
-                this.AddCheckStateBitmap(this.StateImageList, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
+                AddCheckStateBitmap(this.StateImageList, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
             }
 
             if (this.StateImageList.Images.Count <= 1)
             {
-                this.AddCheckStateBitmap(this.StateImageList, CHECKED_KEY, CheckBoxState.CheckedNormal);
+                AddCheckStateBitmap(this.StateImageList, CHECKED_KEY, CheckBoxState.CheckedNormal);
             }
 
             if (this.TriStateCheckBoxes && this.StateImageList.Images.Count <= 2)
             {
-                this.AddCheckStateBitmap(this.StateImageList, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
+                AddCheckStateBitmap(this.StateImageList, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
             }
             else {
                 if (this.StateImageList.Images.ContainsKey(INDETERMINATE_KEY))
@@ -10201,7 +10195,7 @@ namespace BrightIdeasSoftware
 
             // Legacy serialized image lists can have no spare bitmap capacity for appended states.
             ImageList source = this.SmallImageList;
-            ImageList il = this.MakeResizedImageList(source == null ? 16 : source.ImageSize.Width,
+            ImageList il = MakeResizedImageList(source == null ? 16 : source.ImageSize.Width,
                 source == null ? 16 : source.ImageSize.Height, source);
             bool attached = false;
             try {
@@ -10210,9 +10204,9 @@ namespace BrightIdeasSoftware
                     il.ColorDepth = ColorDepth.Depth32Bit;
                 }
 
-                this.AddCheckStateBitmap(il, CHECKED_KEY, CheckBoxState.CheckedNormal);
-                this.AddCheckStateBitmap(il, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
-                this.AddCheckStateBitmap(il, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
+                AddCheckStateBitmap(il, CHECKED_KEY, CheckBoxState.CheckedNormal);
+                AddCheckStateBitmap(il, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
+                AddCheckStateBitmap(il, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
 
                 this.SmallImageList = il;
                 ImageList previous = this.subItemCheckBoxImageList;
@@ -10231,7 +10225,7 @@ namespace BrightIdeasSoftware
         }
         private ImageList subItemCheckBoxImageList;
 
-        private void AddCheckStateBitmap(ImageList il, string key, CheckBoxState boxState) {
+        private static void AddCheckStateBitmap(ImageList il, string key, CheckBoxState boxState) {
             using (Bitmap b = new Bitmap(il.ImageSize.Width, il.ImageSize.Height)) {
                 using (Graphics g = Graphics.FromImage(b)) {
                     g.Clear(il.TransparentColor);
@@ -10605,6 +10599,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Rescale known column widths and limits when the control's DPI changes.
         /// </summary>
+        [SuppressMessage("Maintainability", "CA1512", Justification = ".NET Framework 4.6.2 lacks ArgumentOutOfRangeException.ThrowIfNegativeOrZero.")]
         protected virtual void RescaleColumnWidthsForDpi(int dpi) {
             if (dpi <= 0)
             {
@@ -10662,6 +10657,7 @@ namespace BrightIdeasSoftware
         }
 
 #if !NETFRAMEWORK
+        /// <inheritdoc />
         protected override void RescaleConstantsForDpi(int deviceDpiOld, int deviceDpiNew) {
             base.RescaleConstantsForDpi(deviceDpiOld, deviceDpiNew);
             if (this.IsHandleCreated)
@@ -11081,7 +11077,7 @@ namespace BrightIdeasSoftware
             }
 
             try {
-                return control.GetType().InvokeMember("Value", BindingFlags.GetProperty, null, control, null);
+                return control.GetType().InvokeMember("Value", BindingFlags.GetProperty, null, control, null, CultureInfo.CurrentCulture);
             } catch (MissingMethodException) { // Microsoft throws this
                 return control.Text;
             } catch (MissingFieldException) { // Mono throws this
@@ -11786,41 +11782,41 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="args"></param>
-        protected override void OnDragEnter(DragEventArgs args) {
-            base.OnDragEnter(args);
+        /// <param name="drgevent"></param>
+        protected override void OnDragEnter(DragEventArgs drgevent) {
+            base.OnDragEnter(drgevent);
 
             if (this.DropSink != null)
             {
-                this.DropSink.Enter(args);
+                this.DropSink.Enter(drgevent);
             }
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="args"></param>
-        protected override void OnDragOver(DragEventArgs args) {
-            base.OnDragOver(args);
+        /// <param name="drgevent"></param>
+        protected override void OnDragOver(DragEventArgs drgevent) {
+            base.OnDragOver(drgevent);
 
             if (this.DropSink != null)
             {
-                this.DropSink.Over(args);
+                this.DropSink.Over(drgevent);
             }
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="args"></param>
-        protected override void OnDragDrop(DragEventArgs args) {
-            base.OnDragDrop(args);
+        /// <param name="drgevent"></param>
+        protected override void OnDragDrop(DragEventArgs drgevent) {
+            base.OnDragDrop(drgevent);
 
             this.lastMouseDownClickCount = 0;  // prevent drop events from becoming cell edits
 
             if (this.DropSink != null)
             {
-                this.DropSink.Drop(args);
+                this.DropSink.Drop(drgevent);
             }
         }
 
@@ -11840,26 +11836,26 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="args"></param>
-        protected override void OnGiveFeedback(GiveFeedbackEventArgs args) {
-            base.OnGiveFeedback(args);
+        /// <param name="gfbevent"></param>
+        protected override void OnGiveFeedback(GiveFeedbackEventArgs gfbevent) {
+            base.OnGiveFeedback(gfbevent);
 
             if (this.DropSink != null)
             {
-                this.DropSink.GiveFeedback(args);
+                this.DropSink.GiveFeedback(gfbevent);
             }
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="args"></param>
-        protected override void OnQueryContinueDrag(QueryContinueDragEventArgs args) {
-            base.OnQueryContinueDrag(args);
+        /// <param name="qcdevent"></param>
+        protected override void OnQueryContinueDrag(QueryContinueDragEventArgs qcdevent) {
+            base.OnQueryContinueDrag(qcdevent);
 
             if (this.DropSink != null)
             {
-                this.DropSink.QueryContinue(args);
+                this.DropSink.QueryContinue(qcdevent);
             }
         }
 

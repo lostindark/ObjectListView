@@ -17,34 +17,42 @@ namespace BrightIdeasSoftware.Design
     {
         private ObjectListViewBase ListView { get { return (ObjectListViewBase)this.Control; } }
         private BehaviorService behaviorService;
-        private Adorner headerAdorner;
         private HeaderResizeGlyph headerResize;
+        private DesignerActionListCollection actionLists;
 
         public override void Initialize(IComponent component) {
             base.Initialize(component);
-            this.behaviorService = (BehaviorService)this.GetService(typeof(BehaviorService));
-            var host = (IDesignerHost)this.GetService(typeof(IDesignerHost));
-            var changes = (IComponentChangeService)this.GetService(typeof(IComponentChangeService));
+            this.behaviorService = this.GetService<BehaviorService>();
+            var host = this.GetService<IDesignerHost>();
+            var changes = this.GetService<IComponentChangeService>();
             if (this.behaviorService == null || host == null || changes == null)
             {
                 throw new InvalidOperationException("ObjectListView requires the WinForms designer behavior and change services.");
             }
 
             this.headerResize = new HeaderResizeGlyph(this.ListView, this.behaviorService, host, changes);
-            this.headerAdorner = new Adorner();
-            this.headerAdorner.Glyphs.Add(this.headerResize);
-            this.behaviorService.Adorners.Add(this.headerAdorner);
+            this.ListView.HandleDestroyed += this.OnHandleDestroyed;
         }
 
         protected override void Dispose(bool disposing) {
             if (disposing) {
+                this.ListView.HandleDestroyed -= this.OnHandleDestroyed;
                 this.headerResize?.Cancel();
-                if (this.headerAdorner != null)
-                {
-                    this.behaviorService.Adorners.Remove(this.headerAdorner);
-                }
             }
             base.Dispose(disposing);
+        }
+
+        private void OnHandleDestroyed(object sender, EventArgs e) {
+            this.headerResize?.Cancel();
+        }
+
+        public override GlyphCollection GetGlyphs(GlyphSelectionType selectionType) {
+            GlyphCollection glyphs = base.GetGlyphs(selectionType);
+            if (selectionType != GlyphSelectionType.NotSelected && this.headerResize != null)
+            {
+                glyphs.Insert(0, this.headerResize);
+            }
+            return glyphs;
         }
 
         public override System.Collections.Generic.IReadOnlyCollection<IComponent> AssociatedComponents {
@@ -52,7 +60,7 @@ namespace BrightIdeasSoftware.Design
         }
 
         public override DesignerActionListCollection ActionLists {
-            get { return new DesignerActionListCollection { new Options(this.ListView) }; }
+            get { return this.actionLists ?? (this.actionLists = new DesignerActionListCollection { new Options(this.ListView) }); }
         }
 
         public sealed class Options : DesignerActionList
@@ -97,7 +105,7 @@ namespace BrightIdeasSoftware.Design
                 "LabelEdit", "VirtualListSize", "VirtualMode"
             };
             foreach (string name in properties.Keys.Cast<string>().ToArray()) {
-                bool treeProperty = this.ListView is TreeListView && new[] {
+                bool treeProperty = this.ListView is ITreeListView && new[] {
                     "GroupImageList", "GroupWithItemCountFormat", "GroupWithItemCountSingularFormat",
                     "HasCollapsibleGroups", "SpaceBetweenGroups", "ShowGroups",
                     "SortGroupItemsByPrimaryColumn", "ShowItemCountOnGroups"
@@ -121,7 +129,7 @@ namespace BrightIdeasSoftware.Design
                 "GroupTaskClicked", "GroupExpandingCollapsing", "GroupStateChanged"
             };
             foreach (string name in events.Keys.Cast<string>().ToArray()) {
-                if (hidden.Contains(name) || (this.ListView is TreeListView && treeEvents.Contains(name)))
+                if (hidden.Contains(name) || (this.ListView is ITreeListView && treeEvents.Contains(name)))
                 {
                     events[name] = TypeDescriptor.CreateEvent(typeof(ObjectListViewBase),
                         (EventDescriptor)events[name], BrowsableAttribute.No);

@@ -152,7 +152,7 @@ namespace BrightIdeasSoftware
                     result = (xIsNull ? -1 : 1);
                 }
             } else {
-                result = this.CompareValues(x1, y1);
+                result = CompareValues(x1, y1);
             }
 
             if (this.sortOrder == SortOrder.Descending)
@@ -175,7 +175,7 @@ namespace BrightIdeasSoftware
         /// <param name="x">The aspect extracted from the first row</param>
         /// <param name="y">The aspect extracted from the second row</param>
         /// <returns>An ordering indication: -1, 0, 1</returns>
-        public int CompareValues(object x, object y)
+        public static int CompareValues(object x, object y)
         {
             // Force case insensitive compares on strings
             String xAsString = x as String;
@@ -192,7 +192,9 @@ namespace BrightIdeasSoftware
         {
             if (StringComparer == null)
             {
+#pragma warning disable CA1309 // Displayed values sort according to the user's culture.
                 return String.Compare(x, y, StringComparison.CurrentCultureIgnoreCase);
+#pragma warning restore CA1309
             }
             else
             {
@@ -237,7 +239,9 @@ namespace BrightIdeasSoftware
             }
             else
             {
+#pragma warning disable CA1309 // Displayed group headers sort according to the user's culture.
                 result = String.Compare(x.Header, y.Header, StringComparison.CurrentCultureIgnoreCase);
+#pragma warning restore CA1309
             }
 
             if (this.sortOrder == SortOrder.Descending)
@@ -346,7 +350,7 @@ namespace BrightIdeasSoftware
                     result = (xIsNull ? -1 : 1);
                 }
             } else {
-                result = this.CompareValues(x1, y1);
+                result = CompareValues(x1, y1);
             }
 
             if (this.sortOrder == SortOrder.Descending)
@@ -369,7 +373,7 @@ namespace BrightIdeasSoftware
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <returns></returns>
-        public int CompareValues(object x, object y)
+        public static int CompareValues(object x, object y)
         {
             // Force case insensitive compares on strings
             String xStr = x as String;
@@ -386,7 +390,9 @@ namespace BrightIdeasSoftware
         {
             if (StringComparer == null)
             {
+#pragma warning disable CA1309 // Displayed values sort according to the user's culture.
                 return String.Compare(x, y, StringComparison.CurrentCultureIgnoreCase);
+#pragma warning restore CA1309
             }
             else
             {

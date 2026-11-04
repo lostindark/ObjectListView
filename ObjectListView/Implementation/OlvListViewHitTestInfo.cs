@@ -27,6 +27,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Forms;
@@ -108,6 +109,7 @@ namespace BrightIdeasSoftware {
     /// </summary>
     [Flags]
     [SuppressMessage("Naming", "CA1707", Justification = "Member names mirror the Win32 hit-test constants.")]
+    [SuppressMessage("Naming", "CA1711", Justification = "Ex identifies extended native hit-test flags rather than the simplified hit location.")]
     [SuppressMessage("Design", "CA1069", Justification = "Win32 uses bit 0x8 for both state-icon hits and above-control hits in different contexts.")]
     public enum HitTestLocationEx {
         /// <summary>
@@ -269,27 +271,28 @@ namespace BrightIdeasSoftware {
             return (ListViewHitTestLocations)(flags & 0xffff);
         }
 
-        #region Public fields
+        #region Public properties
 
         /// <summary>
         /// Where is the hit location?
         /// </summary>
-        public HitTestLocation HitTestLocation;
+        public HitTestLocation HitTestLocation { get; set; }
 
         /// <summary>
         /// Where is the hit location?
         /// </summary>
-        public HitTestLocationEx HitTestLocationEx;
+        [SuppressMessage("Naming", "CA1711", Justification = "Ex distinguishes extended native hit-test flags from the simplified hit location.")]
+        public HitTestLocationEx HitTestLocationEx { get; set; }
 
         /// <summary>
         /// Which group was hit?
         /// </summary>
-        public OLVGroup Group;
+        public OLVGroup Group { get; set; }
 
         /// <summary>
         /// Custom renderers can use this information to supply more details about the hit location
         /// </summary>
-        public Object UserData;
+        public Object UserData { get; set; }
 
         #endregion
 
@@ -386,11 +389,11 @@ namespace BrightIdeasSoftware {
         /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
-            return string.Format("HitTestLocation: {0}, HitTestLocationEx: {1}, Item: {2}, SubItem: {3}, Location: {4}, Group: {5}, ColumnIndex: {6}", 
+            return string.Format(CultureInfo.CurrentCulture, "HitTestLocation: {0}, HitTestLocationEx: {1}, Item: {2}, SubItem: {3}, Location: {4}, Group: {5}, ColumnIndex: {6}",
                 this.HitTestLocation, this.HitTestLocationEx, this.item, this.subItem, this.location, this.Group, this.ColumnIndex);
         }
 
-        internal class HeaderHitTestInfo
+        internal sealed class HeaderHitTestInfo
         {
             public int ColumnIndex;
             public bool IsOverCheckBox;

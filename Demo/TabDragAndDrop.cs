@@ -59,12 +59,12 @@ namespace ObjectListViewDemo
 
         private void comboBoxGeeksAndTweebsView_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Coordinator.ChangeView(this.olvGeeks, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeView(this.olvGeeks, (ComboBox)sender);
         }
 
         private void comboBoxCoolFroodsView_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Coordinator.ChangeView(this.olvFroods, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeView(this.olvFroods, (ComboBox)sender);
         }
 
         #endregion

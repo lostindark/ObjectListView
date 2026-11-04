@@ -11,6 +11,7 @@
  */
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel;
 using System.Collections.Generic;
 using System.Text;
@@ -21,11 +22,11 @@ using System.Drawing.Drawing2D;
 
 namespace BrightIdeasSoftware {
 
-    public partial class TreeListView {
+    public partial class TypedTreeListView<T> where T : class {
         /// <summary>
         /// This class handles drawing the tree structure of the primary column.
         /// </summary>
-        public class TreeRenderer : HighlightTextRenderer {
+        public class TreeRenderer : HighlightTextRenderer, ITreeRenderer {
             /// <summary>
             /// Create a TreeRenderer
             /// </summary>
@@ -98,16 +99,17 @@ namespace BrightIdeasSoftware {
             /// <summary>
             /// Return the TreeListView for which the renderer is being used.
             /// </summary>
-            public TreeListView TreeListView {
+            public TypedTreeListView<T> TreeListView {
                 get {
-                    return (TreeListView)this.ListView;
+                    return (TypedTreeListView<T>)this.ListView;
                 }
             }
 
             /// <summary>
             /// How many pixels will be reserved for each level of indentation?
             /// </summary>
-            public static int PIXELS_PER_LEVEL = 16 + 1;
+            [SuppressMessage("Design", "CA1000", Justification = "Preserve the independently configurable indentation for each tree model type.")]
+            public static int PIXELS_PER_LEVEL { get; set; } = 16 + 1;
 
             /// <summary>
             /// The real work of drawing the tree is done in this method

@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <_ObjectListViewDesignerFramework>$(TargetFrameworkIdentifier)</_ObjectListViewDesignerFramework>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_ObjectListViewDesignerFramework)' == '' and '$(TargetFramework)' != ''">
+    <_ObjectListViewDesignerFramework>$([MSBuild]::GetTargetFrameworkIdentifier('$(TargetFramework)'))</_ObjectListViewDesignerFramework>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(_ObjectListViewDesignerFramework)' == '.NETFramework'">
+    <Reference Include="ObjectListView.Design.Framework" Exclude="@(Reference)">
+      <HintPath>$(MSBuildThisFileDirectory)..\lib\net462\Design\WinForms\ObjectListView.Design.Framework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

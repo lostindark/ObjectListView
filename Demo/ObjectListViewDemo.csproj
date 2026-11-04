@@ -46,4 +46,5 @@
     <Content Update="Photos\np.png" CopyToOutputDirectory="Always" />
     <Content Include="Resources\Espresso Maker.ico" />
   </ItemGroup>
+  <Import Project="..\ObjectListView.Design.Framework\ObjectListView.Design.Framework.targets" />
 </Project>

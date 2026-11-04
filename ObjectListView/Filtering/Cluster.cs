@@ -27,6 +27,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace BrightIdeasSoftware {
@@ -34,6 +35,7 @@ namespace BrightIdeasSoftware {
     /// <summary>
     /// Concrete implementation of the ICluster interface.
     /// </summary>
+    [SuppressMessage("Design", "CA1036", Justification = "Clusters sort by key but retain reference identity; comparison does not imply value equality.")]
     public class Cluster : ICluster {
 
         #region Life and death
@@ -99,15 +101,15 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Return an indication of the ordering between this object and the given one
         /// </summary>
-        /// <param name="other"></param>
+        /// <param name="obj"></param>
         /// <returns></returns>
-        public int CompareTo(object other) {
-            if (other == null || other == System.DBNull.Value)
+        public int CompareTo(object obj) {
+            if (obj == null || obj == System.DBNull.Value)
             {
                 return 1;
             }
 
-            ICluster otherCluster = other as ICluster;
+            ICluster otherCluster = obj as ICluster;
             if (otherCluster == null)
             {
                 return 1;
@@ -116,7 +118,9 @@ namespace BrightIdeasSoftware {
             string keyAsString = this.ClusterKey as string;
             if (keyAsString != null)
             {
+#pragma warning disable CA1309 // Displayed cluster keys sort according to the user's culture.
                 return String.Compare(keyAsString, otherCluster.ClusterKey as string, StringComparison.CurrentCultureIgnoreCase);
+#pragma warning restore CA1309
             }
 
             IComparable keyAsComparable = this.ClusterKey as IComparable;

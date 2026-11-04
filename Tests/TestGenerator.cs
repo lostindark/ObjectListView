@@ -7,11 +7,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests
 {
-    class GeneratorTestModelEmpty
+    sealed class GeneratorTestModelEmpty
     {
     }
 
-    class GeneratorTestModel1
+    sealed class GeneratorTestModel1
     {
         [OLVColumn("Primary",
             AspectToStringFormat = "AspectToStringFormat",
@@ -35,15 +35,9 @@ namespace BrightIdeasSoftware.Tests
             TriStateCheckBoxes = true,
             UseInitialLetterForGroup = true,
             Width = 500)]
-        public string OLVPrimaryColumn {
-            get { return ""; }
-            set { }
-        }
+        public string OLVPrimaryColumn { get; set; } = "";
 
-        public string NotUsedProperty {
-            get { return ""; }
-            set { }
-        }
+        public string NotUsedProperty { get; set; } = "";
 
         [OLVColumn("Secondary",
             AspectToStringFormat = "!AspectToStringFormat",
@@ -65,48 +59,30 @@ namespace BrightIdeasSoftware.Tests
             TriStateCheckBoxes = false,
             UseInitialLetterForGroup = false,
             Width = -1)]
-        public string OLVSecondaryColumn {
-            get { return ""; }
-            set { }
-        }
+        public string OLVSecondaryColumn { get; set; } = "";
 
     }
 
-    class GeneratorTestModelSorting
+    sealed class GeneratorTestModelSorting
     {
         [OLVColumn("Secondary", DisplayIndex = 1)]
-        public string OLVSecondaryColumn {
-            get { return ""; }
-            set { }
-        }
+        public string OLVSecondaryColumn { get; set; } = "";
 
         [OLVColumn("Primary", DisplayIndex = 0)]
-        public string OLVShouldBeFirst {
-            get { return ""; }
-            set { }
-        }
+        public string OLVShouldBeFirst { get; set; } = "";
 
         [OLVColumn("SecondLast", DisplayIndex = 3)]
-        public string OLVSecondLast {
-            get { return ""; }
-            set { }
-        }
+        public string OLVSecondLast { get; set; } = "";
 
         [OLVColumn("Last")]
-        public string OLVMustBeLast {
-            get { return ""; }
-            set { }
-        }
+        public string OLVMustBeLast { get; set; } = "";
 
         [OLVColumn("Hidden", DisplayIndex = 2, IsVisible=false)]
-        public string OLVMustNotBeVisible {
-            get { return ""; }
-            set { }
-        }
+        public string OLVMustNotBeVisible { get; set; } = "";
     }
 
 
-    class GeneratorTestModelGroupies
+    sealed class GeneratorTestModelGroupies
     {
         [OLVColumn("Secondary", 
             DisplayIndex = 1,
@@ -120,7 +96,7 @@ namespace BrightIdeasSoftware.Tests
         private int groupy;
     }
 
-    class GeneratorTestPropertiesWithoutOlvColumnAttribute {
+    sealed class GeneratorTestPropertiesWithoutOlvColumnAttribute {
         public int Property1 {
             get { return this.property1; }
             set { this.property1 = value; }
@@ -147,7 +123,7 @@ namespace BrightIdeasSoftware.Tests
         private bool? triStateCheckBox;
     }
 
-    class ClassWithChildren
+    sealed class ClassWithChildren
     {
         public int Property1 {
             get { return this.property1; }
@@ -168,7 +144,7 @@ namespace BrightIdeasSoftware.Tests
         private IList<ClassWithChildren> myChildren;
     }
 
-    class ClassWithUntypedChildren
+    sealed class ClassWithUntypedChildren
     {
         public int Property1 {
             get { return this.property1; }
@@ -196,7 +172,7 @@ namespace BrightIdeasSoftware.Tests
         private IList<ClassWithChildren> myChildren;
     }
 
-    class ClassWithIgnoredProperties {
+    sealed class ClassWithIgnoredProperties {
 
         [OLVIgnore]
         public string PublicProperty {
@@ -209,7 +185,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestGenerator : WinFormsTestFixture
     {
-        protected ObjectListView olv;
+        protected ObjectListView olv { get; set; }
 
         [TestInitialize]
         public void InitEachTest() {
@@ -390,7 +366,7 @@ namespace BrightIdeasSoftware.Tests
 
     [STATestClass]
     public class TestColumnBuildingForTreeListView : WinFormsTestFixture {
-        protected TreeListView tolv;
+        protected TreeListView tolv { get; set; }
 
         [TestInitialize]
         public void InitEachTest() {
@@ -450,7 +426,7 @@ namespace BrightIdeasSoftware.Tests
 
             ArrayList roots = new ArrayList();
             roots.Add(parent);
-            this.tolv.Objects = roots;
+            this.tolv.ModelObjects = roots;
             this.tolv.ExpandAll();
 
             Assert.AreEqual(5, this.tolv.GetItemCount());
@@ -466,7 +442,7 @@ namespace BrightIdeasSoftware.Tests
 
             ArrayList roots = new ArrayList();
             roots.Add(parent);
-            this.tolv.Objects = roots;
+            this.tolv.ModelObjects = roots;
             this.tolv.ExpandAll();
 
             Assert.AreEqual(3, this.tolv.GetItemCount());

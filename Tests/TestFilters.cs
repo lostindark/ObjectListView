@@ -15,7 +15,7 @@ namespace BrightIdeasSoftware.Tests
             this.olv = GetObjectListView();
         }
 
-        protected virtual ObjectListView GetObjectListView() {
+        protected virtual TypedObjectListView<object> GetObjectListView() {
             return mainForm.objectListView1;
         }
 
@@ -319,13 +319,13 @@ namespace BrightIdeasSoftware.Tests
             }
         }
 
-        protected ObjectListView olv;
+        protected TypedObjectListView<object> olv { get; set; }
     }
 
     [STATestClass]
     public class TestFastFilters : TestFilters
     {
-        protected override ObjectListView GetObjectListView() {
+        protected override TypedObjectListView<object> GetObjectListView() {
             return mainForm.fastObjectListView1;
         }
     }
@@ -355,7 +355,7 @@ namespace BrightIdeasSoftware.Tests
         override public void Test_ListFilter_Tail_Large() {
         }
 
-        protected override ObjectListView GetObjectListView() {
+        protected override TypedObjectListView<object> GetObjectListView() {
             return mainForm.treeListView1;
         }
     }

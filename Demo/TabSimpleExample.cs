@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
 using ObjectListViewDemo.Models;
@@ -85,7 +86,7 @@ namespace ObjectListViewDemo {
                 OLVColumn column;
                 Point pt = this.olvSimple.PointToClient(Cursor.Position);
                 OLVListItem item = this.olvSimple.GetItemAt(pt.X, pt.Y, out column);
-                System.Diagnostics.Debug.WriteLine(String.Format("Hover: {0}, {1}", item, column));
+                System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "Hover: {0}, {1}", item, column));
             };
         }
 
@@ -99,7 +100,7 @@ namespace ObjectListViewDemo {
                     return;
                 }
 
-                if (p.Name.StartsWith("N"))
+                if (p.Name.StartsWith("N", StringComparison.CurrentCulture))
                 {
                     args.Item.BackColor = Color.LightPink;
                 }
@@ -209,11 +210,11 @@ namespace ObjectListViewDemo {
         }
 
         private void buttonCopy_Click(object sender, EventArgs e) {
-            this.ListView.CopyObjectsToClipboard(this.ListView.SelectedObjects);
+            this.ListView.CopyObjectsToClipboard(this.ListView.SelectedModelObjects);
         }
 
         private void buttonRemove_Click(object sender, EventArgs e) {
-            this.ListView.RemoveObjects(this.ListView.SelectedObjects);
+            this.ListView.RemoveObjects(this.ListView.SelectedModelObjects);
         }
 
         private void buttonAdd_Click(object sender, EventArgs e) {
@@ -232,7 +233,7 @@ namespace ObjectListViewDemo {
         }
 
         private void comboBoxEditable_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeEditable(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeEditable(this.ListView, (ComboBox)sender);
         }
 
         private void checkBoxHotItem_CheckedChanged(object sender, EventArgs e) {
@@ -240,11 +241,11 @@ namespace ObjectListViewDemo {
         }
 
         private void checkBoxItemCount_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowLabelsOnGroupsChecked(this.ListView, (CheckBox)sender);
+            OLVDemoCoordinator.ShowLabelsOnGroupsChecked(this.ListView, (CheckBox)sender);
         }
 
         private void checkBoxGroups_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
+            OLVDemoCoordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
         }
 
         #endregion
@@ -253,17 +254,17 @@ namespace ObjectListViewDemo {
 
 #if WITHOUT_ANIMATION
         private void buttonListAnimation_Click(object sender, EventArgs e) {
-            Coordinator.ShowMessage("Animations do not work on VS 2005");
+            OLVDemoCoordinator.ShowMessage("Animations do not work on VS 2005");
         }
 
         private void buttonRowAnimation_Click(object sender, EventArgs e)
         {
-            Coordinator.ShowMessage("Animations do not work on VS 2005");
+            OLVDemoCoordinator.ShowMessage("Animations do not work on VS 2005");
         }
 
         private void buttonCellAnimation_Click(object sender, EventArgs e)
         {
-            Coordinator.ShowMessage("Animations do not work on VS 2005");
+            OLVDemoCoordinator.ShowMessage("Animations do not work on VS 2005");
         }
 #else
 
@@ -307,25 +308,25 @@ namespace ObjectListViewDemo {
         private void buttonRowAnimation_Click(object sender, EventArgs e) {
             object modelObject = this.olvSimple.GetModelObject(Math.Min(5, this.olvSimple.GetItemCount()));
             if (modelObject == null) {
-                Coordinator.ShowMessage("There aren't any rows to be animated");
+                OLVDemoCoordinator.ShowMessage("There aren't any rows to be animated");
                 return;
             }
             AnimatedDecoration animatedDecoration = new AnimatedDecoration(this.olvSimple, modelObject);
             Animation animation = animatedDecoration.Animation;
 
             // Animate the same star several times to make ghosting
-            this.AddStarAnimation(animation, 250, 0.4f);
-            this.AddStarAnimation(animation, 200, 0.5f);
-            this.AddStarAnimation(animation, 150, 0.6f);
-            this.AddStarAnimation(animation, 100, 0.7f);
-            this.AddStarAnimation(animation, 50, 0.8f);
-            this.AddStarAnimation(animation, 0, 1.0f);
+            AddStarAnimation(animation, 250, 0.4f);
+            AddStarAnimation(animation, 200, 0.5f);
+            AddStarAnimation(animation, 150, 0.6f);
+            AddStarAnimation(animation, 100, 0.7f);
+            AddStarAnimation(animation, 50, 0.8f);
+            AddStarAnimation(animation, 0, 1.0f);
 
             animation.Start();
         }
 
-        private void AddStarAnimation(Animation animation, int start, float opacity) {
-            Sprite sprite = new ImageSprite(Resource1.star32);
+        private static void AddStarAnimation(Animation animation, int start, float opacity) {
+            ImageSprite sprite = new ImageSprite(Resource1.star32);
             sprite.Opacity = opacity;
             sprite.Add(0, 4000, Effects.Walk(Locators.AnimationBounds(), WalkDirection.Anticlockwise));
             sprite.Add(0, 4000, Effects.Rotate(0, 1480));
@@ -335,7 +336,7 @@ namespace ObjectListViewDemo {
         private void buttonCellAnimation_Click(object sender, EventArgs e) {
             object modelObject = this.olvSimple.GetModelObject(Math.Min(5, this.olvSimple.GetItemCount()));
             if (modelObject == null || this.olvSimple.Columns.Count < 2) {
-                Coordinator.ShowMessage("There aren't any cells to be animated");
+                OLVDemoCoordinator.ShowMessage("There aren't any cells to be animated");
                 return;
             }
 

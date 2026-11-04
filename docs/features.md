@@ -346,7 +346,7 @@ N.B. Every row has the same height. No variable height rows are allowed. See [Ca
 
 ## Custom selection colours
 
-The colours used to indicate a selected row are governed by the operating system and cannot be changed. However, if you set `UseCustomSelectionColors` to true, the ObjectListView will use `HighlightBackgroundColor` and `HighlightForegroundColor` as the colours for the selected rows.
+With `OwnerDraw` enabled, set `SelectedBackColor` and `SelectedForeColor` to customise the colours of selected rows. No separate flag is required.
 
 <a name="tool-tips"></a>
 

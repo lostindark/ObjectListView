@@ -185,7 +185,7 @@ namespace BrightIdeasSoftware
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public class HDHITTESTINFO
+        public sealed class HDHITTESTINFO
         {
             public int pt_x;
             public int pt_y;
@@ -194,7 +194,7 @@ namespace BrightIdeasSoftware
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public class HDLAYOUT
+        public sealed class HDLAYOUT
         {
             public IntPtr prc;
             public IntPtr pwpos;
@@ -507,9 +507,9 @@ namespace BrightIdeasSoftware
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public class SCROLLINFO
+        public sealed class SCROLLINFO
         {
-            public int cbSize = Marshal.SizeOf(typeof(NativeMethods.SCROLLINFO));
+            public int cbSize = Marshal.SizeOf<NativeMethods.SCROLLINFO>();
             public int fMask;
             public int nMin;
             public int nMax;
@@ -519,9 +519,9 @@ namespace BrightIdeasSoftware
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-        public class TOOLINFO
+        public sealed class TOOLINFO
         {
-            public int cbSize = Marshal.SizeOf(typeof(NativeMethods.TOOLINFO));
+            public int cbSize = Marshal.SizeOf<NativeMethods.TOOLINFO>();
             public int uFlags;
             public IntPtr hwnd;
             public IntPtr uId;
@@ -570,7 +570,7 @@ namespace BrightIdeasSoftware
         public static extern IntPtr SendMessageTOOLINFO(IntPtr hWnd, int Msg, int wParam, NativeMethods.TOOLINFO lParam);
         [DllImport("user32.dll", EntryPoint = "SendMessage", CharSet = CharSet.Auto)]
         public static extern IntPtr SendMessageLVBKIMAGE(IntPtr hWnd, int Msg, int wParam, ref NativeMethods.LVBKIMAGE lParam);
-        [DllImport("user32.dll", EntryPoint = "SendMessage", CharSet = CharSet.Auto)]
+        [DllImport("user32.dll", EntryPoint = "SendMessageW", CharSet = CharSet.Unicode, ExactSpelling = true)]
         public static extern IntPtr SendMessageString(IntPtr hWnd, int Msg, int wParam, string lParam);
         [DllImport("user32.dll", EntryPoint = "SendMessage", CharSet = CharSet.Auto)]
         public static extern IntPtr SendMessageIUnknown(IntPtr hWnd, int msg, [MarshalAs(UnmanagedType.IUnknown)] object wParam, int lParam);
@@ -1198,7 +1198,7 @@ namespace BrightIdeasSoftware
         [DllImport("gdi32.dll", CharSet = CharSet.Auto, SetLastError = true, ExactSpelling = true)]
         public static extern IntPtr SelectObject(IntPtr hdc, IntPtr obj);
 
-        [DllImport("uxtheme.dll", CharSet = CharSet.Auto, SetLastError = true, ExactSpelling = true)]
+        [DllImport("uxtheme.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
         public static extern IntPtr SetWindowTheme(IntPtr hWnd, string subApp, string subIdList);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
@@ -1238,7 +1238,7 @@ namespace BrightIdeasSoftware
             return (int)NativeMethods.SendMessage(olv.Handle, LVM_SETGROUPMETRICS, 0, ref metrics);
         }
 
-        public static void ClearGroups(VirtualObjectListView virtualObjectListView) {
+        public static void ClearGroups(ObjectListViewBase virtualObjectListView) {
             NativeMethods.SendMessage(virtualObjectListView.Handle, LVM_REMOVEALLGROUPS, 0, 0);
         }
 

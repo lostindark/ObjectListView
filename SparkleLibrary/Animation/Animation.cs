@@ -226,6 +226,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Start the story
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA1513", Justification = "The shared net462 and modern implementation retains explicit disposal checks to avoid target-specific scaffolding for unavailable helpers.")]
         public void Start() {
             lock (this.Timer) {
                 if (this.disposed)
@@ -255,6 +256,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Unpause the story
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA1513", Justification = "The shared net462 and modern implementation retains explicit disposal checks to avoid target-specific scaffolding for unavailable helpers.")]
         public void Unpause() {
             lock (this.Timer) {
                 if (this.disposed)
@@ -471,10 +473,10 @@ namespace BrightIdeasSoftware
                 this.Sprite = sprite;
             }
 
-            public IAnimateable Component;
-            public long ScheduledStartTick;
-            public long StartTick;
-            public bool Stopped;
+            public IAnimateable Component { get; set; }
+            public long ScheduledStartTick { get; set; }
+            public long StartTick { get; set; }
+            public bool Stopped { get; set; }
 
             public bool Started {
                 get { return this.StartTick != 0; }
@@ -485,7 +487,7 @@ namespace BrightIdeasSoftware
             /// </summary>
             /// <remarks>Almost all components are sprites so we keep this property to
             /// prevent the use of casts.</remarks>
-            public ISprite Sprite;
+            public ISprite Sprite { get; set; }
         }
 
         #endregion

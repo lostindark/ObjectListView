@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <_ObjectListViewDesignerFramework>$(TargetFrameworkIdentifier)</_ObjectListViewDesignerFramework>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_ObjectListViewDesignerFramework)' == '' and '$(TargetFramework)' != ''">
+    <_ObjectListViewDesignerFramework>$([MSBuild]::GetTargetFrameworkIdentifier('$(TargetFramework)'))</_ObjectListViewDesignerFramework>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(_ObjectListViewDesignerFramework)' == '.NETFramework'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)ObjectListView.Design.Framework.csproj"
+                      Private="false" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

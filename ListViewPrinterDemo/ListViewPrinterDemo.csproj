@@ -28,4 +28,5 @@
     <None Remove="Persons.xml" />
     <Content Include="Persons.xml" CopyToOutputDirectory="Always" />
   </ItemGroup>
+  <Import Project="..\ObjectListView.Design.Framework\ObjectListView.Design.Framework.targets" />
 </Project>

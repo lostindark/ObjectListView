@@ -19,13 +19,14 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="System.Design" />
     <Reference Include="System.Runtime.Serialization" />
+    <ProjectReference Include="..\ObjectListView.Design.Framework\ObjectListView.Design.Framework.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Program.cs" Condition="'$(TargetFramework)' == 'net10.0-windows'" />
     <ProjectReference Include="..\ObjectListView\ObjectListView.csproj" />
     <ProjectReference Include="..\ListViewPrinter\ListViewPrinter.csproj" />
     <Compile Include="..\ObjectListView.Design.Protocol\PrinterEditorState.cs" Link="PrinterEditorState.cs" />
-    <Compile Include="..\ObjectListView.Design.Server\ColumnResizeTransaction.cs" Link="ColumnResizeTransaction.cs" />
+    <Compile Include="..\ObjectListView.Design.Shared\ColumnResizeTransaction.cs" Link="ColumnResizeTransaction.cs" />
     <ProjectReference Include="..\Demo\ObjectListViewDemo.csproj" />
   </ItemGroup>
 </Project>

@@ -36,12 +36,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Drawing;
 
 namespace BrightIdeasSoftware {
 
+    /// <summary>
+    /// A model filter that identifies matching text for highlighting.
+    /// </summary>
     public interface ITextMatchFilter: IModelFilter {
         /// <summary>
         /// Find all the ways in which this filter matches the given string.
@@ -404,7 +408,10 @@ namespace BrightIdeasSoftware {
 
         #region Implementation members
 
-        protected List<TextMatchingStrategy> MatchingStrategies = new List<TextMatchingStrategy>();
+        /// <summary>
+        /// The strategies used to find matching text.
+        /// </summary>
+        protected List<TextMatchingStrategy> MatchingStrategies { get; set; } = new List<TextMatchingStrategy>();
 
         #endregion
 
@@ -488,6 +495,7 @@ namespace BrightIdeasSoftware {
             /// </remarks>
             /// <param name="cellText">The text of the cell we want to search</param>
             /// <returns>Return true if the given cellText matches our strategy</returns>
+            [SuppressMessage("Maintainability", "CA2249", Justification = ".NET Framework 4.6.2 lacks string.Contains(string, StringComparison).")]
             public override bool MatchesText(string cellText) {
                 return cellText.IndexOf(this.Text, this.StringComparison) != -1;
             }
@@ -642,7 +650,7 @@ namespace BrightIdeasSoftware {
                     return true;
                 }
 
-                return this.Regex.Match(cellText).Success;
+                return this.Regex.IsMatch(cellText);
             }
 
             /// <summary>

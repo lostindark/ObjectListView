@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using System.Collections.Generic;
@@ -163,7 +164,7 @@ namespace BrightIdeasSoftware.Tests
                     list.SmallImageList = source;
                     list.UseSubItemCheckBoxes = true;
                     var resources = new ComponentResourceManager(typeof(ObjectListViewDemo.TabComplexExample));
-                    source.ImageStream = (ImageListStreamer)resources.GetObject("imageList1.ImageStream");
+                    source.ImageStream = (ImageListStreamer)resources.GetObject("imageList1.ImageStream", CultureInfo.CurrentUICulture);
                     for (int i = 0; i < 18; i++)
                     {
                         source.Images.SetKeyName(i, "asset" + i);

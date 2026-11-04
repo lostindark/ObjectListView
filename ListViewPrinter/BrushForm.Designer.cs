@@ -1,4 +1,8 @@
+#if OLV_DESIGN_CLIENT
+namespace BrightIdeasSoftware.Design.Client.Printing
+#else
 namespace BrightIdeasSoftware
+#endif
 {
     partial class BrushForm
     {

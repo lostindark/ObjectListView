@@ -107,14 +107,14 @@ namespace ObjectListViewDemo {
                 TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding | TextFormatFlags.PreserveGraphicsClipping);
         }
 
-        protected override void OnPaintBackground(PaintEventArgs e) {
+        protected override void OnPaintBackground(PaintEventArgs pevent) {
             if (!this.GetStyle(ControlStyles.UserPaint)) {
-                base.OnPaintBackground(e);
+                base.OnPaintBackground(pevent);
                 return;
             }
             using (Brush brush = new SolidBrush(ObjectListViewTheme.ControlColor))
             {
-                e.Graphics.FillRectangle(brush, e.ClipRectangle);
+                pevent.Graphics.FillRectangle(brush, pevent.ClipRectangle);
             }
         }
 

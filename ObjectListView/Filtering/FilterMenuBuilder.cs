@@ -59,36 +59,36 @@ namespace BrightIdeasSoftware {
         /// Gets or sets the string that labels the Apply button.
         /// Exposed so it can be localized.
         /// </summary>
-        static public string APPLY_LABEL = "Apply";
+        public static string APPLY_LABEL { get; set; } = "Apply";
 
         /// <summary>
         /// Gets or sets the string that labels the Clear All menu item.
         /// Exposed so it can be localized.
         /// </summary>
-        static public string CLEAR_ALL_FILTERS_LABEL = "Clear All Filters";
+        public static string CLEAR_ALL_FILTERS_LABEL { get; set; } = "Clear All Filters";
 
         /// <summary>
         /// Gets or sets the string that labels the Filtering menu as a whole..
         /// Exposed so it can be localized.
         /// </summary>
-        static public string FILTERING_LABEL = "Filtering";
+        public static string FILTERING_LABEL { get; set; } = "Filtering";
 
         /// <summary>
         /// Gets or sets the string that represents Select All values.
         /// If this is set to null or empty, no Select All option will be included.
         /// Exposed so it can be localized.
         /// </summary>
-        static public string SELECT_ALL_LABEL = "Select All";
+        public static string SELECT_ALL_LABEL { get; set; } = "Select All";
 
         /// <summary>
         /// Gets or sets the image that will be placed next to the Clear Filtering menu item
         /// </summary>
-        static public Bitmap ClearFilteringImage = BrightIdeasSoftware.Properties.Resources.ClearFiltering;
+        public static Bitmap ClearFilteringImage { get; set; } = BrightIdeasSoftware.Properties.Resources.ClearFiltering;
 
         /// <summary>
         /// Gets or sets the image that will be placed next to all "Apply" menu items on the filtering menu
         /// </summary>
-        static public Bitmap FilteringImage = BrightIdeasSoftware.Properties.Resources.Filtering;
+        public static Bitmap FilteringImage { get; set; } = BrightIdeasSoftware.Properties.Resources.Filtering;
 
         #endregion
 

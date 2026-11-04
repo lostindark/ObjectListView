@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
 
 namespace ObjectListViewDemo {
     public partial class TabFileExplorer : OlvDemoTab {
+        private static readonly string[] fileSizeTitles = { "Folders", "Small", "Big", "Disk space chewer" };
 
         public TabFileExplorer() {
             InitializeComponent();
@@ -47,13 +49,13 @@ namespace ObjectListViewDemo {
             this.olvFiles.CellToolTipShowing += delegate(object sender, ToolTipShowingEventArgs e) {
                 if (this.showToolTipsOnFiles)
                 {
-                    e.Text = String.Format("Tool tip for '{0}', column '{1}'\r\nValue shown: '{2}'", e.Model, e.Column.Text, e.SubItem.Text);
+                    e.Text = String.Format(CultureInfo.CurrentCulture, "Tool tip for '{0}', column '{1}'\r\nValue shown: '{2}'", e.Model, e.Column.Text, e.SubItem.Text);
                 }
             };
 
             // Show a menu -- but only when the user right clicks on the first column
             this.olvFiles.CellRightClick += delegate(object sender, CellRightClickEventArgs e) {
-                System.Diagnostics.Trace.WriteLine(String.Format("right clicked {0}, {1}). model {2}", e.RowIndex, e.ColumnIndex, e.Model));
+                System.Diagnostics.Trace.WriteLine(String.Format(CultureInfo.CurrentCulture, "right clicked {0}, {1}). model {2}", e.RowIndex, e.ColumnIndex, e.Model));
                 if (e.ColumnIndex == 0)
                 {
                     e.MenuStrip = this.contextMenuStrip2;
@@ -90,10 +92,10 @@ namespace ObjectListViewDemo {
                     return "";
                 }
 
-                return Coordinator.FormatFileSize(sizeInBytes);
+                return OLVDemoCoordinator.FormatFileSize(sizeInBytes);
             };
             this.olvColumnSize.MakeGroupies(new long[] {0, 1024 * 1024, 512 * 1024 * 1024},
-                new string[] {"Folders", "Small", "Big", "Disk space chewer"});
+                fileSizeTitles);
 
             // Group by month-year, rather than date
             // This code is duplicated for FileCreated and FileModified, so we really should
@@ -103,7 +105,7 @@ namespace ObjectListViewDemo {
                 return new DateTime(dt.Year, dt.Month, 1);
             };
             this.olvColumnCreated.GroupKeyToTitleConverter = delegate(object x) {
-                return ((DateTime)x).ToString("MMMM yyyy");
+                return ((DateTime)x).ToString("MMMM yyyy", CultureInfo.CurrentCulture);
             };
 
             // Group by month-year, rather than date
@@ -112,7 +114,7 @@ namespace ObjectListViewDemo {
                 return new DateTime(dt.Year, dt.Month, 1);
             };
             this.olvColumnModified.GroupKeyToTitleConverter = delegate(object x) {
-                return ((DateTime)x).ToString("MMMM yyyy");
+                return ((DateTime)x).ToString("MMMM yyyy", CultureInfo.CurrentCulture);
             };
 
             // Show the system description for this object
@@ -160,7 +162,7 @@ namespace ObjectListViewDemo {
             Cursor.Current = Cursors.Default;
 
             float msPerItem = (olvFiles.Items.Count == 0 ? 0 : (float)sw.ElapsedMilliseconds / olvFiles.Items.Count);
-            Coordinator.ToolStripStatus1 = String.Format("Timed build: {0} items in {1}ms ({2:F}ms per item)",
+            Coordinator.ToolStripStatus1 = String.Format(CultureInfo.CurrentCulture, "Timed build: {0} items in {1}ms ({2:F}ms per item)",
                 olvFiles.Items.Count, sw.ElapsedMilliseconds, msPerItem);
         }
 
@@ -260,7 +262,7 @@ namespace ObjectListViewDemo {
         private TextOverlay nagOverlay;
 
         private void checkBoxGroups_CheckedChanged(object sender, EventArgs e) {
-            Coordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
+            OLVDemoCoordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
         }
 
         private void checkBoxTooltips_CheckedChanged(object sender, EventArgs e) {
@@ -270,11 +272,11 @@ namespace ObjectListViewDemo {
         private bool showToolTipsOnFiles;
 
         private void comboBoxHotItemStyle_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeHotItemStyle(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeHotItemStyle(this.ListView, (ComboBox)sender);
         }
 
         private void comboBoxView_SelectedIndexChanged(object sender, EventArgs e) {
-            Coordinator.ChangeView(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeView(this.ListView, (ComboBox)sender);
         }
 
         private void buttonSaveState_Click(object sender, EventArgs e) {

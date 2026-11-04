@@ -175,14 +175,14 @@ namespace BrightIdeasSoftware {
         protected virtual string DateToString(DateTime dateTime) {
             if (String.IsNullOrEmpty(this.Format))
             {
-                return dateTime.ToString(CultureInfo.CurrentUICulture);
+                return dateTime.ToString(CultureInfo.CurrentCulture);
             }
 
             try {
-                return dateTime.ToString(this.Format);
+                return dateTime.ToString(this.Format, CultureInfo.CurrentCulture);
             }
             catch (FormatException) {
-                return String.Format("Bad format string '{0}' for value '{1}'", this.Format, dateTime);
+                return String.Format(CultureInfo.CurrentCulture, "Bad format string '{0}' for value '{1}'", this.Format, dateTime);
             }
         }
     

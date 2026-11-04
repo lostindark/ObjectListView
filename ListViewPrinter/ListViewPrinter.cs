@@ -66,6 +66,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Printing;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace BrightIdeasSoftware
@@ -591,9 +592,10 @@ namespace BrightIdeasSoftware
         /// <param name="lv">The ListView in virtual mode</param>
         /// <param name="n">index of item to get</param>
         /// <returns>the item</returns>
+        /// <exception cref="NotSupportedException">The base printer does not support virtual list items.</exception>
         virtual protected ListViewItem GetVirtualItem(ListView lv, int n)
         {
-            throw new ApplicationException("Virtual list items cannot be retrieved. Use an ObjectListView instead.");
+            throw new NotSupportedException("Virtual list items cannot be retrieved. Use an ObjectListView instead.");
         }
 
         /// <summary>
@@ -1207,9 +1209,10 @@ namespace BrightIdeasSoftware
         /// <returns></returns>
         private String[] SplitAndFormat(String text)
         {
-            String s = String.Format(text, this.pageNumber, DateTime.Now);
-            return s.Split(new Char[] { '\x09' }, 3);
+            String s = String.Format(CultureInfo.CurrentCulture, text, this.pageNumber, DateTime.Now);
+            return s.Split(HeaderFooterSeparators, 3);
         }
+        private static readonly char[] HeaderFooterSeparators = { '\t' };
 
         #endregion
 
@@ -1283,7 +1286,7 @@ namespace BrightIdeasSoftware
         /// <returns>the item</returns>
         override protected ListViewItem GetVirtualItem(ListView lv, int n)
         {
-            return ((VirtualObjectListView)lv).MakeListViewItem(n);
+            return ((IVirtualListView)lv).MakeListViewItem(n);
         }
 
         /// <summary>
@@ -1307,7 +1310,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// If the given BlockFormat doesn't specify a background, take it from the SubItem or the ListItem.
         /// </summary>
-        protected bool ApplyCellSpecificBackground(BlockFormat fmt, ListViewItem lvi, ListViewItem.ListViewSubItem lvsi)
+        protected static bool ApplyCellSpecificBackground(BlockFormat fmt, ListViewItem lvi, ListViewItem.ListViewSubItem lvsi)
         {
             if (fmt.BackgroundBrush != null)
             {
@@ -1373,7 +1376,7 @@ namespace BrightIdeasSoftware
                 renderer.SubItem = (OLVListSubItem)this.GetSubItem(lvi, column);
 
                 // Use the cell block format to draw the background and border of the cell
-                bool bkChanged = this.ApplyCellSpecificBackground(this.CellFormat, renderer.ListItem, renderer.SubItem);
+                bool bkChanged = ApplyCellSpecificBackground(this.CellFormat, renderer.ListItem, renderer.SubItem);
                 this.CellFormat.Draw(g, cell, "", "", "");
                 if (bkChanged)
                 {
@@ -1474,7 +1477,8 @@ namespace BrightIdeasSoftware
         /// This is useful when you have setup specific colors on a RowFormatter delegate, for example.
         /// </para>
         /// </remarks>
-        public Brush TextBrush;
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public Brush TextBrush { get; set; }
         
         /// <summary>
         /// This object is used by the IDE to set the text brush.
@@ -1518,8 +1522,8 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// What brush will be used to paint the background?
         /// </summary>
-        [Browsable(false)]
-        public Brush BackgroundBrush;
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public Brush BackgroundBrush { get; set; }
 
         /// <summary>
         /// This object is used by the IDE to set the background brush.
@@ -1939,7 +1943,7 @@ namespace BrightIdeasSoftware
             }
         }
 
-        private ValueT GetKeyOrDefault<KeyT, ValueT>(Dictionary<KeyT, ValueT> map, KeyT key, ValueT defaultValue)
+        private static ValueT GetKeyOrDefault<KeyT, ValueT>(Dictionary<KeyT, ValueT> map, KeyT key, ValueT defaultValue)
         {
             return map.TryGetValue(key, out ValueT value) ? value : defaultValue;
         }
@@ -1992,7 +1996,7 @@ namespace BrightIdeasSoftware
             return height;
         }
 
-        private RectangleF ApplyInsets(RectangleF cell, float left, float top, float right, float bottom)
+        private static RectangleF ApplyInsets(RectangleF cell, float left, float top, float right, float bottom)
         {
             return new RectangleF(cell.X + left,
                 cell.Y + top,
@@ -2007,7 +2011,7 @@ namespace BrightIdeasSoftware
         /// <returns></returns>
         public RectangleF CalculatePaddedBox(RectangleF cell)
         {
-            return this.ApplyInsets(cell,
+            return ApplyInsets(cell,
                 this.GetPadding(Sides.Left),
                 this.GetPadding(Sides.Top),
                 this.GetPadding(Sides.Right),
@@ -2021,7 +2025,7 @@ namespace BrightIdeasSoftware
         /// <returns></returns>
         public RectangleF CalculateBorderedBox(RectangleF cell)
         {
-            return this.ApplyInsets(cell,
+            return ApplyInsets(cell,
                 this.GetBorderWidth(Sides.Left),
                 this.GetBorderWidth(Sides.Top),
                 this.GetBorderWidth(Sides.Right),
@@ -2035,7 +2039,7 @@ namespace BrightIdeasSoftware
         /// <returns></returns>
         public RectangleF CalculateTextBox(RectangleF cell)
         {
-            return this.ApplyInsets(cell,
+            return ApplyInsets(cell,
                 this.GetTextInset(Sides.Left),
                 this.GetTextInset(Sides.Top),
                 this.GetTextInset(Sides.Right),
@@ -2131,7 +2135,7 @@ namespace BrightIdeasSoftware
         {
             if (this.BackgroundBrush != null) {
                 // Enlarge the background area by half the border widths on each side
-                RectangleF r2 = this.ApplyInsets(r,
+                RectangleF r2 = ApplyInsets(r,
                       this.GetBorderWidth(Sides.Left) / -2,
                       this.GetBorderWidth(Sides.Top) / -2,
                       this.GetBorderWidth(Sides.Right) / -2,
@@ -2155,72 +2159,22 @@ namespace BrightIdeasSoftware
 
         static public Brush PrepareBrushForDrawing(Brush value, RectangleF r)
         {
-            LinearGradientBrush lgb = value as LinearGradientBrush;
-            if (lgb == null)
-            {
-                return value;
-            }
-
-            // We really just want to change the bounds of the gradient, but there is no way to do that
-            // so we have to make a new brush and copy across the information we can
-
-            //lgb.Rectangle.X = r.X;
-            //lgb.Rectangle.Y = r.Y;
-            //lgb.Rectangle.Width = r.Width;
-            //lgb.Rectangle.Height = r.Height;
-
-            LinearGradientBrush lgb2 = new LinearGradientBrush(r, lgb.LinearColors[0], lgb.LinearColors[1], 0.0);
-            lgb2.Blend = lgb.Blend;
-            //lgb2.InterpolationColors = lgb.InterpolationColors;
-            lgb2.WrapMode = lgb.WrapMode;
-            lgb2.Transform = lgb.Transform;
-            return lgb2;
+            return BrushPenDrawing.PrepareBrush(value, r);
         }
 
         static public Pen PreparePenForDrawing(Pen value, RectangleF r)
         {
-            if (r.Height == 0)
-            {
-                r.Height = value.Width;
-            }
-
-            if (r.Width == 0)
-            {
-                r.Width = value.Width;
-            }
-
-            value.Brush = BlockFormat.PrepareBrushForDrawing(value.Brush, r);
-            return value;
+            return BrushPenDrawing.PreparePen(value, r);
         }
 
         static public Brush PrepareBrushForDrawing(Brush value, Rectangle r)
         {
-            LinearGradientBrush lgb = value as LinearGradientBrush;
-            if (lgb == null)
-            {
-                return value;
-            }
-
-            // We really just want to change the bounds of the gradient, but there is no way to do that
-            // so we have to make a new brush and copy across the information we can
-
-            //lgb.Rectangle.X = r.X;
-            //lgb.Rectangle.Y = r.Y;
-            //lgb.Rectangle.Width = r.Width;
-            //lgb.Rectangle.Height = r.Height;
-
-            LinearGradientBrush lgb2 = new LinearGradientBrush(r, lgb.LinearColors[0], lgb.LinearColors[1], 0.0);
-            lgb2.Blend = lgb.Blend;
-            //lgb2.InterpolationColors = lgb.InterpolationColors;
-            lgb2.WrapMode = lgb.WrapMode;
-            lgb2.Transform = lgb.Transform;
-            return lgb2;
+            return BrushPenDrawing.PrepareBrush(value, r);
         }
 
         static public Pen PreparePenForDrawing(Pen value, Rectangle r)
         {
-            value.Brush = BlockFormat.PrepareBrushForDrawing(value.Brush, r);
-            return value;
+            return BrushPenDrawing.PreparePen(value, r);
         }
 
         private void DrawOneBorder(Graphics g, Sides side, float x1, float y1, float x2, float y2, bool isRectangle)

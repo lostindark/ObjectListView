@@ -13,6 +13,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -185,7 +186,7 @@ namespace BrightIdeasSoftware.Tests
         [DataRow(false)]
         [DataRow(true)]
         public void Test_FullContentSizing_MeasuresOffscreenRowsWithoutChangingNativeSizing(bool fast) {
-            var list = fast ? mainForm.fastObjectListView1 : CreateVirtualObjectListView();
+            TypedVirtualObjectListView<object> list = fast ? mainForm.fastObjectListView1 : CreateVirtualObjectListView();
             var models = Enumerable.Range(0, 200).Select(i => new Person(i == 199 ? new string('W', 100) : "x")).ToArray();
             list.SetObjects(models);
             int expected = TextRenderer.MeasureText(models[199].Name, list.Font, Size.Empty,
@@ -268,7 +269,7 @@ namespace BrightIdeasSoftware.Tests
             OLVColumn column = new OLVColumn();
             column.AspectName = "BirthDate";
             column.AspectToStringFormat = "{0:dd-mm-yy}";
-            Assert.AreEqual(String.Format("{0:dd-mm-yy}", this.person1.BirthDate), column.GetStringValue(this.person1));
+            Assert.AreEqual(String.Format(CultureInfo.CurrentCulture, "{0:dd-mm-yy}", this.person1.BirthDate), column.GetStringValue(this.person1));
         }
 
         [TestMethod]
@@ -279,35 +280,62 @@ namespace BrightIdeasSoftware.Tests
             Assert.AreEqual("AspectToStringConverter called", column.GetStringValue(this.person1));
         }
 
+        [TestMethod]
+        public void Test_FieldAspect_CanReadChainAndWrite() {
+            var model = new FieldAspectModel();
+            var column = new OLVColumn("Text", "Text");
+            var chainedColumn = new OLVColumn("Length", "Text.Length");
+
+            Assert.AreEqual("field", column.GetValue(model));
+            Assert.AreEqual(5, chainedColumn.GetValue(model));
+            column.PutValue(model, "updated");
+            Assert.AreEqual("updated", model.Text);
+        }
+
+        [TestMethod]
+        [DataRow("Text", "field")]
+        [DataRow("Text.Length", 5)]
+        public void Test_GeneratedFieldAspect_CanReadAndChain(string aspectName, object expected) {
+            var model = new FieldAspectModel();
+            var column = new OLVColumn("Field", aspectName);
+            new TypedColumn<FieldAspectModel>(column).GenerateAspectGetter();
+
+            Assert.AreEqual(expected, column.GetValue(model));
+        }
+
+        private sealed class FieldAspectModel {
+            public string Text = "field";
+        }
+
         [TestInitialize]
         public void Init() {
             this.person1 = new Person("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
             this.person2 = new Person2("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
         }
 
-        protected Person person1;
-        protected Person2 person2;
+        protected Person person1 { get; set; }
+        protected Person2 person2 { get; set; }
     }
 
     [STATestClass]
     public class TestAspectGetting : AspectTestFixture
     {
-        public void ExecuteAspect(string aspectName, object expectedResult, Person person) {
+        public static void ExecuteAspect(string aspectName, object expectedResult, Person person) {
             OLVColumn column = new OLVColumn();
             column.AspectName = aspectName;
             Assert.AreEqual(expectedResult, column.GetValue(person));
         }
 
         virtual public void ExecuteAspect(string aspectName, object expectedResult) {
-            this.ExecuteAspect(aspectName, expectedResult, this.person1);
+            ExecuteAspect(aspectName, expectedResult, this.person1);
         }
 
         virtual public void ExecuteAspect2(string aspectName, object expectedResult) {
-            this.ExecuteAspect(aspectName, expectedResult, this.person2);
+            ExecuteAspect(aspectName, expectedResult, this.person2);
         }
 
         [TestMethod]
-        public void TestSimpleField() {
+        public void TestSimpleAspect() {
             this.ExecuteAspect("Comments", "comments");
         }
 
@@ -322,7 +350,7 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
-        public void TestChainedField() {
+        public void TestChainedAspect() {
             this.ExecuteAspect("Comments.ToUpper", "COMMENTS");
         }
 
@@ -384,25 +412,25 @@ namespace BrightIdeasSoftware.Tests
             this.person2 = new Person2("name", "occupation", 100, DateTime.Now, 1.0, true, "  photo  ", "comments");
         }
 
-        protected Person person1;
-        protected Person2 person2;
+        protected Person person1 { get; set; }
+        protected Person2 person2 { get; set; }
     }
 
     [STATestClass]
     public class TestIndexedAspects : TestAspectGetting
     {
-        public void ExecuteAspect(string aspectName, object expectedResult, object source) {
+        public static void ExecuteAspect(string aspectName, object expectedResult, object source) {
             OLVColumn column = new OLVColumn();
             column.AspectName = aspectName;
             Assert.AreEqual(expectedResult, column.GetValue(source));
         }
 
         override public void ExecuteAspect(string aspectName, object expectedResult) {
-            this.ExecuteAspect(aspectName, expectedResult, this.dict1);
+            ExecuteAspect(aspectName, expectedResult, this.dict1);
         }
 
         override public void ExecuteAspect2(string aspectName, object expectedResult) {
-            this.ExecuteAspect(aspectName, expectedResult, this.dict2);
+            ExecuteAspect(aspectName, expectedResult, this.dict2);
         }
 
         [TestMethod]
@@ -424,7 +452,7 @@ namespace BrightIdeasSoftware.Tests
             this.dict2["GetRate"] = 2.0;
         }
 
-        private void InitializeDictionary(IDictionary dict) {
+        private static void InitializeDictionary(IDictionary dict) {
             dict["Name"] = "name";
             dict["Occupation"] = "occupation";
             dict["CulinaryRating"] = 100;
@@ -435,14 +463,14 @@ namespace BrightIdeasSoftware.Tests
             dict["Photo"] = "  photo  ";
         }
 
-        protected Hashtable dict1;
-        protected Dictionary<string, Object> dict2;
+        protected Hashtable dict1 { get; set; }
+        protected Dictionary<string, Object> dict2 { get; set; }
     }
 
     [STATestClass]
     public class TestAspectGeneration : TestAspectGetting
     {
-        public void Execute<T>(string aspectName, object expectedResult, T person) where T : class {
+        public static void Execute<T>(string aspectName, object expectedResult, T person) where T : class {
             OLVColumn column = new OLVColumn();
             column.AspectName = aspectName;
 
@@ -454,11 +482,11 @@ namespace BrightIdeasSoftware.Tests
         }
 
         override public void ExecuteAspect(string aspectName, object expectedResult) {
-            this.Execute(aspectName, expectedResult, this.person1);
+            Execute(aspectName, expectedResult, this.person1);
         }
 
         override public void ExecuteAspect2(string aspectName, object expectedResult) {
-            this.Execute(aspectName, expectedResult, this.person2);
+            Execute(aspectName, expectedResult, this.person2);
         }
 
         [TestMethod]
@@ -477,7 +505,7 @@ namespace BrightIdeasSoftware.Tests
     [STATestClass]
     public class TestAspectSetting
     {
-        public void ExecuteAspect(string aspectName, object newValue, Person person) {
+        public static void ExecuteAspect(string aspectName, object newValue, Person person) {
             OLVColumn column = new OLVColumn();
             column.AspectName = aspectName;
             column.PutValue(person, newValue);
@@ -485,15 +513,15 @@ namespace BrightIdeasSoftware.Tests
         }
 
         virtual public void ExecuteAspect(string aspectName, object newValue) {
-            this.ExecuteAspect(aspectName, newValue, this.person1);
+            ExecuteAspect(aspectName, newValue, this.person1);
         }
 
         virtual public void ExecuteAspect2(string aspectName, object newValue) {
-            this.ExecuteAspect(aspectName, newValue, this.person2);
+            ExecuteAspect(aspectName, newValue, this.person2);
         }
 
         [TestMethod]
-        public void TestSimpleField() {
+        public void TestSimpleAspect() {
             this.ExecuteAspect("Comments", "NEW comments");
         }
 
@@ -536,14 +564,14 @@ namespace BrightIdeasSoftware.Tests
 
         }
 
-        protected Person person1;
-        protected Person2 person2;
+        protected Person person1 { get; set; }
+        protected Person2 person2 { get; set; }
     }
 
     [STATestClass]
     public class TestIndexedAspectSetting
     {
-        public void ExecuteAspect(string aspectName, object newValue, object dict) {
+        public static void ExecuteAspect(string aspectName, object newValue, object dict) {
             OLVColumn column = new OLVColumn();
             column.AspectName = aspectName;
             column.PutValue(dict, newValue);
@@ -551,15 +579,15 @@ namespace BrightIdeasSoftware.Tests
         }
 
         public void ExecuteAspect(string aspectName, object newValue) {
-            this.ExecuteAspect(aspectName, newValue, this.dict1);
+            ExecuteAspect(aspectName, newValue, this.dict1);
         }
 
         public void ExecuteAspect2(string aspectName, object newValue) {
-            this.ExecuteAspect(aspectName, newValue, this.dict2);
+            ExecuteAspect(aspectName, newValue, this.dict2);
         }
 
         [TestMethod]
-        public void TestSimpleField() {
+        public void TestSimpleAspect() {
             this.ExecuteAspect("Comments", "NEW comments");
             this.ExecuteAspect2("Comments", "NEW comments2");
         }
@@ -580,7 +608,7 @@ namespace BrightIdeasSoftware.Tests
             this.dict2["GetRate"] = 2.0;
         }
 
-        private void InitializeDictionary(IDictionary dict) {
+        private static void InitializeDictionary(IDictionary dict) {
             dict["Name"] = "name";
             dict["Occupation"] = "occupation";
             dict["CulinaryRating"] = 100;
@@ -591,8 +619,8 @@ namespace BrightIdeasSoftware.Tests
             dict["Photo"] = "  photo  ";
         }
 
-        protected Hashtable dict1;
-        protected Dictionary<string, Object> dict2;
+        protected Hashtable dict1 { get; set; }
+        protected Dictionary<string, Object> dict2 { get; set; }
     }
 
 }

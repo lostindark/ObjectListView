@@ -25,7 +25,11 @@ namespace BrightIdeasSoftware {
         public static ObjectListViewColorMode ColorMode {
             get { return colorMode; }
             set {
+#if NETFRAMEWORK
                 if (!Enum.IsDefined(typeof(ObjectListViewColorMode), value))
+#else
+                if (!Enum.IsDefined(value))
+#endif
                 {
                     throw new ArgumentOutOfRangeException(nameof(value));
                 }

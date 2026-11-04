@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
 using ObjectListViewDemo.Models;
@@ -10,6 +11,18 @@ using ObjectListViewDemo.Properties;
 namespace ObjectListViewDemo
 {
     public partial class TabFastList : OlvDemoTab {
+        private static readonly string[] cookingSkillTitles = {
+            "Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef"
+        };
+        private static readonly string[] cookingSkillImages = { "not", "hamburger", "toast", "beef", "chef" };
+        private static readonly string[] cookingSkillSubtitles = {
+            "Pay good money -- or flee the house -- rather than eat their homecooked food",
+            "Offer to buy takeaway rather than risk what may appear on your plate",
+            "Neither spectacular nor dangerous",
+            "Try to visit at dinner time to wrangle an invitation to dinner",
+            "Do whatever is necessary to procure their services"
+        };
+        private static readonly string[] cookingSkillTasks = { "Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance" };
 
         public TabFastList()
         {
@@ -59,7 +72,9 @@ namespace ObjectListViewDemo
                     return 0; // star
                 }
 
-                if (person.Name.CompareTo("N") < 0)
+#pragma warning disable CA1309 // Name grouping intentionally follows the user's linguistic ordering.
+                if (String.Compare(person.Name, "N", StringComparison.CurrentCulture) < 0)
+#pragma warning restore CA1309
                 {
                     return 1; // heart
                 }
@@ -72,16 +87,10 @@ namespace ObjectListViewDemo
             this.olvColumn26.Renderer = new MultiImageRenderer(Resource1.star16, 5, 0, 40);
             this.olvColumn26.MakeGroupies(
                 new object[] {10, 20, 30, 40},
-                new string[] {"Pay to eat out", "Suggest take-away", "Passable", "Seek dinner invitation", "Hire as chef"},
-                new string[] {"not", "hamburger", "toast", "beef", "chef"},
-                new string[] {
-                    "Pay good money -- or flee the house -- rather than eat their homecooked food",
-                    "Offer to buy takeaway rather than risk what may appear on your plate",
-                    "Neither spectacular nor dangerous",
-                    "Try to visit at dinner time to wrangle an invitation to dinner",
-                    "Do whatever is necessary to procure their services"
-                },
-                new string[] {"Call 911", "Phone PizzaHut", "", "Open calendar", "Check bank balance"}
+                cookingSkillTitles,
+                cookingSkillImages,
+                cookingSkillSubtitles,
+                cookingSkillTasks
                 );
 
             this.olvColumn27.AspectGetter = delegate(object x) { return ((Person) x).YearOfBirth; };
@@ -116,7 +125,7 @@ namespace ObjectListViewDemo
             this.olvColumn31.Renderer = new MappedImageRenderer(new Object[] {"Little", Resource1.down16, "Medium", Resource1.tick16, "Lots", Resource1.star16});
 
             this.olvColumn32.AspectGetter = delegate(object row) { return DateTime.Now - ((Person) row).BirthDate; };
-            this.olvColumn32.AspectToStringConverter = delegate(object aspect) { return ((TimeSpan) aspect).Days.ToString("#,##0"); };
+            this.olvColumn32.AspectToStringConverter = delegate(object aspect) { return ((TimeSpan) aspect).Days.ToString("#,##0", CultureInfo.CurrentCulture); };
             
             this.olvColumn33.AspectGetter = delegate(object row) { return ((Person) row).CanTellJokes; };
         }
@@ -135,7 +144,7 @@ namespace ObjectListViewDemo
 
         private void checkBoxGroups_CheckedChanged(object sender, EventArgs e)
         {
-            Coordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
+            OLVDemoCoordinator.ShowGroupsChecked(this.ListView, (CheckBox)sender);
         }
 
         private void checkBoxCheckboxes_CheckedChanged(object sender, EventArgs e) {
@@ -144,17 +153,17 @@ namespace ObjectListViewDemo
 
         private void comboBoxEditable_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Coordinator.ChangeEditable(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeEditable(this.ListView, (ComboBox)sender);
         }
 
         private void comboBoxView_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Coordinator.ChangeView(this.ListView, (ComboBox)sender);
+            OLVDemoCoordinator.ChangeView(this.ListView, (ComboBox)sender);
         }
 
         private void buttonCopy_Click(object sender, EventArgs e)
         {
-            this.ListView.CopyObjectsToClipboard(this.ListView.CheckedObjects);
+            this.ListView.CopyObjectsToClipboard(this.ListView.CheckedModelObjects);
         }
 
         private void buttonDisable_Click(object sender, EventArgs e)
@@ -168,10 +177,10 @@ namespace ObjectListViewDemo
             }
             else
             {
-                this.ListView.DisableObjects(this.ListView.SelectedObjects);
+                this.ListView.DisableObjects(this.ListView.SelectedModelObjects);
             }
 
-            System.Diagnostics.Debug.WriteLine(String.Format("Disable UI action took {0} ms", ts.Elapsed.TotalMilliseconds));
+            System.Diagnostics.Debug.WriteLine(String.Format(CultureInfo.CurrentCulture, "Disable UI action took {0} ms", ts.Elapsed.TotalMilliseconds));
         }
 
         private void buttonRemove_Click(object sender, EventArgs e)
@@ -183,7 +192,7 @@ namespace ObjectListViewDemo
             }
             else
             {
-                this.ListView.RemoveObjects(this.ListView.SelectedObjects);
+                this.ListView.RemoveObjects(this.ListView.SelectedModelObjects);
             }
         }
 
@@ -206,7 +215,7 @@ namespace ObjectListViewDemo
             }
 
             Coordinator.ToolStripStatus1 =
-                String.Format("Build time: {0} items in {1}ms, average per item: {2:F}ms",
+                String.Format(CultureInfo.CurrentCulture, "Build time: {0} items in {1}ms, average per item: {2:F}ms",
                     this.olvFast.Items.Count,
                     stopWatch.ElapsedMilliseconds,
                     (float) stopWatch.ElapsedMilliseconds / this.olvFast.Items.Count);

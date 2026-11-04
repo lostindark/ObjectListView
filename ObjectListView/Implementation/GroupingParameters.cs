@@ -27,6 +27,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
 
@@ -202,7 +203,7 @@ namespace BrightIdeasSoftware {
                 string format = (count == 1 ? TitleSingularFormat : TitleFormat);
                 try
                 {
-                    title = String.Format(format, title, count);
+                    title = String.Format(CultureInfo.CurrentCulture, format, title, count);
                 }
                 catch (FormatException)
                 {

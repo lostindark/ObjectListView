@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace BrightIdeasSoftware.Tests {
@@ -43,7 +45,7 @@ namespace BrightIdeasSoftware.Tests {
             DateTimeClusteringStrategy strategy = new DateTimeClusteringStrategy(DateTimePortion.Hour | DateTimePortion.Minute, "HH:mm");
             strategy.Column = new OLVColumn();
             strategy.Column.AspectGetter = delegate(object x) { return DATE1; };
-            ICluster cluster = new Cluster(strategy.GetClusterKey(null));
+            Cluster cluster = new Cluster(strategy.GetClusterKey(null));
             cluster.Count = 2;
             string result = strategy.GetClusterDisplayLabel(cluster);
             Assert.AreEqual("22:23 (2 items)", result);
@@ -54,7 +56,7 @@ namespace BrightIdeasSoftware.Tests {
             DateTimeClusteringStrategy strategy = new DateTimeClusteringStrategy(DateTimePortion.Year | DateTimePortion.Month, "MM-yy");
             strategy.Column = new OLVColumn();
             strategy.Column.AspectGetter = delegate(object x) { return DATE1; };
-            ICluster cluster = new Cluster(strategy.GetClusterKey(null));
+            Cluster cluster = new Cluster(strategy.GetClusterKey(null));
             cluster.Count = 1;
             string result = strategy.GetClusterDisplayLabel(cluster);
             Assert.AreEqual("11-98 (1 item)", result);
@@ -65,10 +67,35 @@ namespace BrightIdeasSoftware.Tests {
             DateTimeClusteringStrategy strategy = new DateTimeClusteringStrategy(DateTimePortion.Year | DateTimePortion.Month, "HH:mm");
             strategy.Column = new OLVColumn();
             strategy.Column.AspectGetter = delegate(object x) { return DATE1; };
-            ICluster cluster = new Cluster(null);
+            Cluster cluster = new Cluster(null);
             cluster.Count = 1;
             string result = strategy.GetClusterDisplayLabel(cluster);
             Assert.AreEqual(ClusteringStrategy.NULL_LABEL + " (1 item)", result);
+        }
+
+        [TestMethod]
+        [DataRow(null, "format:1998-11-30 22:23:24 (1 item)")]
+        [DataRow("", "format:1998-11-30 22:23:24 (1 item)")]
+        [DataRow("MMMM yyyy", "November 1998 (1 item)")]
+        public void Test_GetClusterDisplayLabel_UsesFormattingCulture(string format, string expected) {
+            CultureInfo originalCulture = Thread.CurrentThread.CurrentCulture;
+            CultureInfo originalUICulture = Thread.CurrentThread.CurrentUICulture;
+            try {
+                CultureInfo formattingCulture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+                formattingCulture.DateTimeFormat.ShortDatePattern = "'format:'yyyy-MM-dd";
+                formattingCulture.DateTimeFormat.LongTimePattern = "HH':'mm':'ss";
+                Thread.CurrentThread.CurrentCulture = formattingCulture;
+                Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("fr-FR");
+
+                DateTimeClusteringStrategy strategy = new DateTimeClusteringStrategy(DateTimePortion.Year, format);
+                Cluster cluster = new Cluster(DATE1);
+                cluster.Count = 1;
+
+                Assert.AreEqual(expected, strategy.GetClusterDisplayLabel(cluster));
+            } finally {
+                Thread.CurrentThread.CurrentCulture = originalCulture;
+                Thread.CurrentThread.CurrentUICulture = originalUICulture;
+            }
         }
     }
 }

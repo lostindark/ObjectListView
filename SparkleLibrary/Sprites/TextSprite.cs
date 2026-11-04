@@ -133,6 +133,7 @@ namespace BrightIdeasSoftware
         /// Gets or sets the font in which the text will be rendered.
         /// This will be scaled before being used to draw the text.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA1513", Justification = "The shared net462 and modern implementation retains explicit disposal checks to avoid target-specific scaffolding for unavailable helpers.")]
         public Font Font {
             get { return this.font; }
             set {
@@ -208,6 +209,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets the font that will be used to draw the text or a reasonable default
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA1513", Justification = "The shared net462 and modern implementation retains explicit disposal checks to avoid target-specific scaffolding for unavailable helpers.")]
         public Font FontOrDefault {
             get {
                 if (this.disposed)
@@ -250,6 +252,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the formatting that should be used on the text
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA1513", Justification = "The shared net462 and modern implementation retains explicit disposal checks to avoid target-specific scaffolding for unavailable helpers.")]
         public StringFormat StringFormat {
             get {
                 if (this.disposed)

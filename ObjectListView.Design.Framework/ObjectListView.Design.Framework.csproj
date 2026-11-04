@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>BrightIdeasSoftware.Design</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System.Design" />
+    <ProjectReference Include="..\ObjectListView\ObjectListView.csproj" Private="false" />
+    <Compile Include="..\ObjectListView.Design.Shared\ColumnResizeTransaction.cs" Link="ColumnResizeTransaction.cs" />
+    <Compile Include="..\ObjectListView.Design.Shared\HeaderResizeGlyph.cs" Link="HeaderResizeGlyph.cs" />
+  </ItemGroup>
+</Project>

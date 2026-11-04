@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using BrightIdeasSoftware;
 
@@ -53,7 +54,7 @@ namespace ObjectListViewDemo
 
             // Listen for button clicks -- which for the purpose of the demo will cycle the state of the service task
             this.olvTasks.ButtonClick += delegate(object sender, CellClickEventArgs e) {
-                Coordinator.ToolStripStatus1 = String.Format("Button clicked: ({0}, {1}, {2})", e.RowIndex, e.SubItem, e.Model);
+                Coordinator.ToolStripStatus1 = String.Format(CultureInfo.CurrentCulture, "Button clicked: ({0}, {1}, {2})", e.RowIndex, e.SubItem, e.Model);
 
                 // We only have one column with a button, but if there was more than one, you would have to check ColumnIndex to see which button was clicked
                 ServiceTask task = (ServiceTask)e.Model;

@@ -94,10 +94,10 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the name of the audio file that will be played.
         /// </summary>
-        protected string FileName ;
-        protected SoundPlayer Player ;
-        protected string ResourceName ;
-        protected SystemSound SystemSound ;
+        protected string FileName { get; set; }
+        protected SoundPlayer Player { get; set; }
+        protected string ResourceName { get; set; }
+        protected SystemSound SystemSound { get; set; }
 
         #endregion
 

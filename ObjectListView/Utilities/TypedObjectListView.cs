@@ -37,6 +37,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
 using System.Reflection;
@@ -501,6 +503,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="rowObject"></param>
         /// <returns></returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public typed callback.")]
         public delegate Object TypedAspectGetterDelegate(T rowObject);
 
         /// <summary>
@@ -508,6 +511,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="rowObject"></param>
         /// <param name="newValue"></param>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public typed callback.")]
         public delegate void TypedAspectPutterDelegate(T rowObject, Object newValue);
 
         /// <summary>
@@ -515,6 +519,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="rowObject"></param>
         /// <returns></returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public typed callback.")]
         public delegate Object TypedGroupKeyGetterDelegate(T rowObject);
 
         /// <summary>
@@ -522,6 +527,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="rowObject"></param>
         /// <returns></returns>
+        [SuppressMessage("Naming", "CA1711", Justification = "The Delegate suffix identifies this public typed callback.")]
         public delegate Object TypedImageGetterDelegate(T rowObject);
 
         /// <summary>
@@ -634,7 +640,7 @@ namespace BrightIdeasSoftware
         public void GenerateAspectGetter() {
             if (!String.IsNullOrEmpty(this.column.AspectName))
             {
-                this.AspectGetter = this.GenerateAspectGetter(typeof(T), this.column.AspectName);
+                this.AspectGetter = GenerateAspectGetter(typeof(T), this.column.AspectName);
             }
         }
 
@@ -646,10 +652,10 @@ namespace BrightIdeasSoftware
         /// <param name="path">A dotted chain of selectors. Each selector can be the name of a 
         /// field, property or parameter-less method.</param>
         /// <returns>A typed delegate</returns>
-        private TypedAspectGetterDelegate GenerateAspectGetter(Type type, string path) {
+        private static TypedAspectGetterDelegate GenerateAspectGetter(Type type, string path) {
             DynamicMethod getter = new DynamicMethod(String.Empty,
                 typeof(Object), new Type[] { type }, type, true);
-            this.GenerateIL(type, path, getter.GetILGenerator());
+            GenerateIL(type, path, getter.GetILGenerator());
             return (TypedAspectGetterDelegate)getter.CreateDelegate(typeof(TypedAspectGetterDelegate));
         }
 
@@ -659,14 +665,14 @@ namespace BrightIdeasSoftware
         /// <param name="type"></param>
         /// <param name="path"></param>
         /// <param name="il"></param>
-        private void GenerateIL(Type type, string path, ILGenerator il) {
+        private static void GenerateIL(Type type, string path, ILGenerator il) {
             // Push our model object onto the stack
             il.Emit(OpCodes.Ldarg_0);
 
             // Generate the IL to access each part of the dotted chain
             string[] parts = path.Split('.');
             for (int i = 0; i < parts.Length; i++) {
-                type = this.GeneratePart(il, type, parts[i], (i == parts.Length - 1));
+                type = GeneratePart(il, type, parts[i], (i == parts.Length - 1));
                 if (type == null)
                 {
                     break;
@@ -683,7 +689,7 @@ namespace BrightIdeasSoftware
             il.Emit(OpCodes.Ret);
         }
 
-        private Type GeneratePart(ILGenerator il, Type type, string pathPart, bool isLastPart) {
+        private static Type GeneratePart(ILGenerator il, Type type, string pathPart, bool isLastPart) {
             // TODO: Generate check for null
 
             // Find the first member with the given name that is a field, property, or parameter-less method
@@ -713,7 +719,7 @@ namespace BrightIdeasSoftware
                 }
                 else
                 {
-                    il.Emit(OpCodes.Ldstr, String.Format("'{0}' is not a parameter-less method, property or field of type '{1}'", pathPart, type.FullName));
+                    il.Emit(OpCodes.Ldstr, String.Format(CultureInfo.CurrentCulture, "'{0}' is not a parameter-less method, property or field of type '{1}'", pathPart, type.FullName));
                 }
 
                 return null;

@@ -68,6 +68,11 @@ jobs:
       - name: Verify package assets and cross-target consumers
         run: .\.github\scripts\Test-Package.ps1 -PackageDirectory artifacts\packages -PackageVersion "$env:PACKAGE_VERSION-preview"
 
+      - name: Verify Framework designer project-reference consumer
+        run: |
+          .\.github\scripts\Test-ProjectReference.ps1
+          .\.github\scripts\Test-ProjectReference.ps1 -Framework net48
+
       - name: Upload NuGet package
         uses: actions/upload-artifact@v7
         with:

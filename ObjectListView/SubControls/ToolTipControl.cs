@@ -463,7 +463,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="window">The window</param>
         public void AddTool(IWin32Window window) {
-            NativeMethods.TOOLINFO lParam = this.MakeToolInfoStruct(window);
+            NativeMethods.TOOLINFO lParam = MakeToolInfoStruct(window);
             NativeMethods.SendMessageTOOLINFO(this.Handle, TTM_ADDTOOL, 0, lParam);
         }
 
@@ -495,7 +495,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="window"></param>
         public void RemoveToolTip(IWin32Window window) {
-            NativeMethods.TOOLINFO lParam = this.MakeToolInfoStruct(window);
+            NativeMethods.TOOLINFO lParam = MakeToolInfoStruct(window);
             NativeMethods.SendMessageTOOLINFO(this.Handle, TTM_DELTOOL, 0, lParam);
         }
 
@@ -523,7 +523,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <param name="window"></param>
         /// <returns>A filled in TOOLINFO</returns>
-        private NativeMethods.TOOLINFO MakeToolInfoStruct(IWin32Window window) {
+        private static NativeMethods.TOOLINFO MakeToolInfoStruct(IWin32Window window) {
 
             NativeMethods.TOOLINFO toolinfo_tooltip = new NativeMethods.TOOLINFO();
             toolinfo_tooltip.hwnd = window.Handle;
@@ -716,15 +716,15 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Mess with the basic message pump of the tooltip
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="m"></param>
 #if NETFRAMEWORK
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
 #endif
-        override protected void WndProc(ref Message msg) {
-            //System.Diagnostics.Trace.WriteLine(String.Format("xx {0:x}", msg.Msg));
-            switch (msg.Msg) {
+        override protected void WndProc(ref Message m) {
+            //System.Diagnostics.Trace.WriteLine(String.Format("xx {0:x}", m.Msg));
+            switch (m.Msg) {
                 case 0x4E: // WM_NOTIFY
-                    if (!this.HandleNotify(ref msg))
+                    if (!this.HandleNotify(ref m))
                     {
                         return;
                     }
@@ -732,7 +732,7 @@ namespace BrightIdeasSoftware
                     break;
 
                 case 0x204E: // WM_REFLECT_NOTIFY
-                    if (!this.HandleReflectNotify(ref msg))
+                    if (!this.HandleReflectNotify(ref m))
                     {
                         return;
                     }
@@ -740,7 +740,7 @@ namespace BrightIdeasSoftware
                     break;
             }
 
-            base.WndProc(ref msg);
+            base.WndProc(ref m);
         }
 
         #endregion

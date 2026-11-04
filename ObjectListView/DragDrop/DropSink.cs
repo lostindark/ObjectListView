@@ -47,6 +47,7 @@
  */
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -343,6 +344,7 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the list receiving drops. Detaching stops auto-scrolling.
         /// </summary>
+        [SuppressMessage("Maintainability", "CA1513", Justification = ".NET Framework 4.6.2 lacks ObjectDisposedException.ThrowIf.")]
         public override ObjectListViewBase ListView {
             get { return base.ListView; }
             set {
@@ -1143,7 +1145,7 @@ namespace BrightIdeasSoftware
             Rectangle r = bounds;
             r.Inflate((int)-penWidth / 2, (int)-penWidth / 2);
             using (Pen p = new Pen(Color.FromArgb(128, this.FeedbackColor), penWidth)) {
-                using (GraphicsPath path = this.GetRoundedRect(r, 30.0f)) {
+                using (GraphicsPath path = GetRoundedRect(r, 30.0f)) {
                     g.DrawPath(p, path);
                 }
             }
@@ -1166,7 +1168,7 @@ namespace BrightIdeasSoftware
             Rectangle r = this.CalculateDropTargetRectangle(this.DropTargetItem, this.DropTargetSubItemIndex);
             r.Inflate(1, 1);
             float diameter = r.Height / 3;
-            using (GraphicsPath path = this.GetRoundedRect(r, diameter)) {
+            using (GraphicsPath path = GetRoundedRect(r, diameter)) {
                 using (SolidBrush b = new SolidBrush(Color.FromArgb(48, this.FeedbackColor))) {
                     g.FillPath(b, path);
                 }
@@ -1245,7 +1247,7 @@ namespace BrightIdeasSoftware
         /// <param name="rect"></param>
         /// <param name="diameter"></param>
         /// <returns></returns>
-        protected GraphicsPath GetRoundedRect(Rectangle rect, float diameter) {
+        protected static GraphicsPath GetRoundedRect(Rectangle rect, float diameter) {
             GraphicsPath path = new GraphicsPath();
 
             RectangleF arc = new RectangleF(rect.X, rect.Y, diameter, diameter);
@@ -1654,7 +1656,7 @@ namespace BrightIdeasSoftware
             get { return this.dragModels; }
             internal set { 
                 this.dragModels = value;
-                TreeListView tlv = this.SourceListView as TreeListView;
+                ITreeListView tlv = this.SourceListView as ITreeListView;
                 if (tlv != null) {
                     foreach (object model in this.SourceModels) {
                         object parent = tlv.GetParent(model);
@@ -1694,7 +1696,7 @@ namespace BrightIdeasSoftware
         public void RefreshObjects() {
 
             toBeRefreshed.AddRange(this.SourceModels);
-            TreeListView tlv = this.SourceListView as TreeListView;
+            ITreeListView tlv = this.SourceListView as ITreeListView;
             if (tlv == null)
             {
                 this.SourceListView.RefreshObjects(toBeRefreshed);
@@ -1704,7 +1706,7 @@ namespace BrightIdeasSoftware
                 tlv.RebuildAll(true);
             }
 
-            TreeListView tlv2 = this.ListView as TreeListView;
+            ITreeListView tlv2 = this.ListView as ITreeListView;
             if (tlv2 == null)
             {
                 this.ListView.RefreshObject(this.TargetModel);

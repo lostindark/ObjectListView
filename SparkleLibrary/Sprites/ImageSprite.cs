@@ -52,7 +52,7 @@ namespace BrightIdeasSoftware
 
         #region Implementation properties
 
-        protected Image Image ;
+        protected Image Image { get; set; }
 
         #endregion
 

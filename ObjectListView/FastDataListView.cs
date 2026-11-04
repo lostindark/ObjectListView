@@ -48,7 +48,7 @@ namespace BrightIdeasSoftware
     /// However, once the rows are loaded, the FastDataListView will only build rows as they are displayed.
     /// </para>
     /// </remarks>
-    public class FastDataListView : FastObjectListView
+    public class TypedFastDataListView<T> : TypedFastObjectListView<T> where T : class
     {
         /// <summary>
         /// 

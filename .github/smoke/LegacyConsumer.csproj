@@ -1,0 +1,29 @@
+<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
+          Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>LegacyConsumer</AssemblyName>
+    <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <OutputPath>bin\Legacy\$(Configuration)\</OutputPath>
+    <LangVersion>14.0</LangVersion>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="ObjectListView">
+      <HintPath>$(ObjectListViewPackageDirectory)\lib\net462\ObjectListView.dll</HintPath>
+    </Reference>
+    <Compile Include="Program.cs" />
+    <Compile Include="DesignerSmokeForm.cs" />
+    <Compile Include="DesignerSmokeForm.Designer.cs" />
+  </ItemGroup>
+  <Import Project="$(ObjectListViewPackageDirectory)\build\ObjectListView.WinForms.targets" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="VerifyDesignerReference.targets" />
+</Project>

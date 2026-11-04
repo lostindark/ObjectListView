@@ -659,7 +659,7 @@ namespace BrightIdeasSoftware
     /// </list>
     /// </remarks>
 #if NETFRAMEWORK
-    [Designer(typeof(BrightIdeasSoftware.Design.ObjectListViewDesigner))]
+    [Designer("BrightIdeasSoftware.Design.ObjectListViewDesigner, ObjectListView.Design.Framework")]
 #else
     [Designer("ObjectListViewDesigner")]
 #endif
@@ -1422,7 +1422,7 @@ namespace BrightIdeasSoftware
         /// a specialised editor with it.
         /// </summary>
 #if NETFRAMEWORK
-        [Editor("BrightIdeasSoftware.Design.OLVColumnCollectionEditor", "System.Drawing.Design.UITypeEditor")]
+        [Editor("BrightIdeasSoftware.Design.OLVColumnCollectionEditor, ObjectListView.Design.Framework", typeof(System.Drawing.Design.UITypeEditor))]
 #else
         [Editor("OLVColumnCollectionEditor", "System.Drawing.Design.UITypeEditor")]
 #endif

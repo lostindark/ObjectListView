@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net462;net10.0-windows</TargetFrameworks>
+    <TargetFrameworks>net10.0-windows;net462;net48</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
@@ -8,5 +8,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ObjectListView.WinForms" Version="$(ObjectListViewPackageVersion)" />
+    <Compile Update="DesignerSmokeForm.cs" SubType="Form" />
+    <Compile Update="DesignerSmokeForm.Designer.cs" DependentUpon="DesignerSmokeForm.cs" />
   </ItemGroup>
+  <Import Project="VerifyDesignerReference.targets" />
 </Project>

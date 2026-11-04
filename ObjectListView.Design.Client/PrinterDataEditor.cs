@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.Design;
 using Microsoft.DotNet.DesignTools.Client;
 using Microsoft.DotNet.DesignTools.Client.Proxies;
+using BrightIdeasSoftware.Design.Client.Printing;
 
 namespace BrightIdeasSoftware.Design.Client
 {

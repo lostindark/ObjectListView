@@ -2159,72 +2159,22 @@ namespace BrightIdeasSoftware
 
         static public Brush PrepareBrushForDrawing(Brush value, RectangleF r)
         {
-            LinearGradientBrush lgb = value as LinearGradientBrush;
-            if (lgb == null)
-            {
-                return value;
-            }
-
-            // We really just want to change the bounds of the gradient, but there is no way to do that
-            // so we have to make a new brush and copy across the information we can
-
-            //lgb.Rectangle.X = r.X;
-            //lgb.Rectangle.Y = r.Y;
-            //lgb.Rectangle.Width = r.Width;
-            //lgb.Rectangle.Height = r.Height;
-
-            LinearGradientBrush lgb2 = new LinearGradientBrush(r, lgb.LinearColors[0], lgb.LinearColors[1], 0.0);
-            lgb2.Blend = lgb.Blend;
-            //lgb2.InterpolationColors = lgb.InterpolationColors;
-            lgb2.WrapMode = lgb.WrapMode;
-            lgb2.Transform = lgb.Transform;
-            return lgb2;
+            return BrushPenDrawing.PrepareBrush(value, r);
         }
 
         static public Pen PreparePenForDrawing(Pen value, RectangleF r)
         {
-            if (r.Height == 0)
-            {
-                r.Height = value.Width;
-            }
-
-            if (r.Width == 0)
-            {
-                r.Width = value.Width;
-            }
-
-            value.Brush = BlockFormat.PrepareBrushForDrawing(value.Brush, r);
-            return value;
+            return BrushPenDrawing.PreparePen(value, r);
         }
 
         static public Brush PrepareBrushForDrawing(Brush value, Rectangle r)
         {
-            LinearGradientBrush lgb = value as LinearGradientBrush;
-            if (lgb == null)
-            {
-                return value;
-            }
-
-            // We really just want to change the bounds of the gradient, but there is no way to do that
-            // so we have to make a new brush and copy across the information we can
-
-            //lgb.Rectangle.X = r.X;
-            //lgb.Rectangle.Y = r.Y;
-            //lgb.Rectangle.Width = r.Width;
-            //lgb.Rectangle.Height = r.Height;
-
-            LinearGradientBrush lgb2 = new LinearGradientBrush(r, lgb.LinearColors[0], lgb.LinearColors[1], 0.0);
-            lgb2.Blend = lgb.Blend;
-            //lgb2.InterpolationColors = lgb.InterpolationColors;
-            lgb2.WrapMode = lgb.WrapMode;
-            lgb2.Transform = lgb.Transform;
-            return lgb2;
+            return BrushPenDrawing.PrepareBrush(value, r);
         }
 
         static public Pen PreparePenForDrawing(Pen value, Rectangle r)
         {
-            value.Brush = BlockFormat.PrepareBrushForDrawing(value.Brush, r);
-            return value;
+            return BrushPenDrawing.PreparePen(value, r);
         }
 
         private void DrawOneBorder(Graphics g, Sides side, float x1, float y1, float x2, float y2, bool isRectangle)

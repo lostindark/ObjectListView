@@ -16,9 +16,16 @@ internal static class Program
             typeof(ObjectListView).Assembly, typeof(TargetFrameworkAttribute))).FrameworkName;
         if (framework != args[2])
             throw new InvalidOperationException("Wrong runtime asset selected: " + framework);
+        if (typeof(ObjectListView).Assembly.GetReferencedAssemblies().Any(assembly =>
+            assembly.Name == "System.Design" || assembly.Name == "WindowsBase" ||
+            assembly.Name == "ObjectListView.Design.Framework"))
+            throw new InvalidOperationException("The runtime control assembly depends on a designer host.");
 
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
+        using (var designerForm = new ObjectListViewPackageSmoke.DesignerSmokeForm()) {
+            designerForm.VerifyViewRoundTrip();
+        }
         using (var form = new Form { Opacity = 0, ShowInTaskbar = false }) {
             form.Show();
             var models = new[] { new Row("Ada"), new Row("Grace") };
@@ -67,8 +74,9 @@ internal static class Program
                 columns.CreateControl();
         }
         if (AppDomain.CurrentDomain.GetAssemblies().Any(assembly =>
-            assembly.GetName().Name.StartsWith("Microsoft.DotNet.DesignTools", StringComparison.Ordinal)))
-            throw new InvalidOperationException("A runtime consumer loaded Designer SDK assemblies.");
+            assembly.GetName().Name.StartsWith("Microsoft.DotNet.DesignTools", StringComparison.Ordinal) ||
+            assembly.GetName().Name == "ObjectListView.Design.Framework"))
+            throw new InvalidOperationException("A runtime consumer loaded designer assemblies.");
         Console.WriteLine("PASS: " + framework + ", " + (IntPtr.Size * 8) + "-bit");
     }
 

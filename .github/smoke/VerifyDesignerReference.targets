@@ -1,0 +1,12 @@
+<Project>
+  <Target Name="VerifyFrameworkDesignerReference" AfterTargets="ResolveReferences">
+    <ItemGroup>
+      <_FrameworkDesignerReference Include="@(ReferencePath)"
+                                   Condition="'%(Filename)' == 'ObjectListView.Design.Framework'" />
+    </ItemGroup>
+    <Error Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' and '@(_FrameworkDesignerReference)' == ''"
+           Text="The Framework designer was not exposed to the consumer's reference resolver." />
+    <Error Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework' and '@(_FrameworkDesignerReference)' != ''"
+           Text="The Framework designer leaked into a modern consumer's references." />
+  </Target>
+</Project>

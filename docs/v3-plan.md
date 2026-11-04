@@ -15,8 +15,8 @@ Priorities are enumerable-friendly APIs, explicit grouping, shared style
 resolution, consistent rendering/hit testing, and focused cleanup.
 
 Runtime targets are **.NET Framework 4.6.2** and **.NET 10 for Windows**.
-Retain the Framework designer; modern designer support remains a separate
-acceptance milestone. .NET 8 and older Framework targets are out of scope.
+Framework designer support is retained, and modern designer support is implemented
+for NuGet consumers. .NET 8 and older Framework targets are out of scope.
 Before release, review Framework support: Microsoft's support for 4.6.2 ends
 January 12, 2027. Changes to Windows compatibility require a separate support decision.
 
@@ -30,7 +30,7 @@ January 12, 2027. Changes to Windows compatibility require a separate support de
 | Saved layouts | Implemented: shared versioned format; legacy BinaryFormatter layouts must be recreated |
 | DPI and demo layout | Implemented: host DPI configuration, column scaling, and corrected layout/drawing geometry |
 | Dark mode | Implemented: shared palette, stock .NET 10 controls, Framework fallbacks, and demo theme selection |
-| Modern designer | Preview: packaged client/server/protocol integration; desktop acceptance gates remain |
+| Modern designer | Implemented for NuGet: client/server/protocol integration, header resize/Undo, smart tags, and column/printer editors |
 | Grouping redesign | Planned |
 | Unified style precedence | Planned; dark mode does not complete this phase |
 | Shared rendering/hit-test layout | Planned |
@@ -38,24 +38,44 @@ January 12, 2027. Changes to Windows compatibility require a separate support de
 
 ## Platform migration checkpoint
 
-The runtime migration is implemented. Keep open designer work separate from the
-grouping, styling, and layout redesigns.
+The runtime migration and NuGet designer integration are implemented. The grouping,
+styling, and layout redesigns remain separate workstreams.
 
 ### Implemented foundations
 
 - Both demos and runtime/test projects target `net462;net10.0-windows`.
   Modern designer assets are separate from runtime dependencies.
-- Framework resources and designer types are retained. Modern resources do not
+- Framework resources are retained; its designer and column editor live in the
+  separate `ObjectListView.Design.Framework` assembly. Core runtime assemblies
+  have no System.Design, WindowsBase, or Designer SDK dependency. Modern resources do not
   require a BinaryFormatter compatibility switch.
 - Saved layouts use the same format on both runtimes. State regressions cover
   hidden/removed columns and remembered display-order keys.
 - Modern column and copied-value printer editors, binding metadata, localization,
   image resources, and generated-code rebuilds have packaged-consumer coverage.
-- Header resizing uses public Designer SDK adorner/behavior APIs, with bounded
+- Header resizing uses public designer adorner/behavior APIs, with bounded
   preview, cancellation, and one transaction per gesture. Do not reintroduce
   private-reflection hooks.
+- Modern header resizing participates in the selected control's `GetGlyphs`
+  pipeline instead of an independently registered adorner. Smart-tag action lists
+  retain their identity across refreshes. Handle destruction cancels an active
+  resize, and canceled source-control checkout does not start a gesture.
+- The Framework designer shares the same resize behavior and transactions;
+  native width changes now persist and participate in one-operation Undo/Redo.
+- Shared gesture sources live in `ObjectListView.Design.Shared`, outside runtime
+  and host-specific projects. Framework Escape cancellation uses a scoped,
+  in-process UI-thread message hook, independent of the host's WinForms/WPF pump.
+- The modern designer's Framework 4.7.2 client shares printer editor sources under its own
+  `BrightIdeasSoftware.Design.Client.Printing` namespace. It neither references
+  nor ships runtime ObjectListView/ListViewPrinter assemblies, preventing
+  Framework types from leaking into the modern server's load context.
+- Package checks reject runtime DLLs in reserved designer directories, client
+  runtime assembly references, and runtime-namespaced client data types.
 - CI builds/tests both configurations and targets and checks package contents,
   fresh consumers, and two-way layout interchange.
+- Framework NuGet consumers receive a non-copy-local design reference from
+  `build`/`buildTransitive`, including legacy project imports. Source consumers import the Framework designer target.
+  Separate source-reference checks cover `net462` and compatible `net48` hosts.
 
 ### DPI, dark mode, and review follow-up
 
@@ -79,23 +99,33 @@ grouping, styling, and layout redesigns.
   built assembly and cover control wiring, theme reloads, captions, images, and
   print preview.
 
-Recent focused Release checks pass on both runtimes. This is not evidence of a
-new full Debug/Release matrix or packaged-consumer acceptance for the final revision.
+The designer follow-up passes the full Debug/Release test matrix on both runtimes.
+Package checks also exercise a concrete typed designer fixture and its View round
+trip on both runtimes, independently of the desktop acceptance below.
 Historical test totals and temporary package names are not release criteria.
 
-### Open acceptance gates
+### NuGet designer acceptance
 
-1. Verify physical mouse header resizing in Visual Studio, including serialization
-   and one-operation Undo/Redo. Dispatcher checks pass; Columns/Properties remain
-   the verified workaround.
-2. Verify the complete smart-tag View change/return workflow and subsequent
-   native header interaction.
-3. Establish modern designer discovery for project-reference-only consumers.
-   Runtime rendering works, but NuGet designer acceptance does not prove this path.
-4. Repeat affected packaged-consumer checks after designer fixes, retaining
-   Framework designer and runtime-only deployment coverage.
-5. Run the full Debug/Release test matrix and package checks on the final revision.
-   Report clipboard-access or ImageList failures rather than hiding or skipping them.
+Fresh package consumers in an owned Visual Studio 2026 instance cover:
+
+- Actual OS mouse input for header resizing, saved Width values, one-operation
+  Undo/Redo, and Escape cancellation without adding an Undo operation.
+- The actual smart-tag LargeIcon/Tile/Details round trip, followed by another
+  successful header resize.
+- Column-editor Add/Remove/OK and consistent saved column collections.
+- Modal brush and pen editors, all brush preview styles, saved runtime values,
+  and Cancel preserving the original values. Client-only data types are not
+  serialized into consumer code.
+- Rebuilding and running designer-edited code without Designer SDK runtime
+  dependencies, plus the two-runtime package/layout checks.
+- The retained Framework designer, including header resizing, saved widths,
+  and one-operation Undo/Redo.
+- Discovery of the separated Framework designer and column editor from NuGet and
+  project references, with no designer DLLs copied into normal application output.
+
+Modern designer support is scoped to NuGet consumers. Project-reference-only
+designer discovery is not part of this milestone; runtime project references
+remain supported. Do not infer designer discovery from runtime rendering.
 
 ARM64 and every Windows/Visual Studio/monitor configuration are not claimed.
 Local desktop fixtures and screenshots are not reproducible acceptance evidence
@@ -202,6 +232,28 @@ dotnet pack ObjectListView\ObjectListView.csproj --configuration Release --no-bu
 For designer acceptance, use a fresh package consumer in Visual Studio 2026 and
 a namespaced concrete typed subclass. Reference runtime printer DLLs from their
 normal deployment location, never the package's reserved `Design\WinForms` folders.
+
+`Test-Package.ps1` creates `artifacts\PackageSmoke\consumer\PackageConsumer.sln`
+(under the requested output directory when overridden). Its project records the
+exact local package version, source, and isolated package cache, so it can also
+be reopened in Visual Studio without command-line restore properties.
+Both Debug and Release are built for the consumer. Cache paths are kept short
+because the Framework designer client cannot load assemblies beyond MAX_PATH;
+use a short output directory when the checkout path is unusually long.
+Open `DesignerSmokeForm.cs` in the designer, select the list, and verify:
+
+- The Columns editor creates, removes, hides, and reorders `OLVColumn` components;
+  saving and reopening retains both `AllColumns` and the visible columns.
+- The smart-tag View selector changes to LargeIcon or Tile and back to Details;
+  header interaction still works after returning.
+- Drag a header divider, save, and inspect its serialized Width. One Undo restores
+  the old width; one Redo reapplies it. Cancel a second gesture and confirm that
+  neither the width nor the Undo history changes.
+- Rebuild and run the consumer after saving; repeat the appropriate checks on
+  Framework without introducing modern Designer SDK runtime dependencies.
+- For printer editors, reference the matching runtime ListViewPrinter assembly,
+  edit a format's brush or border pen, and verify both OK and Cancel. Saved code
+  must use runtime data types, never `Design.Client.Printing` types.
 
 Use only the owned Visual Studio instance for desktop input checks. Do not send
 pointer-bearing native messages across processes using local buffers.

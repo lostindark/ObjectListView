@@ -6,7 +6,11 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Design;
 
+#if OLV_DESIGN_CLIENT
+namespace BrightIdeasSoftware.Design.Client.Printing
+#else
 namespace BrightIdeasSoftware
+#endif
 {
     /// <summary>
     /// PenData represents the data required to create a pen.

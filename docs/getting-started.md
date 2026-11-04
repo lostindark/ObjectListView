@@ -25,10 +25,16 @@ There are two ways to use an `ObjectListView` in your project:
 To build this source tree, open *ObjectListView.sln* in Visual Studio 2026 with
 the .NET desktop development workload, .NET Framework 4.6.2 and 4.7.2 targeting
 packs, and the .NET 10 SDK. All six runtime/test projects target
-`net462;net10.0-windows`. The three additional designer projects provide the
-modern designer's Framework 4.7.2 client, .NET 10 server, and protocol.
+`net462;net10.0-windows`. Four additional designer projects provide the classic
+Framework 4.6.2 designer and the modern designer's Framework 4.7.2 client,
+.NET 10 server, and protocol.
 Applications using the Framework runtime still require only Framework 4.6.2.
-Modern designer integration is a preview until interactive acceptance is complete.
+The classic designer is no longer compiled into the runtime DLL. NuGet supplies
+its non-copy-local reference automatically; source consumers import
+`ObjectListView.Design.Framework\ObjectListView.Design.Framework.targets`
+as shown in the [migration guide](v3-migration.md#runtime-targets-designers-and-saved-layouts).
+Modern designer integration is supported through the NuGet package in Visual
+Studio 2026. Project references alone do not install its designer extensions.
 
 The tests use MSTest.TestFramework 4.5.1, MSTest.TestAdapter, and Microsoft.NET.Test.Sdk, declared as package references in *Tests\Tests.csproj*. NuGet restores dependencies into its global cache, not a repository-local *packages* directory. The .NET 10 SDK requires MSBuild 18 or later (Visual Studio 2026). Restore and build from a Visual Studio Developer Command Prompt with:
 
@@ -54,7 +60,7 @@ Outputs are under *bin\\Configuration\\TargetFramework*.
 
 Build the whole solution before packing the core project, since the NuGet package
 also includes isolated modern designer assets. Use the package for modern
-designer evaluation; a plain DLL reference does not install its client/server
+designer support; a plain DLL reference does not install its client/server
 assets. Runtime deployment requires neither Visual Studio nor Designer SDK
 assemblies. See the [migration guide](v3-migration.md#runtime-targets-designers-and-saved-layouts)
 for the new cross-runtime saved-layout format and recreation of old layouts.

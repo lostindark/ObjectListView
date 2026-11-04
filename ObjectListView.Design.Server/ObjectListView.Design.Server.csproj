@@ -10,5 +10,7 @@
     <ProjectReference Include="..\ObjectListView.Design.Protocol\ObjectListView.Design.Protocol.csproj" />
     <ProjectReference Include="..\ListViewPrinter\ListViewPrinter.csproj" />
     <Compile Include="..\ObjectListView.Design.Protocol\PrinterEditorState.cs" Link="PrinterEditorState.cs" />
+    <Compile Include="..\ObjectListView.Design.Shared\ColumnResizeTransaction.cs" Link="ColumnResizeTransaction.cs" />
+    <Compile Include="..\ObjectListView.Design.Shared\HeaderResizeGlyph.cs" Link="HeaderResizeGlyph.cs" />
   </ItemGroup>
 </Project>

@@ -5,6 +5,9 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Xml;
+#if OLV_DESIGN_CLIENT
+using BrightIdeasSoftware.Design.Client.Printing;
+#endif
 
 namespace BrightIdeasSoftware.Design
 {

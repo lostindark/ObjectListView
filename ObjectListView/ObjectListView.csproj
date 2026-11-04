@@ -22,13 +22,22 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageTags>WinForms;ListView;ObjectListView;Controls</PackageTags>
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeModernDesigners</TargetsForTfmSpecificBuildOutput>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeFrameworkDesigner;IncludeModernDesigners</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="Accessibility" />
     <Reference Include="System.Configuration" />
-    <Reference Include="System.Design" />
   </ItemGroup>
+  <Target Name="IncludeFrameworkDesigner" Condition="'$(TargetFramework)' == 'net462'">
+    <ItemGroup>
+      <_FrameworkDesignerFile Include="..\ObjectListView.Design.Framework\bin\$(Configuration)\net462\ObjectListView.Design.Framework.dll"
+                              TargetPath="Design\WinForms\ObjectListView.Design.Framework.dll" />
+    </ItemGroup>
+    <Error Condition="!Exists('%(_FrameworkDesignerFile.Identity)')" Text="Missing designer asset %(_FrameworkDesignerFile.Identity). Build ObjectListView.sln before packing." />
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(_FrameworkDesignerFile)" />
+    </ItemGroup>
+  </Target>
   <ItemGroup>
     <Compile Update="DataTreeListView.cs" SubType="Component" />
     <Compile Update="Implementation\Enums.cs" SubType="Component" />
@@ -55,13 +64,12 @@
     <None Include="..\LICENSE" Pack="true" PackagePath="\" />
     <None Remove="README.md" />
     <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="build\ObjectListView.WinForms.targets" Pack="true" PackagePath="build\;buildTransitive\" />
   </ItemGroup>
   <Target Name="IncludeModernDesigners" Condition="'$(TargetFramework)' == 'net10.0-windows'">
     <ItemGroup>
       <_DesignerFile Include="..\ObjectListView.Design.Client\bin\$(Configuration)\net472\ObjectListView.Design.Client.dll" TargetPath="Design\WinForms\ObjectListView.Design.Client.dll" />
       <_DesignerFile Include="..\ObjectListView.Design.Protocol\bin\$(Configuration)\net472\ObjectListView.Design.Protocol.dll" TargetPath="Design\WinForms\ObjectListView.Design.Protocol.dll" />
-      <_DesignerFile Include="..\ListViewPrinter\bin\$(Configuration)\net462\ListViewPrinter.dll" TargetPath="Design\WinForms\ListViewPrinter.dll" />
-      <_DesignerFile Include="bin\$(Configuration)\net462\ObjectListView.dll" TargetPath="Design\WinForms\ObjectListView.dll" />
       <_DesignerFile Include="..\ObjectListView.Design.Server\bin\$(Configuration)\net10.0-windows\ObjectListView.Design.Server.dll" TargetPath="Design\WinForms\Server\ObjectListView.Design.Server.dll" />
       <_DesignerFile Include="..\ObjectListView.Design.Protocol\bin\$(Configuration)\net10.0-windows\ObjectListView.Design.Protocol.dll" TargetPath="Design\WinForms\Server\ObjectListView.Design.Protocol.dll" />
     </ItemGroup>

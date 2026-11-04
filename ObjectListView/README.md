@@ -19,9 +19,11 @@ Install **ObjectListView.WinForms** using Visual Studio's NuGet Package Manager.
 Enable **Include prerelease** for preview versions.
 
 Supports **.NET Framework 4.6.2** and **.NET 10 for Windows**.
-Modern Visual Studio designer support is a preview; see the
+The package includes Visual Studio 2026 designer support; see the
 [project README](https://github.com/lostindark/ObjectListView#version-3-development)
 for current limitations.
+The classic Framework designer is delivered separately from the runtime DLL and
+is referenced automatically without copying it into application output.
 
 ## Documentation
 

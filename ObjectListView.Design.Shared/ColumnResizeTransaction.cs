@@ -12,7 +12,16 @@ namespace BrightIdeasSoftware.Design
         private readonly int originalWidth;
         private DesignerTransaction transaction;
 
-        public ColumnResizeTransaction(OLVColumn column, IComponentChangeService changes,
+        public static ColumnResizeTransaction Begin(OLVColumn column, IComponentChangeService changes,
+            Func<DesignerTransaction> createTransaction) {
+            try {
+                return new ColumnResizeTransaction(column, changes, createTransaction);
+            } catch (CheckoutException ex) when (ex == CheckoutException.Canceled) {
+                return null;
+            }
+        }
+
+        private ColumnResizeTransaction(OLVColumn column, IComponentChangeService changes,
             Func<DesignerTransaction> createTransaction) {
             this.column = column;
             this.changes = changes;

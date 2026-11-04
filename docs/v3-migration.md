@@ -9,15 +9,48 @@ overrides; v3 is not a drop-in binary replacement.
 ## Runtime targets, designers, and saved layouts
 
 Runtime targets are **.NET Framework 4.6.2** and **.NET 10 for Windows**.
-The .NET 10 runtime does not depend on System.Design or the Designer SDK.
+`ObjectListView.dll` on either target does not depend on System.Design,
+WindowsBase, or the Designer SDK.
 
-Framework designer support is retained. Modern designer support is a preview
+Framework designer support now lives in the separate `net462`
+`ObjectListView.Design.Framework.dll`, including its column collection editor.
+NuGet supplies a non-copy-local design reference through its build targets, so
+normal application output and publishing do not include the designer assembly.
+Runtime-used overlay converters remain in `ObjectListView.dll`.
+
+For source/project references, keep the runtime project reference and import the
+designer target in the consuming project:
+
+```xml
+<ItemGroup>
+  <ProjectReference Include="..\ObjectListView\ObjectListView.csproj" />
+</ItemGroup>
+<Import Project="..\ObjectListView.Design.Framework\ObjectListView.Design.Framework.targets" />
+```
+
+The import adds a non-copy-local designer project reference for .NET Framework
+hosts, including `net462` and `net48`. It does nothing for modern .NET hosts.
+The dependency graph stays consumer -> designer -> runtime, never runtime -> designer.
+Runtime-only source consumers do not need the import.
+
+For explicit DLL references, add a reference to the matching Framework designer
+DLL with `Private` set to `false` when design support is needed. Custom designer
+projects deriving from the moved designer/editor types also need this assembly
+reference. Code that intentionally uses these design-time editors at runtime must
+deploy that assembly explicitly.
+
+Modern designer support is included
 for Visual Studio 2026; install the NuGet package rather than referencing a
 standalone DLL. Its Framework 4.7.2 designer client does not raise your
 application's runtime requirement.
 
-**Known limitation:** native header-divider dragging is not supported reliably
-in the modern designer. Set widths through the Columns editor or Properties.
+Modern designer discovery is supported through NuGet packages, not
+project-reference-only or standalone-DLL development setups.
+
+Select the control to resize header dividers in either designer. Each gesture
+is one Undo/Redo operation; Escape cancels it. Fixed-width and free-space-filling
+columns retain their resize restrictions. Columns and Properties editors are
+also available.
 For ListViewPrinter, reference the matching runtime assembly from its normal
 deployment location, not DLLs under the package's `Design\WinForms` directories.
 

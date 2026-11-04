@@ -17,8 +17,8 @@ namespace BrightIdeasSoftware.Design
     {
         private ObjectListViewBase ListView { get { return (ObjectListViewBase)this.Control; } }
         private BehaviorService behaviorService;
-        private Adorner headerAdorner;
         private HeaderResizeGlyph headerResize;
+        private DesignerActionListCollection actionLists;
 
         public override void Initialize(IComponent component) {
             base.Initialize(component);
@@ -31,20 +31,28 @@ namespace BrightIdeasSoftware.Design
             }
 
             this.headerResize = new HeaderResizeGlyph(this.ListView, this.behaviorService, host, changes);
-            this.headerAdorner = new Adorner();
-            this.headerAdorner.Glyphs.Add(this.headerResize);
-            this.behaviorService.Adorners.Add(this.headerAdorner);
+            this.ListView.HandleDestroyed += this.OnHandleDestroyed;
         }
 
         protected override void Dispose(bool disposing) {
             if (disposing) {
+                this.ListView.HandleDestroyed -= this.OnHandleDestroyed;
                 this.headerResize?.Cancel();
-                if (this.headerAdorner != null)
-                {
-                    this.behaviorService.Adorners.Remove(this.headerAdorner);
-                }
             }
             base.Dispose(disposing);
+        }
+
+        private void OnHandleDestroyed(object sender, EventArgs e) {
+            this.headerResize?.Cancel();
+        }
+
+        public override GlyphCollection GetGlyphs(GlyphSelectionType selectionType) {
+            GlyphCollection glyphs = base.GetGlyphs(selectionType);
+            if (selectionType != GlyphSelectionType.NotSelected && this.headerResize != null)
+            {
+                glyphs.Insert(0, this.headerResize);
+            }
+            return glyphs;
         }
 
         public override System.Collections.Generic.IReadOnlyCollection<IComponent> AssociatedComponents {
@@ -52,7 +60,7 @@ namespace BrightIdeasSoftware.Design
         }
 
         public override DesignerActionListCollection ActionLists {
-            get { return new DesignerActionListCollection { new Options(this.ListView) }; }
+            get { return this.actionLists ?? (this.actionLists = new DesignerActionListCollection { new Options(this.ListView) }); }
         }
 
         public sealed class Options : DesignerActionList

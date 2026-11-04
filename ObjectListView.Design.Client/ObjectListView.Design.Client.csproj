@@ -3,11 +3,18 @@
     <TargetFramework>net472</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <IsPackable>false</IsPackable>
+    <DefineConstants>$(DefineConstants);OLV_DESIGN_CLIENT</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WinForms.Designer.SDK" Version="1.6.0" PrivateAssets="all" />
     <ProjectReference Include="..\ObjectListView.Design.Protocol\ObjectListView.Design.Protocol.csproj" />
-    <ProjectReference Include="..\ListViewPrinter\ListViewPrinter.csproj" />
+    <!-- Client copies must not reference runtime assemblies or share their type namespaces. -->
     <Compile Include="..\ObjectListView.Design.Protocol\PrinterEditorState.cs" Link="PrinterEditorState.cs" />
+    <Compile Include="..\ListViewPrinter\BrushPenData.cs" Link="BrushPenData.cs" />
+    <Compile Include="..\ListViewPrinter\BrushPen.DesignTime.cs" Link="BrushPen.DesignTime.cs" />
+    <Compile Include="..\ListViewPrinter\BrushPenDrawing.cs" Link="BrushPenDrawing.cs" />
+    <Compile Include="..\ListViewPrinter\BrushForm.cs" Link="BrushForm.cs" />
+    <Compile Include="..\ListViewPrinter\BrushForm.Designer.cs" Link="BrushForm.Designer.cs" DependentUpon="BrushForm.cs" />
+    <EmbeddedResource Include="..\ListViewPrinter\BrushForm.resx" Link="BrushForm.resx" LogicalName="BrightIdeasSoftware.Design.Client.Printing.BrushForm.resources" />
   </ItemGroup>
 </Project>

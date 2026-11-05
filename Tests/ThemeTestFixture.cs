@@ -11,6 +11,7 @@ namespace BrightIdeasSoftware.Tests
         [TestInitialize]
         public void SetDarkMode() {
             this.originalMode = ObjectListViewTheme.ColorMode;
+            ObjectListViewTheme.ResetColors();
             ObjectListViewTheme.ColorMode = ObjectListViewColorMode.Dark;
             if (!ObjectListViewTheme.IsDarkMode)
             {
@@ -21,6 +22,7 @@ namespace BrightIdeasSoftware.Tests
         [TestCleanup]
         public void RestoreColorMode() {
             ObjectListViewTheme.ColorMode = this.originalMode;
+            ObjectListViewTheme.ResetColors();
         }
 
         protected static bool ContainsColor(Bitmap bitmap, Color color, Rectangle? region = null) {

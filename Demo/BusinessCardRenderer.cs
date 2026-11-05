@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Globalization;
@@ -63,9 +64,10 @@ namespace ObjectListViewDemo {
                 graphics.Clear(olv.BackColor);
                 graphics.SmoothingMode = ObjectListView.SmoothingMode;
                 graphics.TextRenderingHint = ObjectListView.TextRenderingHint;
-                Color borderColor = e.Item.Selected ? Color.Blue : this.BorderColor;
+                Color borderColor = e.Item.Selected ? olv.SelectedBackColorOrDefault : this.BorderColor;
                 Color headerBackColor = e.Item.Selected ? olv.SelectedBackColorOrDefault : this.HeaderBackColor;
-                this.DrawBusinessCard(graphics, itemBounds, rowObject, olv, (OLVListItem)e.Item, borderColor, headerBackColor);
+                Color headerTextColor = e.Item.Selected ? olv.SelectedForeColorOrDefault : this.HeaderTextColor;
+                this.DrawBusinessCard(graphics, itemBounds, rowObject, olv, (OLVListItem)e.Item, borderColor, headerBackColor, headerTextColor);
                 buffered.Render();
             }
 
@@ -73,27 +75,48 @@ namespace ObjectListViewDemo {
             return true;
         }
 
-        internal Color BorderColor = Color.FromArgb(0x33, 0x33, 0x33);
+        private Color borderColor, textColor, headerTextColor, headerBackColor, backColor;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        internal Color BorderColor {
+            get => this.borderColor.IsEmpty ? ObjectListViewTheme.Current.ControlDarkColor : this.borderColor;
+            set => this.borderColor = value;
+        }
         internal float BorderWidth = 1;
-        internal Color TextColor = DemoTheme.IsDarkMode ? ObjectListViewTheme.TextColor : Color.FromArgb(0x22, 0x22, 0x22);
-        internal Color HeaderTextColor = Color.AliceBlue;
-        internal Color HeaderBackColor = DemoTheme.IsDarkMode ? ObjectListViewTheme.ControlLightColor : Color.FromArgb(0x33, 0x33, 0x33);
-        internal Color BackColor = DemoTheme.IsDarkMode ? ObjectListViewTheme.ControlColor : Color.LemonChiffon;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        internal Color TextColor {
+            get => this.textColor.IsEmpty ? ObjectListViewTheme.Current.TextColor : this.textColor;
+            set => this.textColor = value;
+        }
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        internal Color HeaderTextColor {
+            get => this.headerTextColor.IsEmpty ? ObjectListViewTheme.Current.TextColor : this.headerTextColor;
+            set => this.headerTextColor = value;
+        }
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        internal Color HeaderBackColor {
+            get => this.headerBackColor.IsEmpty ? ObjectListViewTheme.Current.ControlLightColor : this.headerBackColor;
+            set => this.headerBackColor = value;
+        }
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        internal Color BackColor {
+            get => this.backColor.IsEmpty ? ObjectListViewTheme.Current.ControlColor : this.backColor;
+            set => this.backColor = value;
+        }
 
         public void DrawBusinessCard(Graphics g, Rectangle itemBounds, object rowObject, ObjectListViewBase olv, OLVListItem item)
         {
-            this.DrawBusinessCard(g, itemBounds, rowObject, olv, item, this.BorderColor, this.HeaderBackColor);
+            this.DrawBusinessCard(g, itemBounds, rowObject, olv, item, this.BorderColor, this.HeaderBackColor, this.HeaderTextColor);
         }
 
         private void DrawBusinessCard(Graphics g, Rectangle itemBounds, object rowObject, ObjectListViewBase olv,
-            OLVListItem item, Color borderColor, Color headerBackColor)
+            OLVListItem item, Color borderColor, Color headerBackColor, Color headerTextColor)
         {
             GraphicsState state = g.Save();
             try {
                 using (var borderPen = new Pen(borderColor, this.BorderWidth))
                 using (var backBrush = new SolidBrush(this.BackColor))
                 using (var textBrush = new SolidBrush(this.TextColor))
-                using (var headerTextBrush = new SolidBrush(this.HeaderTextColor))
+                using (var headerTextBrush = new SolidBrush(headerTextColor))
                 using (var headerBackBrush = new SolidBrush(headerBackColor))
                 using (var format = new StringFormat(StringFormatFlags.NoWrap) {
                     Trimming = StringTrimming.EllipsisCharacter,
@@ -121,7 +144,7 @@ namespace ObjectListViewDemo {
                                 g.DrawImage(photo, photoRect);
                             }
                         } else {
-                            g.DrawRectangle(Pens.DarkGray, photoRect);
+                            g.DrawRectangle(borderPen, photoRect);
                         }
                     }
 

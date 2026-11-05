@@ -346,14 +346,12 @@
             // olvSimpleCookingColumn
             // 
             this.olvSimpleCookingColumn.AspectName = "CulinaryRating";
-            this.olvSimpleCookingColumn.HeaderForeColor = System.Drawing.Color.Green;
             this.olvSimpleCookingColumn.Text = "Cooking Skill";
             this.olvSimpleCookingColumn.Width = 74;
             // 
             // columnHeader14
             // 
             this.columnHeader14.AspectName = "YearOfBirth";
-            this.columnHeader14.HeaderForeColor = System.Drawing.Color.Black;
             this.columnHeader14.MaximumWidth = 81;
             this.columnHeader14.MinimumWidth = 81;
             this.columnHeader14.Text = "Year of birth";
@@ -379,7 +377,6 @@
             this.olvColumn34.AspectName = "Comments";
             this.olvColumn34.FillsFreeSpace = true;
             this.olvColumn34.HeaderFont = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.olvColumn34.HeaderForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.olvColumn34.IsTileViewColumn = true;
             this.olvColumn34.MinimumWidth = 30;
             this.olvColumn34.Text = "Comments";

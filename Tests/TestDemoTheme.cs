@@ -38,7 +38,7 @@ namespace BrightIdeasSoftware.Tests
 #if NET10_0_OR_GREATER
             this.originalWinFormsMode = Application.ColorMode;
 #endif
-            ObjectListViewDemo.DemoTheme.SetColorMode(ObjectListViewColorMode.Dark);
+            FormTheme.SetColorMode(ObjectListViewColorMode.Dark);
         }
 
         [TestCleanup]
@@ -65,6 +65,35 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
+        [DataRow(true)]
+        [DataRow(false)]
+        public void Test_FirstDisplay_PaintsDarkContentBeforeRevealingTheConfiguredOpacity(bool dark) {
+            FormTheme.SetColorMode(dark ? ObjectListViewColorMode.Dark : ObjectListViewColorMode.Light);
+            using (var form = new ObjectListViewDemo.MainForm { Opacity = 0.5, ShowInTaskbar = false }) {
+                double? firstPaintOpacity = null;
+                Color firstBackground = Color.Empty;
+                form.Paint += (sender, e) => {
+                    if (!firstPaintOpacity.HasValue) {
+                        firstPaintOpacity = form.Opacity;
+                        firstBackground = form.BackColor;
+                    }
+                };
+                form.Show();
+                Application.DoEvents();
+
+                Assert.IsTrue(firstPaintOpacity.HasValue);
+                Assert.AreEqual(dark ? 0.0 : 0.5, firstPaintOpacity.Value,
+                    "The first dark paint must finish before the form is exposed to the compositor.");
+                Assert.AreEqual(0.5, form.Opacity, "Startup must preserve the application's configured opacity.");
+                Assert.AreEqual(dark, firstBackground.GetBrightness() < 0.5f);
+                Assert.IsTrue(form.Visible);
+                form.Hide();
+                form.Show();
+                Assert.AreEqual(0.5, form.Opacity);
+            }
+        }
+
+        [TestMethod]
         public void Test_StandardControlPalette_PreservesExplicitDemoStyles() {
             using (var panel = new Panel())
             using (var label = new Label { BackColor = Color.FromArgb(255, 255, 128) })
@@ -82,8 +111,8 @@ namespace BrightIdeasSoftware.Tests
                 list.Columns.Add(column);
                 tabs.TabPages.Add(page);
                 panel.Controls.AddRange(new Control[] { label, grid, button, combo, tabs, list });
-                ObjectListViewDemo.DemoTheme.ApplyInformationBanner(label);
-                ObjectListViewDemo.DemoTheme.Apply(panel);
+                ObjectListViewDemo.DemoStyles.ApplyInformationBanner(label);
+                FormTheme.Apply(panel);
                 list.SetObjects(new[] { new { Name = "First" }, new { Name = "Second" } });
 
                 Assert.IsLessThan(0.5f, label.BackColor.GetBrightness());
@@ -92,9 +121,9 @@ namespace BrightIdeasSoftware.Tests
                 Assert.AreEqual(Color.FromArgb(255, 240, 220), list.GetItem(1).BackColor);
                 Assert.AreEqual(Color.Black, column.HeaderForeColor);
                 Assert.IsFalse(page.UseVisualStyleBackColor);
-                Assert.AreEqual(ObjectListViewTheme.ControlColor, page.BackColor);
-                Assert.AreEqual(ObjectListViewTheme.ControlLightColor, combo.BackColor);
-                Assert.AreEqual(ObjectListViewTheme.TextColor, combo.ForeColor);
+                Assert.AreEqual(ObjectListViewTheme.Current.ControlColor.ToArgb(), page.BackColor.ToArgb());
+                Assert.AreEqual(ObjectListViewTheme.Current.ControlLightColor.ToArgb(), combo.BackColor.ToArgb());
+                Assert.AreEqual(ObjectListViewTheme.Current.TextColor.ToArgb(), combo.ForeColor.ToArgb());
                 combo.Items.Add("Details");
                 combo.SelectedIndex = 0;
                 using (var bitmap = new Bitmap(combo.Width, combo.Height)) {
@@ -104,7 +133,7 @@ namespace BrightIdeasSoftware.Tests
                 Assert.IsFalse(grid.EnableHeadersVisualStyles);
                 Assert.IsLessThan(0.5f, grid.ColumnHeadersDefaultCellStyle.BackColor.GetBrightness());
                 Assert.IsGreaterThan(0.5f, grid.ColumnHeadersDefaultCellStyle.ForeColor.GetBrightness());
-                Assert.AreEqual(ObjectListViewTheme.HighlightTextColor.ToArgb(), grid.DefaultCellStyle.SelectionForeColor.ToArgb());
+                Assert.AreEqual(ObjectListViewTheme.Current.HighlightTextColor.ToArgb(), grid.DefaultCellStyle.SelectionForeColor.ToArgb());
                 grid.Columns.Add("Name", "Name");
                 grid.Rows.Add("Row");
                 using (var bitmap = new Bitmap(grid.Width, grid.Height)) {
@@ -124,11 +153,11 @@ namespace BrightIdeasSoftware.Tests
                         button.Draw(graphics);
                     }
 
-                    Assert.AreEqual(ObjectListViewTheme.ButtonColor.ToArgb(), bitmap.GetPixel(button.Width / 2, 2).ToArgb());
+                    Assert.AreEqual(ObjectListViewTheme.Current.ButtonColor.ToArgb(), bitmap.GetPixel(button.Width / 2, 2).ToArgb());
                 }
 #else
                 Assert.AreEqual(DrawMode.Normal, combo.DrawMode);
-                Assert.AreEqual(FlatStyle.Standard, combo.FlatStyle);
+                Assert.AreEqual(FlatStyle.Flat, combo.FlatStyle);
                 Assert.AreEqual(FlatStyle.Standard, button.FlatStyle);
 #endif
             }
@@ -138,8 +167,8 @@ namespace BrightIdeasSoftware.Tests
         public void Test_InformationBannerRole_DoesNotDependOnItsOriginalColor() {
             using (var banner = new Label { BackColor = Color.Purple })
             using (var ordinaryLabel = new Label { BackColor = Color.FromArgb(255, 255, 128) }) {
-                ObjectListViewDemo.DemoTheme.ApplyInformationBanner(banner);
-                ObjectListViewDemo.DemoTheme.Apply(ordinaryLabel);
+                ObjectListViewDemo.DemoStyles.ApplyInformationBanner(banner);
+                FormTheme.Apply(ordinaryLabel);
                 Assert.IsLessThan(0.5f, banner.BackColor.GetBrightness());
                 Assert.IsGreaterThan(banner.ForeColor.B, banner.ForeColor.R);
                 Assert.AreEqual(Color.FromArgb(255, 255, 128), ordinaryLabel.BackColor);
@@ -147,11 +176,65 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
-        public void Test_ClassicMode_PreservesDemoBannerColors() {
-            ObjectListViewDemo.DemoTheme.SetColorMode(ObjectListViewColorMode.Light);
+        public void Test_LightMode_UsesNativeInformationBannerColors() {
+            FormTheme.SetColorMode(ObjectListViewColorMode.Light);
             using (var label = new Label { BackColor = Color.FromArgb(255, 255, 128) }) {
-                ObjectListViewDemo.DemoTheme.ApplyInformationBanner(label);
-                Assert.AreEqual(Color.FromArgb(255, 255, 128), label.BackColor);
+                ObjectListViewDemo.DemoStyles.ApplyInformationBanner(label);
+                Assert.AreEqual(SystemColors.Info.ToArgb(), label.BackColor.ToArgb());
+                Assert.AreEqual(SystemColors.InfoText.ToArgb(), label.ForeColor.ToArgb());
+            }
+        }
+
+        [TestMethod]
+        public void Test_DemoColorRoles_RefreshBannersAndHeadersThroughTheInterface() {
+            using (Form form = new Form())
+            using (var tab = new ObjectListViewDemo.TabSimpleExample()) {
+                form.Controls.Add(tab);
+                FormTheme theme = FormTheme.Attach(form);
+                var banner = Descendants(tab).OfType<Label>().Single(label => label.Name == "label1");
+                ObjectListViewTheme.SetDarkColor(nameof(IThemeColors.InformationBackColor), Color.Maroon);
+                ObjectListViewTheme.SetDarkColor(nameof(IThemeColors.InformationTextColor), Color.Ivory);
+                ObjectListViewTheme.SetDarkColor(nameof(IThemeColors.PositiveTextColor), Color.Lime);
+                ObjectListViewTheme.SetDarkColor(nameof(IThemeColors.NegativeTextColor), Color.Orange);
+                theme.Apply(new ThemePalette(true, false));
+                Assert.AreEqual(Color.Maroon, banner.BackColor);
+                Assert.AreEqual(Color.Ivory, banner.ForeColor);
+                Assert.AreEqual(Color.Lime, tab.ListView.GetColumn(2).HeaderForeColor);
+                Assert.AreEqual(Color.Orange, tab.ListView.GetColumn(6).HeaderForeColor);
+
+                ThemePalette light = new ThemePalette(false, false);
+                theme.Apply(light);
+                Assert.AreEqual(light.InformationBackColor, banner.BackColor);
+                Assert.AreEqual(light.InformationTextColor, banner.ForeColor);
+                Assert.AreEqual(light.PositiveTextColor, tab.ListView.GetColumn(2).HeaderForeColor);
+                ThemePalette highContrast = new ThemePalette(true, true);
+                theme.Apply(highContrast);
+                Assert.AreEqual(highContrast.InformationBackColor, banner.BackColor);
+                Assert.AreEqual(highContrast.InformationTextColor, banner.ForeColor);
+            }
+        }
+
+        [TestMethod]
+        public void Test_BusinessCardDefaults_FollowTheCurrentPaletteAndPreserveExplicitStyles() {
+            using (var renderer = new ObjectListViewDemo.BusinessCardRenderer()) {
+                foreach (ObjectListViewColorMode mode in new[] { ObjectListViewColorMode.Light, ObjectListViewColorMode.Dark }) {
+                    ObjectListViewTheme.ColorMode = mode;
+                    IThemeColors colors = ObjectListViewTheme.Current;
+                    Assert.AreEqual(colors.TextColor, renderer.TextColor);
+                    Assert.AreEqual(colors.TextColor, renderer.HeaderTextColor);
+                    Assert.AreEqual(colors.ControlLightColor, renderer.HeaderBackColor);
+                    Assert.AreEqual(colors.ControlDarkColor, renderer.BorderColor);
+                    Assert.AreEqual(colors.ControlColor, renderer.BackColor);
+                }
+                ObjectListViewTheme.SetDarkColor(nameof(IThemeColors.ControlLightColor), Color.Navy);
+                ObjectListViewTheme.SetDarkColor(nameof(IThemeColors.TextColor), Color.Ivory);
+                Assert.AreEqual(Color.Navy, renderer.HeaderBackColor);
+                Assert.AreEqual(Color.Ivory, renderer.TextColor);
+                renderer.HeaderBackColor = Color.Maroon;
+                ObjectListViewTheme.ColorMode = ObjectListViewColorMode.Light;
+                Assert.AreEqual(Color.Maroon, renderer.HeaderBackColor);
+                renderer.HeaderBackColor = Color.Empty;
+                Assert.AreEqual(ObjectListViewTheme.Current.ControlLightColor, renderer.HeaderBackColor);
             }
         }
 
@@ -201,7 +284,7 @@ namespace BrightIdeasSoftware.Tests
             using (var form = new ObjectListViewDemo.MainForm { Opacity = 0, ShowInTaskbar = false, Size = new Size(1450, 1150) }) {
                 form.Show();
                 var tabs = form.Controls.OfType<TabControl>().Single();
-                Assert.AreEqual(typeof(ObjectListViewDemo.MainForm).Assembly, typeof(ObjectListViewDemo.DemoTheme).Assembly);
+                Assert.AreEqual(typeof(ObjectListViewDemo.MainForm).Assembly, typeof(ObjectListViewDemo.DemoStyles).Assembly);
                 string[] bannerNames = { "label1", "label2", "label3", "label5", "label26", "label32", "label42", "label12", "label30", "label1" };
                 for (int index = 0; index < tabs.TabPages.Count; index++) {
                     tabs.SelectedIndex = index;
@@ -224,14 +307,17 @@ namespace BrightIdeasSoftware.Tests
 #endif
                 }
 #if NETFRAMEWORK
-                Assert.IsInstanceOfType<ObjectListViewDemo.ThemedTabControl>(tabs);
+                Assert.IsInstanceOfType<ThemedTabControl>(tabs);
 #else
                 Assert.AreEqual(typeof(TabControl), tabs.GetType());
 #endif
                 var simpleList = tabs.TabPages[0].Controls.OfType<ObjectListViewDemo.TabSimpleExample>().Single().ListView;
                 Assert.IsGreaterThan(0.5f, simpleList.GetColumn(2).HeaderForeColor.GetBrightness());
-                Assert.AreEqual(ObjectListViewTheme.TextColor, simpleList.GetColumn(3).HeaderForeColor);
+                Assert.IsTrue(simpleList.GetColumn(3).HeaderForeColor.IsEmpty);
                 var complexList = tabs.TabPages[1].Controls.OfType<ObjectListViewDemo.TabComplexExample>().Single().ListView;
+                Assert.IsTrue(complexList.AlternateRowBackColor.IsEmpty);
+                var fastList = tabs.TabPages[4].Controls.OfType<ObjectListViewDemo.TabFastList>().Single().ListView;
+                Assert.IsTrue(fastList.AlternateRowBackColor.IsEmpty);
                 Assert.AreEqual(2, complexList.SmallImageList.Images.IndexOfKey("user"));
                 Assert.AreEqual(6, complexList.SmallImageList.Images.IndexOfKey("music"));
                 Assert.AreEqual(12, complexList.SmallImageList.Images.IndexOfKey("star"));
@@ -379,7 +465,7 @@ namespace BrightIdeasSoftware.Tests
             using (var second = new CheckBox { Text = "Item Count" })
             using (var third = new CheckBox { Text = "Hot Item", Checked = true }) {
                 group.Controls.AddRange(new Control[] { first, second, third });
-                ObjectListViewDemo.DemoTheme.Apply(group);
+                FormTheme.Apply(group);
                 Assert.AreEqual(group.BackColor, first.BackColor);
                 Assert.AreEqual(group.BackColor, second.BackColor);
                 Assert.AreEqual(group.BackColor, third.BackColor);
@@ -415,7 +501,7 @@ namespace BrightIdeasSoftware.Tests
 #if NETFRAMEWORK
         [TestMethod]
         public void Test_FrameworkTabs_UseStockLayoutWithDarkBordersAndNoUnderline() {
-            using (var tabs = new ObjectListViewDemo.ThemedTabControl { Size = new Size(240, 100) })
+            using (var tabs = new ThemedTabControl { Size = new Size(240, 100) })
             using (var bitmap = new Bitmap(240, 100)) {
                 tabs.TabPages.Add("First");
                 tabs.TabPages.Add("Second");
@@ -431,14 +517,14 @@ namespace BrightIdeasSoftware.Tests
                     bitmap.GetPixel(second.Left + 3, second.Top + 3).ToArgb());
                 Rectangle firstHeader = new Rectangle(first.Left, 0, first.Width, tabs.DisplayRectangle.Top);
                 Rectangle secondHeader = new Rectangle(second.Left, 0, second.Width, tabs.DisplayRectangle.Top);
-                Assert.IsTrue(ContainsColor(bitmap, ObjectListViewTheme.ControlDarkColor, firstHeader));
-                Assert.IsFalse(ContainsColor(bitmap, ObjectListViewTheme.AccentColor, firstHeader));
+                Assert.IsTrue(ContainsColor(bitmap, ObjectListViewTheme.Current.ControlDarkColor, firstHeader));
+                Assert.IsFalse(ContainsColor(bitmap, ObjectListViewTheme.Current.AccentColor, firstHeader));
                 Assert.IsLessThan(0.5f, bitmap.GetPixel(first.Right - 1, first.Top + 1).GetBrightness());
                 Assert.IsLessThan(0.5f, bitmap.GetPixel(second.Right - 1, second.Top + 1).GetBrightness());
                 tabs.SelectedIndex = 1;
                 tabs.DrawToBitmap(bitmap, tabs.ClientRectangle);
-                Assert.IsTrue(ContainsColor(bitmap, ObjectListViewTheme.ControlDarkColor, secondHeader));
-                Assert.IsFalse(ContainsColor(bitmap, ObjectListViewTheme.AccentColor, secondHeader));
+                Assert.IsTrue(ContainsColor(bitmap, ObjectListViewTheme.Current.ControlDarkColor, secondHeader));
+                Assert.IsFalse(ContainsColor(bitmap, ObjectListViewTheme.Current.AccentColor, secondHeader));
             }
         }
 #endif
@@ -453,7 +539,7 @@ namespace BrightIdeasSoftware.Tests
         }
 
 #if NETFRAMEWORK
-        private sealed class TabPaintProbe : ObjectListViewDemo.ThemedTabControl {
+        private sealed class TabPaintProbe : ThemedTabControl {
             public void Send(ref Message message) {
                 this.WndProc(ref message);
             }

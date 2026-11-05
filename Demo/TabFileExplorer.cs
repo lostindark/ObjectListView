@@ -12,7 +12,7 @@ namespace ObjectListViewDemo {
 
         public TabFileExplorer() {
             InitializeComponent();
-            DemoTheme.ApplyInformationBanner(this.label5);
+            this.InformationBanner = this.label5;
             this.ListView = this.olvFiles;
         }
 

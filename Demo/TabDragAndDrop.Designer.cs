@@ -97,7 +97,6 @@
             // 
             this.label34.AutoSize = true;
             this.label34.Font = new System.Drawing.Font("Tahoma", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label34.ForeColor = System.Drawing.Color.RoyalBlue;
             this.label34.Location = new System.Drawing.Point(3, 3);
             this.label34.Margin = new System.Windows.Forms.Padding(3);
             this.label34.Name = "label34";
@@ -109,7 +108,6 @@
             // 
             this.label35.AutoSize = true;
             this.label35.Font = new System.Drawing.Font("Tahoma", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label35.ForeColor = System.Drawing.Color.RoyalBlue;
             this.label35.Location = new System.Drawing.Point(402, 3);
             this.label35.Margin = new System.Windows.Forms.Padding(3);
             this.label35.Name = "label35";

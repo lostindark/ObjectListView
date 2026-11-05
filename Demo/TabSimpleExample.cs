@@ -12,12 +12,8 @@ namespace ObjectListViewDemo {
 
         public TabSimpleExample() {
             InitializeComponent();
-            DemoTheme.ApplyInformationBanner(this.label1);
-            if (DemoTheme.IsDarkMode) {
-                this.olvSimpleCookingColumn.HeaderForeColor = Color.LightGreen;
-                this.columnHeader14.HeaderForeColor = ObjectListViewTheme.TextColor;
-                this.olvColumn34.HeaderForeColor = Color.LightCoral;
-            }
+            this.InformationBanner = this.label1;
+            this.ApplyTheme(ObjectListViewTheme.Current);
             this.ListView = this.olvSimple;
 
             // If you wanted the lists checkboxes to behave like radio buttons, you could do something like this:
@@ -30,6 +26,12 @@ namespace ObjectListViewDemo {
 //                    olvSimple.UncheckObjects(objects);
 //                }
 //            };
+        }
+
+        public override void ApplyTheme(IThemeColors colors) {
+            base.ApplyTheme(colors);
+            this.olvSimpleCookingColumn.HeaderForeColor = colors.PositiveTextColor;
+            this.olvColumn34.HeaderForeColor = colors.NegativeTextColor;
         }
 
         protected override void InitializeTab() {

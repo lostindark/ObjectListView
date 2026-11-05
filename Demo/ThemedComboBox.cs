@@ -87,10 +87,10 @@ namespace ObjectListViewDemo {
                 1, Math.Max(0, bounds.Width - width - 6), bounds.Height - 2);
             string text = this.SelectedItem == null ? this.Text : this.GetItemText(this.SelectedItem);
             TextRenderer.DrawText(graphics, text, this.Font, textBounds,
-                this.Enabled ? this.ForeColor : ObjectListViewTheme.GrayTextColor,
+                this.Enabled ? this.ForeColor : ObjectListViewTheme.Current.GrayTextColor,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis |
                 (this.RightToLeft == RightToLeft.Yes ? TextFormatFlags.Right | TextFormatFlags.RightToLeft : TextFormatFlags.Left));
-            using (Brush brush = new SolidBrush(this.DroppedDown ? ObjectListViewTheme.ControlDarkColor : this.BackColor))
+            using (Brush brush = new SolidBrush(this.DroppedDown ? ObjectListViewTheme.Current.ControlDarkColor : this.BackColor))
             {
                 graphics.FillRectangle(brush, arrow);
             }
@@ -98,7 +98,7 @@ namespace ObjectListViewDemo {
             int centerX = arrow.Left + arrow.Width / 2;
             int centerY = arrow.Top + arrow.Height / 2;
             int halfWidth = Math.Max(3, (int)Math.Ceiling(3 * graphics.DpiX / 96f));
-            using (Brush brush = new SolidBrush(this.Enabled ? ObjectListViewTheme.TextColor : ObjectListViewTheme.GrayTextColor))
+            using (Brush brush = new SolidBrush(this.Enabled ? ObjectListViewTheme.Current.TextColor : ObjectListViewTheme.Current.GrayTextColor))
             {
                 graphics.FillPolygon(brush, new[] {
                     new Point(centerX - halfWidth, centerY - 2),
@@ -108,7 +108,7 @@ namespace ObjectListViewDemo {
             }
 
             using (Pen pen = new Pen(this.Focused || this.hot || this.DroppedDown ?
-                ObjectListViewTheme.AccentColor : ObjectListViewTheme.ControlDarkColor))
+                ObjectListViewTheme.Current.AccentColor : ObjectListViewTheme.Current.ControlDarkColor))
             {
                 graphics.DrawRectangle(pen, bounds.X, bounds.Y, bounds.Width - 1, bounds.Height - 1);
             }

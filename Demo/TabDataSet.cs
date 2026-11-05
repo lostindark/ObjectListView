@@ -15,7 +15,7 @@ namespace ObjectListViewDemo
 
         public TabDataSet() {
             InitializeComponent();
-            DemoTheme.ApplyInformationBanner(this.label3);
+            this.InformationBanner = this.label3;
             this.ListView = this.olvData;
         }
 
@@ -44,17 +44,20 @@ namespace ObjectListViewDemo
             this.olvData.UseCellFormatEvents = true;
             this.olvData.FormatCell += delegate(object sender, FormatCellEventArgs e) {
                 string text = e.SubItem.Text.ToLowerInvariant();
+                IThemeColors colors = ObjectListViewTheme.Current;
                 foreach (string name in colorNames) {
                     if (text.Contains(name)) {
+                        if (colors.HighContrast)
+                        {
+                            e.SubItem.ForeColor = colors.TextColor;
+                            continue;
+                        }
                         if (text.Contains("bk-" + name)) {
                             e.SubItem.BackColor = Color.FromName(name);
-                            if (DemoTheme.IsDarkMode)
-                            {
-                                e.SubItem.ForeColor = e.SubItem.BackColor.GetBrightness() > 0.5f ? Color.Black : Color.White;
-                            }
+                            e.SubItem.ForeColor = e.SubItem.BackColor.GetBrightness() > 0.5f ? Color.Black : Color.White;
                         } else
                         {
-                            e.SubItem.ForeColor = GetDataTextColor(name);
+                            e.SubItem.ForeColor = GetDataTextColor(name, e.Item.BackColor);
                         }
                     }
                 }
@@ -86,16 +89,13 @@ namespace ObjectListViewDemo
             };
         }
 
-        private static Color GetDataTextColor(string name) {
-            if (DemoTheme.IsDarkMode) {
-                switch (name) {
-                    case "black": return ObjectListViewTheme.TextColor;
-                    case "red": return Color.LightCoral;
-                    case "green": return Color.LightGreen;
-                    case "blue": return ObjectListViewTheme.LinkColor;
-                }
+        private static Color GetDataTextColor(string name, Color background) {
+            Color color = Color.FromName(name);
+            if (Math.Abs(color.GetBrightness() - background.GetBrightness()) < 0.25f)
+            {
+                return background.GetBrightness() > 0.5f ? ControlPaint.DarkDark(color) : ControlPaint.LightLight(color);
             }
-            return Color.FromName(name);
+            return color;
         }
 
         private void SetupColumns() {

@@ -5,7 +5,27 @@ using System.Windows.Forms;
 using BrightIdeasSoftware;
 
 namespace ObjectListViewDemo {
-    public class OlvDemoTab : UserControl {
+    public class OlvDemoTab : UserControl, IThemeAware {
+
+        private Label informationBanner;
+
+        protected Label InformationBanner {
+            get => this.informationBanner;
+            set {
+                this.informationBanner = value;
+                if (value != null)
+                {
+                    DemoStyles.ApplyInformationBanner(value);
+                }
+            }
+        }
+
+        public virtual void ApplyTheme(IThemeColors colors) {
+            if (this.informationBanner != null)
+            {
+                DemoStyles.ApplyInformationBanner(this.informationBanner, colors);
+            }
+        }
 
         [Browsable(false),
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]

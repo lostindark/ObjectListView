@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -10,20 +12,106 @@ using Microsoft.Win32;
 namespace BrightIdeasSoftware {
     /// <summary>
     /// Selects the default palette used by ObjectListView controls created by an application.
-    /// Configure this before creating controls. This does not theme unrelated WinForms controls.
+    /// SetDarkColor configures dark-mode overrides only. Light and high contrast always use native colors.
+    /// Color.Empty clears an individual dark override; ResetColors clears all dark overrides.
+    /// Call ObjectListViewBase.RefreshTheme after changing settings on an existing list,
+    /// or FormTheme.RefreshAll for forms using the optional form service.
     /// </summary>
     public static class ObjectListViewTheme {
-        private static ObjectListViewColorMode colorMode;
-        private static bool systemDarkMode;
+        private static ObjectListViewColorMode colorMode = ObjectListViewColorMode.System;
+#if NETFRAMEWORK
+        private static bool systemDarkMode = ReadSystemDarkMode();
+#endif
         private static HotItemStyle lightHotItemStyle;
         private static HotItemStyle darkHotItemStyle;
 
+        private static readonly Dictionary<string, ColorDefinition> ColorMap = new Dictionary<string, ColorDefinition>(StringComparer.Ordinal) {
+            [nameof(IThemeColors.WindowColor)] = new(SystemColors.Window, Color.FromArgb(50, 50, 50)),
+            [nameof(IThemeColors.TextColor)] = new(SystemColors.WindowText, Color.FromArgb(240, 240, 240)),
+            [nameof(IThemeColors.ControlColor)] = new(SystemColors.Control, Color.FromArgb(32, 32, 32)),
+            [nameof(IThemeColors.InputColor)] = new(SystemColors.Window, nameof(IThemeColors.ControlLightColor)),
+            [nameof(IThemeColors.ControlLightColor)] = new(SystemColors.ControlLight, Color.FromArgb(46, 46, 46)),
+            [nameof(IThemeColors.ControlLightLightColor)] = new(SystemColors.ControlLightLight, Color.FromArgb(31, 31, 31)),
+            [nameof(IThemeColors.ControlDarkColor)] = new(SystemColors.ControlDark, Color.FromArgb(74, 74, 74)),
+            [nameof(IThemeColors.GrayTextColor)] = new(SystemColors.GrayText, Color.FromArgb(150, 150, 150)),
+            [nameof(IThemeColors.HighlightColor)] = new(SystemColors.Highlight, Color.FromArgb(40, 100, 180)),
+            [nameof(IThemeColors.HighlightTextColor)] = new(SystemColors.HighlightText, Color.Black),
+            [nameof(IThemeColors.AccentColor)] = new(SystemColors.Highlight, nameof(IThemeColors.HighlightColor)),
+            [nameof(IThemeColors.ButtonColor)] = new(SystemColors.Control, Color.FromArgb(51, 51, 51)),
+            [nameof(IThemeColors.ButtonDisabledColor)] = new(SystemColors.Control, Color.FromArgb(32, 32, 32)),
+            [nameof(IThemeColors.ButtonHoverColor)] = new(SystemColors.ControlLight, Color.FromArgb(69, 69, 69)),
+            [nameof(IThemeColors.ButtonPressedColor)] = new(SystemColors.ControlDark, Color.FromArgb(102, 102, 102)),
+            [nameof(IThemeColors.ButtonTextColor)] = new(SystemColors.ControlText, Color.FromArgb(240, 240, 240)),
+            [nameof(IThemeColors.ButtonDisabledTextColor)] = new(SystemColors.GrayText, Color.FromArgb(150, 150, 150)),
+            [nameof(IThemeColors.HoverColor)] = new(SystemColors.ControlLight, nameof(IThemeColors.ControlLightColor)),
+            [nameof(IThemeColors.InactiveSelectionColor)] = new(SystemColors.Control, nameof(IThemeColors.ControlColor)),
+            [nameof(IThemeColors.InactiveSelectionTextColor)] = new(SystemColors.ControlText, Color.FromArgb(240, 240, 240)),
+            [nameof(IThemeColors.SecondaryTextColor)] = new(SystemColors.GrayText, nameof(IThemeColors.GrayTextColor)),
+            [nameof(IThemeColors.PositiveTextColor)] = new(SystemColors.HotTrack, Color.LightGreen),
+            [nameof(IThemeColors.NegativeTextColor)] = new(SystemColors.HotTrack, Color.LightCoral),
+            [nameof(IThemeColors.InformationBackColor)] = new(SystemColors.Info, Color.FromArgb(53, 42, 5)),
+            [nameof(IThemeColors.InformationTextColor)] = new(SystemColors.InfoText, Color.FromArgb(255, 225, 138)),
+            [nameof(IThemeColors.LinkColor)] = new(SystemColors.HotTrack, Color.LightSkyBlue),
+            [nameof(IThemeColors.VisitedLinkColor)] = new(SystemColors.HotTrack, Color.FromArgb(197, 134, 192)),
+            [nameof(IThemeColors.MenuColor)] = new(SystemColors.Menu, Color.FromArgb(55, 55, 55)),
+            [nameof(IThemeColors.MenuHighlightColor)] = new(SystemColors.MenuHighlight, Color.FromArgb(42, 128, 210)),
+            [nameof(IThemeColors.GroupHeaderTextColor)] = new(SystemColors.HotTrack, nameof(IThemeColors.LinkColor)),
+            [nameof(IThemeColors.GroupHeaderSeparatorColor)] = new(SystemColors.ControlDark, nameof(IThemeColors.ControlDarkColor)),
+            [nameof(IThemeColors.ScrollBarTrackColor)] = new(SystemColors.Control, nameof(IThemeColors.ControlColor)),
+            [nameof(IThemeColors.ScrollBarThumbColor)] = new(SystemColors.GrayText, nameof(IThemeColors.GrayTextColor)),
+            [nameof(IThemeColors.ScrollBarArrowColor)] = new(SystemColors.WindowText, nameof(IThemeColors.TextColor)),
+            [nameof(IThemeColors.EmptyListTextColor)] = new(SystemColors.WindowText, nameof(IThemeColors.TextColor)),
+            [nameof(IThemeColors.EmptyListBackgroundColor)] = new(SystemColors.Window, nameof(IThemeColors.ControlLightColor))
+        };
+        private static readonly Dictionary<string, Color> DarkOverrides = new Dictionary<string, Color>(StringComparer.Ordinal);
+        private static readonly ThemePalette CurrentColors = ThemePalette.CreateCurrent();
+
+        internal static bool HasColorOverrides => IsDarkMode && DarkOverrides.Count != 0;
+        internal static bool HasButtonColorOverrides => IsDarkMode && (DarkOverrides.ContainsKey(nameof(IThemeColors.ButtonColor))
+            || DarkOverrides.ContainsKey(nameof(IThemeColors.ButtonDisabledColor)) || DarkOverrides.ContainsKey(nameof(IThemeColors.ButtonHoverColor))
+            || DarkOverrides.ContainsKey(nameof(IThemeColors.ButtonPressedColor)));
+        internal static bool HasDisabledButtonTextOverride => IsDarkMode && DarkOverrides.ContainsKey(nameof(IThemeColors.ButtonDisabledTextColor));
+        internal static bool HasMutedTextOverride => IsDarkMode && DarkOverrides.ContainsKey(nameof(IThemeColors.GrayTextColor));
+        internal static bool HasGroupHeaderColorOverrides => IsDarkMode && (DarkOverrides.ContainsKey(nameof(IThemeColors.GroupHeaderTextColor))
+            || DarkOverrides.ContainsKey(nameof(IThemeColors.GroupHeaderSeparatorColor)));
+        internal static bool HasScrollBarColorOverrides => IsDarkMode && (DarkOverrides.ContainsKey(nameof(IThemeColors.ScrollBarTrackColor))
+            || DarkOverrides.ContainsKey(nameof(IThemeColors.ScrollBarThumbColor)) || DarkOverrides.ContainsKey(nameof(IThemeColors.ScrollBarArrowColor)));
+
+        /// <summary>Gets an allocation-free, read-only color reader that follows the current mode and overrides.</summary>
+        public static IThemeColors Current => CurrentColors;
+
+        /// <summary>Restores all defined dark colors without changing the selected color mode.</summary>
+        public static void ResetColors() {
+            DarkOverrides.Clear();
+        }
+
+        /// <summary>
+        /// Sets a dark-only override keyed by an IThemeColors property name.
+        /// Use nameof(IThemeColors.WindowColor), for example. Color.Empty restores the defined default.
+        /// </summary>
+        public static void SetDarkColor(string colorName, Color color) {
+            ArgumentNullException.ThrowIfNull(colorName, nameof(colorName));
+            if (!ColorMap.ContainsKey(colorName))
+            {
+                throw new ArgumentException("Unknown theme color.", nameof(colorName));
+            }
+            if (color.IsEmpty)
+            {
+                DarkOverrides.Remove(colorName);
+            }
+            else
+            {
+                DarkOverrides[colorName] = color;
+            }
+        }
+
         /// <summary>
         /// Gets or sets the application-wide ObjectListView color mode.
-        /// System mode samples the Windows preference when this property is assigned.
+        /// System follows the app's WinForms mode on .NET 10. On Framework it samples
+        /// the Windows preference initially and whenever this property is assigned System.
         /// </summary>
         public static ObjectListViewColorMode ColorMode {
-            get { return colorMode; }
+            get => colorMode;
             set {
 #if NETFRAMEWORK
                 if (!Enum.IsDefined(typeof(ObjectListViewColorMode), value))
@@ -34,10 +122,12 @@ namespace BrightIdeasSoftware {
                     throw new ArgumentOutOfRangeException(nameof(value));
                 }
 
+#if NETFRAMEWORK
                 if (value == ObjectListViewColorMode.System)
                 {
                     systemDarkMode = ReadSystemDarkMode();
                 }
+#endif
 
                 colorMode = value;
             }
@@ -46,115 +136,30 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets whether the selected mode uses a dark palette. High contrast always takes precedence.
         /// </summary>
-        public static bool IsDarkMode {
-            get {
-                if (SystemInformation.HighContrast)
-                {
-                    return false;
-                }
-
-                if (colorMode == ObjectListViewColorMode.Dark)
-                {
-                    return true;
-                }
-
-                if (colorMode == ObjectListViewColorMode.System)
-                {
-                    return systemDarkMode;
-                }
+        public static bool IsDarkMode => !SystemInformation.HighContrast && (colorMode switch {
+            ObjectListViewColorMode.Dark => true,
 #if NET10_0_OR_GREATER
-                if (colorMode == ObjectListViewColorMode.Default)
-                {
-                    return Application.IsDarkModeEnabled;
-                }
+            ObjectListViewColorMode.System => Application.IsDarkModeEnabled,
+#else
+            ObjectListViewColorMode.System => systemDarkMode,
 #endif
-                return false;
-            }
-        }
+            _ => false
+        });
 
-        /// <summary>Gets the stock WinForms window background color.</summary>
-        public static Color WindowColor { get { return ResolveColor(Color.FromArgb(50, 50, 50), Color.White, SystemColors.Window); } }
-        /// <summary>Gets the default text color.</summary>
-        public static Color TextColor { get { return ResolveColor(Color.FromArgb(240, 240, 240), Color.Black, SystemColors.WindowText); } }
-        /// <summary>Gets the background color of headers and alternate rows.</summary>
-        public static Color ControlColor { get { return ResolveColor(Color.FromArgb(32, 32, 32), Color.FromArgb(240, 240, 240), SystemColors.Control); } }
-        /// <summary>Gets the input and dropdown background color.</summary>
-        public static Color ControlLightColor { get { return ResolveColor(Color.FromArgb(46, 46, 46), Color.FromArgb(227, 227, 227), SystemColors.ControlLight); } }
-        /// <summary>Gets the stock focused-input background color.</summary>
-        public static Color ControlLightLightColor { get { return ResolveColor(Color.FromArgb(31, 31, 31), Color.White, SystemColors.ControlLightLight); } }
-        /// <summary>Gets the separator and pressed background color.</summary>
-        public static Color ControlDarkColor { get { return ResolveColor(Color.FromArgb(74, 74, 74), Color.FromArgb(160, 160, 160), SystemColors.ControlDark); } }
-        /// <summary>Gets the disabled text color.</summary>
-        public static Color GrayTextColor { get { return ResolveColor(Color.FromArgb(150, 150, 150), Color.FromArgb(109, 109, 109), SystemColors.GrayText); } }
-        /// <summary>Gets the selected background color.</summary>
-        public static Color HighlightColor { get { return ResolveColor(Color.FromArgb(40, 100, 180), Color.FromArgb(0, 120, 215), SystemColors.Highlight); } }
-        /// <summary>Gets the selected text color.</summary>
-        public static Color HighlightTextColor { get { return ResolveColor(Color.Black, Color.White, SystemColors.HighlightText); } }
-        /// <summary>Gets the focus, checkbox, and active-tab accent color.</summary>
-        public static Color AccentColor { get { return HighlightColor; } }
-        /// <summary>Gets the normal button background color.</summary>
-        public static Color ButtonColor { get { return ResolveColor(Color.FromArgb(51, 51, 51), Color.FromArgb(240, 240, 240), SystemColors.Control, false); } }
-        /// <summary>Gets the button hover color.</summary>
-        public static Color ButtonHoverColor { get { return ResolveColor(Color.FromArgb(69, 69, 69), Color.FromArgb(227, 227, 227), SystemColors.ControlLight, false); } }
-        /// <summary>Gets the stock WinForms pressed-button background color.</summary>
-        public static Color ButtonPressedColor { get { return ResolveColor(Color.FromArgb(102, 102, 102), Color.FromArgb(160, 160, 160), SystemColors.ControlDark, false); } }
-        /// <summary>Gets the stock WinForms button foreground color.</summary>
-        public static Color ButtonTextColor { get { return ResolveColor(Color.FromArgb(240, 240, 240), Color.Black, SystemColors.ControlText, false); } }
-        /// <summary>Gets the stock WinForms disabled-button foreground color.</summary>
-        public static Color ButtonDisabledTextColor { get { return ResolveColor(Color.FromArgb(204, 204, 204), Color.FromArgb(109, 109, 109), SystemColors.GrayText, false); } }
-        /// <summary>Gets the row hover background color.</summary>
-        public static Color HoverColor { get { return ControlLightColor; } }
-        /// <summary>Gets the inactive selection background color.</summary>
-        public static Color InactiveSelectionColor { get { return ControlColor; } }
-        /// <summary>Gets the inactive selection foreground from the selected palette.</summary>
-        public static Color InactiveSelectionTextColor { get { return ResolveColor(Color.FromArgb(240, 240, 240), Color.Black, SystemColors.ControlText); } }
-        /// <summary>Gets the description and inactive-tab text color.</summary>
-        public static Color SecondaryTextColor { get { return GrayTextColor; } }
-        /// <summary>Gets a readable hyperlink foreground, respecting the system color in high contrast.</summary>
-        public static Color LinkColor { get { return ResolveColor(Color.LightSkyBlue, Color.Blue, SystemColors.HotTrack, false); } }
-        /// <summary>Gets the stock WinForms menu background color.</summary>
-        public static Color MenuColor { get { return ResolveColor(Color.FromArgb(55, 55, 55), Color.FromArgb(240, 240, 240), SystemColors.Menu); } }
-        /// <summary>Gets the stock WinForms menu highlight color.</summary>
-        public static Color MenuHighlightColor { get { return ResolveColor(Color.FromArgb(42, 128, 210), Color.FromArgb(0, 120, 215), SystemColors.MenuHighlight); } }
+#if NET10_0_OR_GREATER
+        internal static bool SystemPrefersDark => !SystemInformation.HighContrast && ReadSystemDarkMode();
+#endif
 
-        internal static Color AlternateRowColor { get { return IsDarkMode ? ControlColor : Color.LemonChiffon; } }
-        internal static Color HeaderTextColor { get { return IsDarkMode ? TextColor : Color.Black; } }
-        internal static Color EmptyListTextColor { get { return IsDarkMode ? TextColor : SystemColors.ControlDarkDark; } }
-        internal static Color EmptyListBackColor { get { return IsDarkMode ? ControlLightColor : Color.BlanchedAlmond; } }
-        internal static Color HyperlinkTextColor { get { return IsDarkMode ? LinkColor : Color.Blue; } }
-        internal static Color VisitedLinkTextColor { get { return IsDarkMode ? Color.FromArgb(197, 134, 192) : Color.Purple; } }
-        internal static bool UsesCustomHeaderColors {
-            get { return !SystemInformation.HighContrast && (IsDarkMode || colorMode != ObjectListViewColorMode.Default); }
-        }
-        private static bool UsesCustomEditorColors {
-            get { return IsDarkMode || colorMode != ObjectListViewColorMode.Default; }
-        }
+        internal static bool UsesCustomHeaderColors => !SystemInformation.HighContrast && (IsDarkMode || HasColorOverrides || NeedsNativeLightColors);
+        private static bool UsesCustomEditorColors => IsDarkMode || HasColorOverrides || NeedsNativeLightColors;
+        internal static HotItemStyle DefaultHotItemStyle => GetDefaultHotItemStyle();
 
-        internal static HotItemStyle DefaultHotItemStyle {
-            get {
-                if (IsDarkMode)
-                {
-                    return darkHotItemStyle ?? (darkHotItemStyle = new HotItemStyle { BackColor = HoverColor });
-                }
-
-                return lightHotItemStyle ?? (lightHotItemStyle = new HotItemStyle { BackColor = Color.FromArgb(224, 235, 253) });
-            }
-        }
-
-        internal static Color ResolveWindowColor(Color color) {
-            return color == SystemColors.Window ? WindowColor : color;
-        }
-
-        internal static Color ResolveTextColor(Color color) {
-            return color == SystemColors.WindowText ? TextColor : color;
-        }
-
-        internal static Color GetHeaderBackColor(bool pressed, bool hot) {
-            return pressed ? ControlDarkColor : hot ? ControlLightColor : ControlColor;
-        }
-
-        internal static Color GetDescriptionColor(bool printing) {
-            return IsDarkMode && !printing ? SecondaryTextColor : Color.FromArgb(45, 46, 49);
+        private static HotItemStyle GetDefaultHotItemStyle() {
+            HotItemStyle style = IsDarkMode
+                ? (darkHotItemStyle ??= new HotItemStyle())
+                : (lightHotItemStyle ??= new HotItemStyle());
+            style.BackColor = Current.HoverColor;
+            return style;
         }
 
         internal static void ApplyCellEditorColors(Control editor) {
@@ -168,32 +173,81 @@ namespace BrightIdeasSoftware {
             PropertyDescriptor foreColor = properties[nameof(Control.ForeColor)];
             if (backColor != null && !backColor.ShouldSerializeValue(editor))
             {
-                editor.BackColor = IsDarkMode ? ControlLightColor : WindowColor;
+                editor.BackColor = Current.InputColor;
             }
 
             if (foreColor != null && !foreColor.ShouldSerializeValue(editor))
             {
-                editor.ForeColor = TextColor;
+                editor.ForeColor = Current.TextColor;
             }
         }
 
-        private static Color ResolveColor(Color dark, Color light, Color system, bool useSystemInDark = true) {
-            if (SystemInformation.HighContrast)
-            {
-                return system;
-            }
-
-            if (IsDarkMode) {
+        private static bool NeedsNativeLightColors =>
 #if NET10_0_OR_GREATER
-                if (useSystemInDark && Application.IsDarkModeEnabled)
-                {
-                    return system;
-                }
+            !IsDarkMode && Application.IsDarkModeEnabled;
+#else
+            false;
 #endif
-                return dark;
+
+        internal static Dictionary<string, Color> ResolveColors(bool dark, bool highContrast) {
+            var colors = new Dictionary<string, Color>(ColorMap.Count, StringComparer.Ordinal);
+            foreach (string colorName in ColorMap.Keys)
+            {
+                Color color = ResolveColor(colorName, dark, highContrast);
+                colors.Add(colorName, color.IsSystemColor ? Color.FromArgb(color.ToArgb()) : color);
             }
-            return colorMode == ObjectListViewColorMode.Default ? system : light;
+            return colors;
         }
+
+        internal static Color ResolveColor(string colorName, bool dark, bool highContrast) {
+            if (!ColorMap.TryGetValue(colorName, out ColorDefinition definition))
+            {
+                throw new ArgumentException("Unknown theme color.", nameof(colorName));
+            }
+            if (!dark || highContrast)
+            {
+                return NativeColor(definition.Native);
+            }
+            if (DarkOverrides.TryGetValue(colorName, out Color color))
+            {
+                return color;
+            }
+            return definition.DarkBase != null ? ResolveColor(definition.DarkBase, true, false) : definition.Dark;
+        }
+
+        private readonly struct ColorDefinition {
+            internal ColorDefinition(Color native, Color dark) {
+                this.Native = native;
+                this.Dark = dark;
+                this.DarkBase = null;
+            }
+
+            internal ColorDefinition(Color native, string darkBase) {
+                this.Native = native;
+                this.Dark = Color.Empty;
+                this.DarkBase = darkBase;
+            }
+
+            internal Color Native { get; }
+            internal Color Dark { get; }
+            internal string DarkBase { get; }
+        }
+
+        private static Color NativeColor(Color color) {
+#if NET10_0_OR_GREATER
+            if (Application.IsDarkModeEnabled)
+            {
+                // WinForms remaps SystemColors in dark mode; Windows still supplies native light/accessibility colors.
+                return ColorTranslator.FromWin32(GetSysColor(ColorTranslator.ToOle(color) & 0xFF));
+            }
+#endif
+            return color;
+        }
+
+#if NET10_0_OR_GREATER
+        [DllImport("user32.dll")]
+        private static extern int GetSysColor(int index);
+#endif
 
         private static bool ReadSystemDarkMode() {
             try {

@@ -29,7 +29,7 @@ January 12, 2027. Changes to Windows compatibility require a separate support de
 | Generic control foundation | Implemented: shared UI base, typed storage, compatibility facade, typed adapters, source hooks, and display-order `Rows` |
 | Saved layouts | Implemented: shared versioned format; legacy BinaryFormatter layouts must be recreated |
 | DPI and demo layout | Implemented: host DPI configuration, column scaling, and corrected layout/drawing geometry |
-| Dark mode | Implemented: shared palette, stock .NET 10 controls, Framework fallbacks, and demo theme selection |
+| Dark mode | Implemented: shared palette, independent list refresh, opt-in extensible form theming, stock .NET 10 controls, and Framework fallbacks |
 | Modern designer | Implemented for NuGet: client/server/protocol integration, header resize/Undo, smart tags, and column/printer editors |
 | Grouping redesign | Planned |
 | Unified style precedence | Planned; dark mode does not complete this phase |
@@ -86,11 +86,30 @@ styling, and layout redesigns remain separate workstreams.
 - Business-card and task-button geometry is DPI-aware and measured against content.
 - `ObjectListViewTheme` owns palette decisions. Explicit editor colors, including
   system-color assignments, are preserved through WinForms property metadata.
+- One `nameof`-keyed map defines native system colors and dark colors. Light and high
+  contrast ignore shared overrides; dark custom drawing uses defined dark colors
+  on both runtimes. `IThemeColors` exposes named read-only properties. One
+  `ThemePalette` implementation backs the allocation-free live reader and explicit
+  immutable snapshots, without a color enum or a separate resolver type.
+- System is the sole automatic mode: it follows WinForms on .NET 10 and Windows'
+  preference on Framework. Selecting System does not replace a .NET 10 host's
+  explicit application mode.
+- `RefreshTheme()` reapplies OLV styling independently of host form theming.
+  Applications can bridge their own theme manager without changing WinForms'
+  application color mode or unrelated controls.
+- Optional `FormTheme` supports `IThemeAware` and post-styling callbacks. It
+  preserves explicit system colors and application-owned renderers, and detaches
+  handlers/restores captured appearance when controls leave its subtree.
+- Opt-in first-frame preparation delegates to standalone `FormFirstFrame`, so
+  dark startup does not require demo-specific display overrides or form theming.
 - The .NET 10 demo retains stock control rendering, with targeted background/header
   color corrections. Framework-only dark fallbacks use buffered painting.
 - Demo banners and illustrative colors are configured explicitly, not inferred
   from existing RGB values. The theme menu reloads examples while preserving
   window position and the selected tab.
+- Demo defaults consume central named colors without mode-dependent RGB branches.
+  Theme-aware tabs update banners, header accents, and links through `IThemeColors`;
+  business-card defaults remain live while preserving explicit renderer styles.
 - Drawing resources are scoped. Control-owned image-list copies are disposed on
   replacement, control disposal, and failed construction/attachment.
 - Serialized image lists are copied before appending checkbox states. Setup waits

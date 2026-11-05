@@ -49,6 +49,7 @@ namespace BrightIdeasSoftware
         private const int LVM_GETCOLUMN = LVM_FIRST + 95;
         private const int LVM_GETCOUNTPERPAGE = LVM_FIRST + 40;
         private const int LVM_GETGROUPINFO = LVM_FIRST + 149;
+        private const int LVM_GETGROUPRECT = LVM_FIRST + 98;
         private const int LVM_GETGROUPSTATE = LVM_FIRST + 92;
         private const int LVM_GETHEADER = LVM_FIRST + 31;
         private const int LVM_GETTOOLTIPS = LVM_FIRST + 78;
@@ -1199,7 +1200,7 @@ namespace BrightIdeasSoftware
         public static extern IntPtr SelectObject(IntPtr hdc, IntPtr obj);
 
         [DllImport("uxtheme.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
-        public static extern IntPtr SetWindowTheme(IntPtr hWnd, string subApp, string subIdList);
+        public static extern int SetWindowTheme(IntPtr hWnd, string subApp, string subIdList);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
         public static extern bool InvalidateRect(IntPtr hWnd, int ignored, bool erase);
@@ -1220,6 +1221,24 @@ namespace BrightIdeasSoftware
 
         public static int GetGroupInfo(ObjectListViewBase olv, int groupId, ref LVGROUP2 group) {
             return (int)NativeMethods.SendMessage(olv.Handle, LVM_GETGROUPINFO, groupId, ref group);
+        }
+
+        public static void SetListViewColors(ObjectListViewBase list) {
+            SendMessage(list.Handle, LVM_FIRST + 1, 0, ColorTranslator.ToWin32(list.BackColor));
+            SendMessage(list.Handle, LVM_FIRST + 36, 0, ColorTranslator.ToWin32(list.ForeColor));
+            SendMessage(list.Handle, LVM_FIRST + 38, 0, ColorTranslator.ToWin32(list.BackColor));
+        }
+
+        public static bool GetGroupLabelRectangle(ObjectListViewBase olv, int groupId, out Rectangle bounds) {
+            const int LVGGR_LABEL = 2;
+            RECT rectangle = new RECT { top = LVGGR_LABEL };
+            if (SendMessageRECT(olv.Handle, LVM_GETGROUPRECT, groupId, ref rectangle) == IntPtr.Zero) {
+                bounds = Rectangle.Empty;
+                return false;
+            }
+
+            bounds = Rectangle.FromLTRB(rectangle.left, rectangle.top, rectangle.right, rectangle.bottom);
+            return true;
         }
 
         public static GroupState GetGroupState(ObjectListViewBase olv, int groupId, GroupState mask) {
@@ -1245,6 +1264,11 @@ namespace BrightIdeasSoftware
         public static void SetGroupImageList(ObjectListViewBase olv, ImageList il) {
             const int LVSIL_GROUPHEADER = 3;
             NativeMethods.SendMessage(olv.Handle, LVM_SETIMAGELIST, LVSIL_GROUPHEADER, il == null ? IntPtr.Zero : il.Handle);
+        }
+
+        public static void SetStateImageList(ObjectListViewBase list, ImageList images) {
+            const int LVSIL_STATE = 2;
+            _ = SendMessage(list.Handle, LVM_SETIMAGELIST, LVSIL_STATE, images == null ? IntPtr.Zero : images.Handle);
         }
 
         public static int HitTest(ObjectListViewBase olv, ref LVHITTESTINFO hittest)

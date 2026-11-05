@@ -1018,7 +1018,7 @@ namespace BrightIdeasSoftware {
         public virtual Color GetBackgroundColor() {
             if (!this.ListView.Enabled)
             {
-                return ObjectListViewTheme.ControlColor;
+                return ObjectListViewTheme.Current.ControlColor;
             }
 
             if (this.IsItemSelected && !this.ListView.UseTranslucentSelection && this.ListView.FullRowSelect)
@@ -3842,7 +3842,11 @@ namespace BrightIdeasSoftware {
                     return this.GetForegroundColor();
                 }
 
-                return this.DescriptionColor.IsEmpty ? ObjectListViewTheme.GetDescriptionColor(this.IsPrinting) : this.DescriptionColor;
+                if (!this.DescriptionColor.IsEmpty)
+                {
+                    return this.DescriptionColor;
+                }
+                return this.IsPrinting ? Color.FromArgb(45, 46, 49) : ObjectListViewTheme.Current.SecondaryTextColor;
             }
         }
 
@@ -4186,7 +4190,7 @@ namespace BrightIdeasSoftware {
                     if (darkMode) {
                         ThemedRendering.DrawDarkButtonBackground(g, r, state);
                         TextRenderer.DrawText(g, buttonText, this.Font, r,
-                            state == PushButtonState.Disabled ? ObjectListViewTheme.ButtonDisabledTextColor : ObjectListViewTheme.ButtonTextColor, textFormatFlags);
+                            state == PushButtonState.Disabled ? ObjectListViewTheme.Current.ButtonDisabledTextColor : ObjectListViewTheme.Current.ButtonTextColor, textFormatFlags);
                     } else
                     {
                         ButtonRenderer.DrawButton(g, r, buttonText, this.Font, textFormatFlags, false, state);
@@ -4239,8 +4243,8 @@ namespace BrightIdeasSoftware {
             contentBounds.Width -= imageAndSpacing;
             if (!String.IsNullOrEmpty(buttonText) && contentBounds.Width > 0) {
                 Color textColor = state == PushButtonState.Disabled ?
-                    (darkMode ? ObjectListViewTheme.ButtonDisabledTextColor : SystemColors.GrayText) :
-                    darkMode ? ObjectListViewTheme.ButtonTextColor : SystemColors.ControlText;
+                    (darkMode ? ObjectListViewTheme.Current.ButtonDisabledTextColor : SystemColors.GrayText) :
+                    darkMode ? ObjectListViewTheme.Current.ButtonTextColor : SystemColors.ControlText;
                 TextRenderer.DrawText(g, buttonText, this.Font, contentBounds, textColor, textFormatFlags);
             }
         }

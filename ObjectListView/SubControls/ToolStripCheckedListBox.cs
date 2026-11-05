@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Windows.Forms.VisualStyles;
 
 namespace BrightIdeasSoftware {
 
@@ -42,7 +43,7 @@ namespace BrightIdeasSoftware {
         /// Create a ToolStripCheckedListBox
         /// </summary>
         public ToolStripCheckedListBox()
-            : base(new CheckedListBox()) {
+            : base(new ThemedCheckedListBox()) {
             this.CheckedListBoxControl.MaximumSize = new Size(400, 700);
             this.CheckedListBoxControl.ThreeDCheckBoxes = true;
             this.CheckedListBoxControl.CheckOnClick = true;
@@ -190,6 +191,50 @@ namespace BrightIdeasSoftware {
         private void OnItemCheck(object sender, ItemCheckEventArgs e) {
             if (ItemCheck != null) {
                 ItemCheck(this, e);
+            }
+        }
+
+        private sealed class ThemedCheckedListBox : CheckedListBox {
+            protected override void OnDrawItem(DrawItemEventArgs e) {
+                if (!ObjectListViewTheme.IsDarkMode || e.Index < 0)
+                {
+                    base.OnDrawItem(e);
+                    return;
+                }
+
+                bool selected = (e.State & DrawItemState.Selected) != 0;
+                Color background = selected ? ObjectListViewTheme.Current.HighlightColor : this.BackColor;
+                Color foreground = !this.Enabled ? ObjectListViewTheme.Current.GrayTextColor
+                    : selected ? ObjectListViewTheme.Current.HighlightTextColor : this.ForeColor;
+                using (Brush brush = new SolidBrush(background))
+                {
+                    e.Graphics.FillRectangle(brush, e.Bounds);
+                }
+
+                CheckState checkState = this.GetItemCheckState(e.Index);
+                CheckBoxState state = checkState == CheckState.Checked
+                    ? this.Enabled ? CheckBoxState.CheckedNormal : CheckBoxState.CheckedDisabled
+                    : checkState == CheckState.Indeterminate
+                        ? this.Enabled ? CheckBoxState.MixedNormal : CheckBoxState.MixedDisabled
+                        : this.Enabled ? CheckBoxState.UncheckedNormal : CheckBoxState.UncheckedDisabled;
+                Size glyphSize = CheckBoxRenderer.GetGlyphSize(e.Graphics, state);
+                bool rtl = this.RightToLeft == RightToLeft.Yes;
+                int spacing = (int)Math.Ceiling(3 * e.Graphics.DpiX / 96f);
+                Point location = new Point(rtl ? e.Bounds.Right - glyphSize.Width - 1 : e.Bounds.Left + 1,
+                    e.Bounds.Top + Math.Max(0, (e.Bounds.Height - glyphSize.Height) / 2));
+                ThemedRendering.DrawCheckBox(e.Graphics, location, state);
+
+                Rectangle text = e.Bounds;
+                text.Width = Math.Max(0, text.Width - glyphSize.Width - spacing);
+                if (!rtl)
+                {
+                    text.X += glyphSize.Width + spacing;
+                }
+                TextRenderer.DrawText(e.Graphics, this.GetItemText(this.Items[e.Index]), e.Font, text, foreground,
+                    TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix
+                    | TextFormatFlags.EndEllipsis | TextFormatFlags.PreserveGraphicsClipping
+                    | (rtl ? TextFormatFlags.Right | TextFormatFlags.RightToLeft : TextFormatFlags.Left));
+                e.DrawFocusRectangle();
             }
         }
 

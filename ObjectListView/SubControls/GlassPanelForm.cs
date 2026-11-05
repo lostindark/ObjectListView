@@ -44,6 +44,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -54,9 +55,13 @@ namespace BrightIdeasSoftware
     /// </summary>
     internal sealed partial class GlassPanelForm : Form
     {
-        public GlassPanelForm() {
-            this.Name = "GlassPanelForm";
-            this.Text = "GlassPanelForm";
+        public GlassPanelForm() : this(false) {
+        }
+
+        internal GlassPanelForm(bool coversNonClient) {
+            this.CoversNonClient = coversNonClient;
+            this.Name = coversNonClient ? "ObjectListViewChrome" : "GlassPanelForm";
+            this.Text = this.Name;
 
             ClientSize = new System.Drawing.Size(0, 0);
             ControlBox = false;
@@ -70,6 +75,7 @@ namespace BrightIdeasSoftware
             FormBorderStyle = FormBorderStyle.None;
 
             SetStyle(ControlStyles.Selectable, false);
+            this.DoubleBuffered = true;
             
             this.Opacity = 0.5f;
             this.BackColor = Color.FromArgb(255, 254, 254, 254);
@@ -89,6 +95,9 @@ namespace BrightIdeasSoftware
 
         #region Properties
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        internal bool CoversNonClient { get; }
+
         /// <summary>
         /// Get the low-level windows flag that will be given to CreateWindow.
         /// </summary>
@@ -97,6 +106,10 @@ namespace BrightIdeasSoftware
                 CreateParams cp = base.CreateParams;
                 cp.ExStyle |= 0x20; // WS_EX_TRANSPARENT
                 cp.ExStyle |= 0x80; // WS_EX_TOOLWINDOW 
+                if (this.CoversNonClient)
+                {
+                    cp.ExStyle |= 0x08000000; // WS_EX_NOACTIVATE
+                }
                 return cp;
             }
         }
@@ -109,13 +122,23 @@ namespace BrightIdeasSoftware
         /// Attach this form to the given ObjectListView
         /// </summary>        
         public void Bind(ObjectListViewBase olv, IOverlay overlay) {
+            this.BindControl(olv, overlay, null, 255);
+        }
+
+        internal void Bind(Control control, Action<Graphics, Rectangle> draw, int transparency) {
+            this.BindControl(control, null, draw, transparency);
+        }
+
+        private void BindControl(Control control, IOverlay overlay, Action<Graphics, Rectangle> draw, int transparency) {
             if (this.objectListView != null)
             {
                 this.Unbind();
             }
 
-            this.objectListView = olv;
+            this.objectListView = control;
             this.Overlay = overlay;
+            this.customDraw = draw;
+            this.customTransparency = transparency;
             this.mdiClient = null;
             this.mdiOwner = null;
 
@@ -147,6 +170,16 @@ namespace BrightIdeasSoftware
             // Listen for changes in the hierarchy
             foreach (Control ancestor in this.ancestors) {
                 ancestor.ParentChanged += new EventHandler(objectListView_ParentChanged);
+                if (this.CoversNonClient) {
+                    if (!(ancestor is Form)) {
+                        ancestor.LocationChanged += this.AncestorGeometryChanged;
+                        ancestor.SizeChanged += this.AncestorGeometryChanged;
+                    }
+                    if (ancestor is ScrollableControl scrollable)
+                    {
+                        scrollable.Scroll += this.AncestorScrolled;
+                    }
+                }
                 TabControl tabControl = ancestor as TabControl;
                 if (tabControl != null) {
                     tabControl.Selected += new TabControlEventHandler(tabControl_Selected);
@@ -200,7 +233,7 @@ namespace BrightIdeasSoftware
         /// Made the overlay panel invisible
         /// </summary>
         public void HideGlass() {
-            if (!this.isGlassShown)
+            if (!this.isGlassShown && (!this.CoversNonClient || this.Left < -1000))
             {
                 return;
             }
@@ -217,6 +250,12 @@ namespace BrightIdeasSoftware
         /// If the panel is being resized, this method also does nothing.
         /// </remarks>
         public void ShowGlass() {
+            if (this.CoversNonClient && (this.myOwner == null || !this.myOwner.Visible
+                || this.myOwner.Opacity <= 0 || this.myOwner.WindowState == FormWindowState.Minimized))
+            {
+                this.HideGlass();
+                return;
+            }
             if (this.isGlassShown || this.isDuringResizeSequence)
             {
                 return;
@@ -246,6 +285,16 @@ namespace BrightIdeasSoftware
             if (this.ancestors != null) {
                 foreach (Control parent in this.ancestors) {
                     parent.ParentChanged -= new EventHandler(objectListView_ParentChanged);
+                    if (this.CoversNonClient) {
+                        if (!(parent is Form)) {
+                            parent.LocationChanged -= this.AncestorGeometryChanged;
+                            parent.SizeChanged -= this.AncestorGeometryChanged;
+                        }
+                        if (parent is ScrollableControl scrollable)
+                        {
+                            scrollable.Scroll -= this.AncestorScrolled;
+                        }
+                    }
                     TabControl tabControl = parent as TabControl;
                     if (tabControl != null) {
                         tabControl.Selected -= new TabControlEventHandler(tabControl_Selected);
@@ -290,6 +339,10 @@ namespace BrightIdeasSoftware
         /// <param name="sender"></param>
         /// <param name="e"></param>
         void Owner_ResizeBegin(object sender, EventArgs e) {
+            if (this.CoversNonClient)
+            {
+                return;
+            }
             // When the top level window is being resized, we just want to hide
             // the overlay window. When the resizing finishes, we want to show
             // the overlay window, if it was shown before the resize started.
@@ -316,7 +369,7 @@ namespace BrightIdeasSoftware
         /// <param name="sender"></param>
         /// <param name="e"></param>
         void Owner_LocationChanged(object sender, EventArgs e) {
-            if (this.mdiOwner != null)
+            if (this.mdiOwner != null && !this.CoversNonClient)
             {
                 this.HideGlass();
             }
@@ -332,7 +385,15 @@ namespace BrightIdeasSoftware
         /// <param name="sender"></param>
         /// <param name="e"></param>
         void Owner_SizeChanged(object sender, EventArgs e) {
-            this.HideGlass();
+            if (this.CoversNonClient)
+            {
+                this.RecalculateBounds();
+                this.Invalidate();
+            }
+            else
+            {
+                this.HideGlass();
+            }
         }
 
 
@@ -348,6 +409,13 @@ namespace BrightIdeasSoftware
             }
         }
 
+        private void AncestorGeometryChanged(object sender, EventArgs e) {
+            this.RecalculateBounds();
+            this.Invalidate();
+        }
+
+        private void AncestorScrolled(object sender, ScrollEventArgs e) => this.AncestorGeometryChanged(sender, e);
+
         /// <summary>
         /// Handle when the bound OLV changes size. The overlay panel must 
         /// resize too, IFF it is currently visible.
@@ -355,6 +423,10 @@ namespace BrightIdeasSoftware
         /// <param name="sender"></param>
         /// <param name="e"></param>
         void objectListView_SizeChanged(object sender, EventArgs e) {
+            if (this.CoversNonClient)
+            {
+                this.RecalculateBounds();
+            }
             // This event is triggered in all sorts of places, and not always when the size changes.
             //if (this.isGlassShown) {
             //    this.Size = this.objectListView.ClientSize;
@@ -380,10 +452,12 @@ namespace BrightIdeasSoftware
         /// <param name="sender"></param>
         /// <param name="e"></param>
         void objectListView_ParentChanged(object sender, EventArgs e) {
-            ObjectListViewBase olv = this.objectListView;
+            Control control = this.objectListView;
             IOverlay overlay = this.Overlay;
+            Action<Graphics, Rectangle> draw = this.customDraw;
+            int transparency = this.customTransparency;
             this.Unbind();
-            this.Bind(olv, overlay);
+            this.BindControl(control, overlay, draw, transparency);
         }
 
         /// <summary>
@@ -408,7 +482,7 @@ namespace BrightIdeasSoftware
         #region Implementation
 
         protected override void OnPaint(PaintEventArgs e) {
-            if (this.objectListView == null || this.Overlay == null)
+            if (this.objectListView == null || (this.Overlay == null && this.customDraw == null))
             {
                 return;
             }
@@ -425,7 +499,15 @@ namespace BrightIdeasSoftware
                 g.SetClip(r2, System.Drawing.Drawing2D.CombineMode.Intersect);
             }
 
-            this.Overlay.Draw(this.objectListView, g, this.objectListView.ClientRectangle);
+            if (this.customDraw != null)
+            {
+                this.customDraw(g, this.ClientRectangle);
+            }
+            else
+            {
+                this.Overlay.Draw((ObjectListViewBase)this.objectListView, g,
+                    this.CoversNonClient ? this.ClientRectangle : this.objectListView.ClientRectangle);
+            }
         }
 
         private void RecalculateBounds() {
@@ -434,6 +516,26 @@ namespace BrightIdeasSoftware
                 return;
             }
 
+            if (this.CoversNonClient)
+            {
+                Rectangle window = NativeListViewTheme.GetScreenBounds(this.objectListView);
+                if (window.IsEmpty)
+                {
+                    this.HideGlass();
+                    return;
+                }
+                Rectangle visible = window;
+                foreach (Control ancestor in this.ancestors)
+                {
+                    visible.Intersect(ancestor.RectangleToScreen(ancestor.ClientRectangle));
+                }
+                this.Bounds = window;
+                visible.Offset(-window.Left, -window.Top);
+                Region previous = this.Region;
+                this.Region = new Region(visible);
+                previous?.Dispose();
+                return;
+            }
             Rectangle rect = this.objectListView.ClientRectangle;
             rect.X = 0;
             rect.Y = 0;
@@ -441,10 +543,15 @@ namespace BrightIdeasSoftware
         }
 
         internal void UpdateTransparency() {
+            if (this.customDraw != null)
+            {
+                this.Opacity = this.customTransparency / 255.0;
+                return;
+            }
             ITransparentOverlay transparentOverlay = this.Overlay as ITransparentOverlay;
             if (transparentOverlay == null)
             {
-                this.Opacity = this.objectListView.OverlayTransparency / 255.0f;
+                this.Opacity = ((ObjectListViewBase)this.objectListView).OverlayTransparency / 255.0f;
             }
             else
             {
@@ -459,7 +566,7 @@ namespace BrightIdeasSoftware
                 // Ignore all mouse interactions
                 case WM_NCHITTEST:
                     m.Result = (IntPtr)HTTRANSPARENT;
-                    break;
+                    return;
             }
             base.WndProc(ref m);
         }
@@ -474,7 +581,9 @@ namespace BrightIdeasSoftware
 
         #region Private variables
 
-        private ObjectListViewBase objectListView;
+        private Control objectListView;
+        private Action<Graphics, Rectangle> customDraw;
+        private int customTransparency;
         private bool isDuringResizeSequence;
         private bool isGlassShown;
         private bool wasGlassShownBeforeResize;

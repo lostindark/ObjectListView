@@ -751,7 +751,7 @@ namespace BrightIdeasSoftware {
 
                         if (right < bounds.Right) {
                             using (Graphics graphics = Graphics.FromHdc(nmcustomdraw.hdc))
-                            using (Brush brush = new SolidBrush(ObjectListViewTheme.ControlColor))
+                            using (Brush brush = new SolidBrush(ObjectListViewTheme.Current.ControlColor))
                             {
                                 graphics.FillRectangle(brush, right, bounds.Top, bounds.Right - right, bounds.Height);
                             }
@@ -959,7 +959,7 @@ namespace BrightIdeasSoftware {
                         indicatorBounds.Width -= 16;
                         using (Font priorityFont = CreateSortPriorityFont(font))
                         {
-                            TextRenderer.DrawText(g, label, priorityFont, indicatorBounds, ObjectListViewTheme.GrayTextColor,
+                            TextRenderer.DrawText(g, label, priorityFont, indicatorBounds, ObjectListViewTheme.Current.GrayTextColor,
                                 TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine |
                                 TextFormatFlags.NoPrefix | TextFormatFlags.PreserveGraphicsClipping);
                         }
@@ -1097,7 +1097,7 @@ namespace BrightIdeasSoftware {
                 else {
                     if (ObjectListViewTheme.UsesCustomHeaderColors)
                     {
-                        using (Brush brush = new SolidBrush(ObjectListViewTheme.ControlColor))
+                        using (Brush brush = new SolidBrush(ObjectListViewTheme.Current.ControlColor))
                         {
                             g.FillRectangle(brush, r);
                         }
@@ -1135,13 +1135,14 @@ namespace BrightIdeasSoftware {
         protected void DrawThemedBackground(Graphics g, Rectangle r, int columnIndex, bool isPressed, bool isHot) {
             // VisualStyleRenderer("HEADER") opens the classic theme, not the header window's dark theme.
             if (ObjectListViewTheme.IsDarkMode) {
-                Color backColor = ObjectListViewTheme.GetHeaderBackColor(isPressed, isHot);
+                IThemeColors colors = ObjectListViewTheme.Current;
+                Color backColor = isPressed ? colors.ControlDarkColor : isHot ? colors.ControlLightColor : colors.ControlColor;
                 using (Brush brush = new SolidBrush(backColor))
                 {
                     g.FillRectangle(brush, r);
                 }
 
-                using (Pen pen = new Pen(ObjectListViewTheme.ControlDarkColor))
+                using (Pen pen = new Pen(colors.ControlDarkColor))
                 {
                     g.DrawLine(pen, r.Right - 1, r.Top, r.Right - 1, r.Bottom - 1);
                 }
@@ -1298,7 +1299,7 @@ namespace BrightIdeasSoftware {
             }
 
             Font f = this.ListView.HeaderUsesThemes ? this.ListView.Font : stateStyle.Font ?? this.ListView.Font;
-            Color defaultColor = ObjectListViewTheme.HeaderTextColor;
+            Color defaultColor = ObjectListViewTheme.Current.TextColor;
             Color color = this.ListView.HeaderUsesThemes ? defaultColor : stateStyle.ForeColor;
             if (color.IsEmpty)
             {

@@ -27,12 +27,7 @@ namespace ObjectListViewDemo
         public TabFastList()
         {
             InitializeComponent();
-            DemoTheme.ApplyInformationBanner(this.label26);
-            if (DemoTheme.IsDarkMode)
-            {
-                this.olvFast.AlternateRowBackColor = ObjectListViewTheme.ControlColor;
-            }
-
+            this.InformationBanner = this.label26;
             this.ListView = this.olvFast;
         }
 

@@ -159,6 +159,16 @@ namespace BrightIdeasSoftware
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public class CellStyle : IItemStyle
     {
+        /// <summary>Create an unconfigured cell style.</summary>
+        public CellStyle() {
+        }
+
+        internal CellStyle(Func<Color> defaultForeColor) {
+            this.defaultForeColor = defaultForeColor;
+        }
+
+        private Func<Color> defaultForeColor;
+
         /// <summary>
         /// Gets or sets the font that will be applied by this style
         /// </summary>
@@ -183,8 +193,8 @@ namespace BrightIdeasSoftware
         /// </summary>
         [DefaultValue(typeof(Color), "")]
         public Color ForeColor {
-            get { return this.foreColor; }
-            set { this.foreColor = value; }
+            get { return this.defaultForeColor?.Invoke() ?? this.foreColor; }
+            set { this.defaultForeColor = null; this.foreColor = value; }
         }
         private Color foreColor;
 
@@ -208,12 +218,10 @@ namespace BrightIdeasSoftware
         /// Create a HyperlinkStyle
         /// </summary>
         public HyperlinkStyle() {
-            this.Normal = new CellStyle();
-            this.Normal.ForeColor = ObjectListViewTheme.HyperlinkTextColor;
+            this.Normal = new CellStyle(() => ObjectListViewTheme.Current.LinkColor);
             this.Over = new CellStyle();
             this.Over.FontStyle = FontStyle.Underline;
-            this.Visited = new CellStyle();
-            this.Visited.ForeColor = ObjectListViewTheme.VisitedLinkTextColor;
+            this.Visited = new CellStyle(() => ObjectListViewTheme.Current.VisitedLinkColor);
             this.OverCursor = Cursors.Hand;
         }
 

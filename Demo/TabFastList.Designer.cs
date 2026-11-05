@@ -258,7 +258,6 @@
             this.olvFast.AllColumns.Add(this.olvColumn33);
             this.olvFast.AllowColumnReorder = true;
             this.olvFast.AllowDrop = true;
-            this.olvFast.AlternateRowBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
             this.olvFast.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));

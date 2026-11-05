@@ -10,7 +10,7 @@ namespace ObjectListViewDemo
         public TabDataTreeListView()
         {
             InitializeComponent();
-            DemoTheme.ApplyInformationBanner(this.label42);
+            this.InformationBanner = this.label42;
             this.ListView = this.olvDataTree;
         }
 

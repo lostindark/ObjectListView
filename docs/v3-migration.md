@@ -6,6 +6,40 @@
 changes, not a completed release. Recompile consumers and update affected
 overrides; v3 is not a drop-in binary replacement.
 
+## Theme configuration and color access
+
+`ObjectListViewColorMode` now contains only `System`, `Light`, and `Dark`.
+Replace `Default` with `System`. System is the default automatic mode: it follows
+the app's effective WinForms mode on .NET 10 and the sampled Windows preference
+on Framework. Its enum values are now System = 0, Light = 1, Dark = 2; migrate any
+numeric settings from earlier development builds by name rather than reusing
+their old values.
+
+On .NET 10, selecting System through OLV or `FormTheme.SetColorMode` preserves the
+host's existing application mode. Hosts that want Windows preference tracking
+explicitly call `Application.SetColorMode(SystemColorMode.System)` before
+creating controls. Framework hosts can reassign System to resample Windows.
+
+Named static color properties such as `ObjectListViewTheme.WindowColor` have been
+removed. Read named colors through the live `IThemeColors` interface and configure
+dark overrides separately using `nameof` keys:
+
+```csharp
+IThemeColors colors = ObjectListViewTheme.Current;
+Color background = colors.WindowColor;
+ObjectListViewTheme.SetDarkColor(nameof(IThemeColors.WindowColor), Color.Navy);
+```
+
+`Current` is allocation-free and follows later mode and override changes.
+Use `new ThemePalette(colors.Dark, colors.HighContrast)` for an immutable
+snapshot. `ThemePalette` backs both forms of the same named-color contract; the
+color-role enum and indexer are removed. Light and high contrast ignore shared
+dark overrides.
+
+`IThemeAware.ApplyTheme`, `FormTheme.Apply`, and form customization/theme-change
+callbacks now accept `IThemeColors`, not `ThemePalette`. Update explicitly typed
+handlers accordingly; callers can still pass a `ThemePalette` snapshot.
+
 ## Runtime targets, designers, and saved layouts
 
 See [Designer support](designer-support.md) for the support matrix, setup,

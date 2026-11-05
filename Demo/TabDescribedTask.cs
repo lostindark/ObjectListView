@@ -10,7 +10,7 @@ namespace ObjectListViewDemo
     public partial class TabDescribedTask : OlvDemoTab {
         public TabDescribedTask() {
             InitializeComponent();
-            DemoTheme.ApplyInformationBanner(this.label1);
+            this.InformationBanner = this.label1;
             this.ListView = this.olvTasks;
         }
 

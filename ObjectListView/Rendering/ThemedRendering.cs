@@ -19,8 +19,8 @@ namespace BrightIdeasSoftware {
             bool mixed = state >= CheckBoxState.MixedNormal;
             bool hot = state == CheckBoxState.UncheckedHot || state == CheckBoxState.CheckedHot || state == CheckBoxState.MixedHot;
             bool pressed = state == CheckBoxState.UncheckedPressed || state == CheckBoxState.CheckedPressed || state == CheckBoxState.MixedPressed;
-            Color fill = selected && !disabled ? ObjectListViewTheme.AccentColor :
-                hot ? ObjectListViewTheme.HoverColor : ObjectListViewTheme.ControlLightColor;
+            Color fill = selected && !disabled ? ObjectListViewTheme.Current.AccentColor :
+                hot ? ObjectListViewTheme.Current.HoverColor : ObjectListViewTheme.Current.ControlLightColor;
             if (pressed)
             {
                 fill = ControlPaint.Dark(fill);
@@ -34,8 +34,8 @@ namespace BrightIdeasSoftware {
                     graphics.FillRectangle(brush, bounds);
                 }
 
-                Color borderColor = disabled ? ObjectListViewTheme.ControlLightLightColor :
-                    hot ? ObjectListViewTheme.TextColor : ObjectListViewTheme.GrayTextColor;
+                Color borderColor = disabled ? ObjectListViewTheme.Current.ControlLightLightColor :
+                    hot ? ObjectListViewTheme.Current.TextColor : ObjectListViewTheme.Current.GrayTextColor;
                 int borderWidth = System.Math.Max(1, (int)System.Math.Round(size.Width / 13f));
                 using (Pen border = new Pen(borderColor))
                 {
@@ -52,7 +52,7 @@ namespace BrightIdeasSoftware {
                 }
 
                 graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using (Pen mark = new Pen(disabled ? ObjectListViewTheme.GrayTextColor : Color.White, System.Math.Max(1.5f, size.Width / 7f))) {
+                using (Pen mark = new Pen(disabled ? ObjectListViewTheme.Current.GrayTextColor : Color.White, System.Math.Max(1.5f, size.Width / 7f))) {
                     mark.StartCap = LineCap.Round;
                     mark.EndCap = LineCap.Round;
                     if (mixed)
@@ -80,15 +80,16 @@ namespace BrightIdeasSoftware {
                 return;
             }
 
-            Color fill = state == PushButtonState.Pressed ? ObjectListViewTheme.ButtonPressedColor :
-                state == PushButtonState.Hot ? ObjectListViewTheme.ButtonHoverColor :
-                ObjectListViewTheme.ButtonColor;
+            Color fill = state == PushButtonState.Disabled ? ObjectListViewTheme.Current.ButtonDisabledColor :
+                state == PushButtonState.Pressed ? ObjectListViewTheme.Current.ButtonPressedColor :
+                state == PushButtonState.Hot ? ObjectListViewTheme.Current.ButtonHoverColor :
+                ObjectListViewTheme.Current.ButtonColor;
             using (Brush brush = new SolidBrush(fill))
             {
                 graphics.FillRectangle(brush, bounds);
             }
 
-            using (Pen border = new Pen(ObjectListViewTheme.GrayTextColor))
+            using (Pen border = new Pen(ObjectListViewTheme.Current.GrayTextColor))
             {
                 graphics.DrawRectangle(border, bounds.X, bounds.Y, bounds.Width - 1, bounds.Height - 1);
             }

@@ -601,6 +601,7 @@ using System.Linq;
 using System.Reflection;
 using MethodInvoker = System.Windows.Forms.MethodInvoker;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using System.Threading;
@@ -664,6 +665,13 @@ namespace BrightIdeasSoftware
     [Designer("ObjectListViewDesigner")]
 #endif
     public abstract partial class ObjectListViewBase : ListView, ISupportInitialize {
+        private readonly ConditionalWeakTable<OLVListItem, RowThemeColors> rowThemeColors = new ConditionalWeakTable<OLVListItem, RowThemeColors>();
+
+        private sealed class RowThemeColors {
+            public Color BackColor;
+            public Color ForeColor;
+        }
+
         internal int ModelRowsVersion { get; private set; }
 
         internal void InvalidateModelRows() {
@@ -720,10 +728,12 @@ namespace BrightIdeasSoftware
             this.glassPanels.Clear();
             this.standardTextOverlay?.Dispose();
             this.standardEmptyListMsgOverlay?.Dispose();
+            this.scrollBarGlass?.Dispose();
             if (this.subItemCheckBoxImageList != null)
             {
                 this.subItemCheckBoxImageList.Dispose();
             }
+            this.primaryCheckBoxImageList?.Dispose();
 
             if (this.resizedImageList != null)
             {
@@ -959,14 +969,26 @@ namespace BrightIdeasSoftware
 
         /// <summary>Gets or sets the row background, adapting the default system color to the selected palette.</summary>
         public override Color BackColor {
-            get { return ObjectListViewTheme.ResolveWindowColor(base.BackColor); }
-            set { base.BackColor = value; }
+            get => base.BackColor == SystemColors.Window ? ObjectListViewTheme.Current.WindowColor : base.BackColor;
+            set {
+                base.BackColor = value;
+                if (this.IsHandleCreated)
+                {
+                    NativeMethods.SetListViewColors(this);
+                }
+            }
         }
 
         /// <summary>Gets or sets the row text color, adapting the default system color to the selected palette.</summary>
         public override Color ForeColor {
-            get { return ObjectListViewTheme.ResolveTextColor(base.ForeColor); }
-            set { base.ForeColor = value; }
+            get => base.ForeColor == SystemColors.WindowText ? ObjectListViewTheme.Current.TextColor : base.ForeColor;
+            set {
+                base.ForeColor = value;
+                if (this.IsHandleCreated)
+                {
+                    NativeMethods.SetListViewColors(this);
+                }
+            }
         }
 
         /// <summary>
@@ -1048,7 +1070,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public virtual Color AlternateRowBackColorOrDefault {
             get {
-                return this.alternateRowBackColor.IsEmpty ? ObjectListViewTheme.AlternateRowColor : this.alternateRowBackColor;
+                return this.alternateRowBackColor.IsEmpty ? ObjectListViewTheme.Current.ControlColor : this.alternateRowBackColor;
             }
         }
 
@@ -2304,7 +2326,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public virtual Color SelectedBackColorOrDefault {
             get {
-                return this.SelectedBackColor.IsEmpty ? ObjectListViewTheme.HighlightColor : this.SelectedBackColor;
+                return this.SelectedBackColor.IsEmpty ? ObjectListViewTheme.Current.HighlightColor : this.SelectedBackColor;
             }
         }
 
@@ -2326,7 +2348,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public virtual Color SelectedForeColorOrDefault {
             get {
-                return this.SelectedForeColor.IsEmpty ? ObjectListViewTheme.HighlightTextColor : this.SelectedForeColor;
+                return this.SelectedForeColor.IsEmpty ? ObjectListViewTheme.Current.HighlightTextColor : this.SelectedForeColor;
             }
         }
 
@@ -3662,7 +3684,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public virtual Color UnfocusedSelectedBackColorOrDefault {
             get {
-                return this.UnfocusedSelectedBackColor.IsEmpty ? ObjectListViewTheme.InactiveSelectionColor : this.UnfocusedSelectedBackColor;
+                return this.UnfocusedSelectedBackColor.IsEmpty ? ObjectListViewTheme.Current.InactiveSelectionColor : this.UnfocusedSelectedBackColor;
             }
         }
 
@@ -3684,7 +3706,7 @@ namespace BrightIdeasSoftware
         [Browsable(false)]
         public virtual Color UnfocusedSelectedForeColorOrDefault {
             get {
-                return this.UnfocusedSelectedForeColor.IsEmpty ? ObjectListViewTheme.InactiveSelectionTextColor : this.UnfocusedSelectedForeColor;
+                return this.UnfocusedSelectedForeColor.IsEmpty ? ObjectListViewTheme.Current.InactiveSelectionTextColor : this.UnfocusedSelectedForeColor;
             }
         }
 
@@ -3761,12 +3783,35 @@ namespace BrightIdeasSoftware
             get { return useExplorerTheme; }
             set {
                 useExplorerTheme = value;
-                if (this.Created) {
-                    // Do not replace WinForms' dark native theme with the classic Explorer theme.
-                    NativeMethods.SetWindowTheme(this.Handle, ObjectListViewTheme.IsDarkMode ? "DarkMode_Explorer" : value ? "explorer" : "", null);
-                    if (ObjectListViewTheme.IsDarkMode)
-                    {
-                        NativeMethods.SetWindowTheme(NativeMethods.GetHeaderControl(this), "DarkMode_ItemsView", null);
+                if (this.IsHandleCreated) {
+                    ImageList stateImages = this.StateImageList;
+                    try {
+                        // Theme changes replace the native checkbox list; protect the managed image-list handle.
+                        if (stateImages != null)
+                        {
+                            NativeMethods.SetStateImageList(this, null);
+                        }
+                        int result = NativeMethods.SetWindowTheme(this.Handle,
+                            ObjectListViewTheme.IsDarkMode ? "DarkMode_Explorer" : value ? "explorer" : "", null);
+                        if (result < 0)
+                        {
+                            Trace.TraceWarning("ObjectListView could not set its native theme (HRESULT {0:X8}).", result);
+                        }
+                        IntPtr header = NativeMethods.GetHeaderControl(this);
+                        if (header != IntPtr.Zero)
+                        {
+                            result = NativeMethods.SetWindowTheme(header, ObjectListViewTheme.IsDarkMode ? "DarkMode_ItemsView" : null, null);
+                            if (result < 0)
+                            {
+                                Trace.TraceWarning("ObjectListView could not set its header theme (HRESULT {0:X8}).", result);
+                            }
+                        }
+                        NativeMethods.SetListViewColors(this);
+                    } finally {
+                        if (stateImages != null)
+                        {
+                            NativeMethods.SetStateImageList(this, stateImages);
+                        }
                     }
                 }
                 
@@ -3774,6 +3819,70 @@ namespace BrightIdeasSoftware
             }
         }
         private bool useExplorerTheme;
+
+        /// <summary>
+        /// Reapplies the shared palette to this list without theming its containing form.
+        /// </summary>
+        /// <remarks>
+        /// Call on the control thread after changing <see cref="ObjectListViewTheme"/> settings.
+        /// Preserves explicit colors, renderers, owner drawing, selection, and model objects.
+        /// Does not change the application's WinForms color mode.
+        /// </remarks>
+        public virtual void RefreshTheme() {
+            if (ReferenceEquals(this.EmptyListMsgOverlay, this.standardEmptyListMsgOverlay))
+            {
+                IThemeColors colors = ObjectListViewTheme.Current;
+                this.standardEmptyListMsgOverlay?.UpdateDefaultColors(
+                    colors.EmptyListTextColor, colors.EmptyListBackgroundColor, colors.ControlDarkColor);
+            }
+            bool ownerDraw = this.OwnerDraw;
+            try {
+#pragma warning disable CA2245 // Reapply native styling without changing the configured behavior.
+                this.UseExplorerTheme = this.UseExplorerTheme;
+#pragma warning restore CA2245
+            } finally {
+                this.OwnerDraw = ownerDraw;
+            }
+            this.ClearCachedInfo();
+            if (!this.VirtualMode)
+            {
+                foreach (OLVListItem item in this.Items)
+                {
+                    bool tracked = this.rowThemeColors.TryGetValue(item, out RowThemeColors previous);
+                    foreach (ListViewItem.ListViewSubItem cell in item.SubItems)
+                    {
+                        if (!tracked || cell.BackColor.ToArgb() == previous.BackColor.ToArgb())
+                        {
+                            cell.BackColor = this.BackColor;
+                        }
+                        if (!tracked || cell.ForeColor.ToArgb() == previous.ForeColor.ToArgb())
+                        {
+                            cell.ForeColor = this.ForeColor;
+                        }
+                    }
+                    var defaults = this.rowThemeColors.GetOrCreateValue(item);
+                    defaults.BackColor = this.BackColor;
+                    defaults.ForeColor = this.ForeColor;
+                    if (!item.Enabled)
+                    {
+                        ApplyRowStyle(item, this.DisabledItemStyle ?? ObjectListViewBase.DefaultDisabledItemStyle);
+                    }
+                    this.RowFormatter?.Invoke(item);
+                }
+                this.PostProcessRows();
+                if ((this.UseHotItem || this.UseHyperlinks) && this.HotRowIndex >= 0
+                    && this.HotRowIndex < this.GetItemCount())
+                {
+                    this.UpdateHotRow(this.GetItem(this.HotRowIndex));
+                }
+            }
+            if (this.IsHandleCreated)
+            {
+                this.HeaderControl.Invalidate();
+                this.UpdateScrollBarGlass(NativeListViewTheme.ShouldPaint);
+            }
+            this.Invalidate(true);
+        }
 
         /// <summary>
         /// Gets or sets whether the list should enable filtering
@@ -6203,16 +6312,24 @@ namespace BrightIdeasSoftware
 
         #region Low level Windows Message handling
 
+        private bool paintingScrollBars;
+        private GlassPanelForm scrollBarGlass;
+
         /// <summary>
         /// Override the basic message pump for this control
         /// </summary>
         /// <param name="m"></param>
         protected override void WndProc(ref Message m)
         {
-           
             // System.Diagnostics.Debug.WriteLine(m.Msg);
             switch (m.Msg) {
                 case 2: // WM_DESTROY
+                    this.scrollBarGlass?.HideGlass();
+                    if (this.StateImageList != null && this.IsHandleCreated)
+                    {
+                        // Keep managed checkbox images alive when the native themed handle is recreated.
+                        NativeMethods.SetStateImageList(this, null);
+                    }
                     if (!this.HandleDestroy(ref m))
                     {
                         base.WndProc(ref m);
@@ -6356,6 +6473,65 @@ namespace BrightIdeasSoftware
                     base.WndProc(ref m);
                     break;
             }
+
+            if (!this.paintingScrollBars && this.IsHandleCreated
+                && NativeListViewTheme.IsPaintMessage(m.Msg)
+                && (m.Msg != 0x317 || (m.LParam.ToInt64() & 2) != 0))
+            {
+                bool paintEmptyClient = ObjectListViewTheme.IsDarkMode && !this.Enabled && this.GetItemCount() == 0;
+                bool paintScrollBars = NativeListViewTheme.ShouldPaint;
+                this.paintingScrollBars = true;
+                try
+                {
+                    if (m.Msg == 0x317)
+                    {
+                        _ = NativeListViewTheme.Paint(this, m.WParam, paintScrollBars, paintEmptyClient);
+                    }
+                    else
+                    {
+                        if (paintEmptyClient && (m.Msg == 0x0F || m.Msg == 0x0A))
+                        {
+                            _ = NativeListViewTheme.Paint(this, IntPtr.Zero, false, true);
+                        }
+                        this.UpdateScrollBarGlass(paintScrollBars);
+                    }
+                }
+                finally
+                {
+                    this.paintingScrollBars = false;
+                }
+            }
+        }
+
+        private void UpdateScrollBarGlass(bool enabled) {
+            Form owner = this.FindForm();
+            if (!enabled || this.DesignMode || this.Disposing || this.IsDisposed || !this.Visible
+                || owner == null || !owner.Visible || owner.WindowState == FormWindowState.Minimized)
+            {
+                this.scrollBarGlass?.HideGlass();
+                return;
+            }
+            if (this.scrollBarGlass == null)
+            {
+                this.scrollBarGlass = new GlassPanelForm(true);
+                this.scrollBarGlass.Bind(this, NativeListViewTheme.CreateOverlay());
+            }
+            if (owner.Opacity <= 0)
+            {
+                this.scrollBarGlass.HideGlass();
+                return;
+            }
+            this.scrollBarGlass.ShowGlass();
+            this.scrollBarGlass.Invalidate();
+            this.scrollBarGlass.Update();
+        }
+
+        internal void DrawEmptyListBackground(Graphics graphics) {
+            using (Brush background = new SolidBrush(this.BackColor))
+            {
+                graphics.FillRectangle(background, this.ContentRectangle);
+            }
+            this.DrawAllDecorations(graphics, new List<OLVListItem>());
         }
 
         /// <summary>
@@ -6506,6 +6682,52 @@ namespace BrightIdeasSoftware
         }
         readonly IntPtr minusOne = new IntPtr(-1);
 
+        private void DrawDarkGroupHeader(NativeMethods.NMLVCUSTOMDRAW draw) {
+            foreach (OLVGroup group in this.OLVGroups) {
+                if (group.GroupId != draw.nmcd.dwItemSpec.ToInt64())
+                {
+                    continue;
+                }
+
+                if (!NativeMethods.GetGroupLabelRectangle(this, group.GroupId, out Rectangle bounds)) {
+                    Trace.TraceWarning("ObjectListView could not get the caption bounds for group {0}.", group.GroupId);
+                    return;
+                }
+
+                if (bounds.Width > 0 && bounds.Height > 0) {
+                    TextFormatFlags flags = TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding
+                        | TextFormatFlags.SingleLine | TextFormatFlags.VerticalCenter
+                        | TextFormatFlags.EndEllipsis | TextFormatFlags.PreserveGraphicsClipping;
+                    if (this.RightToLeft == RightToLeft.Yes)
+                    {
+                        flags |= TextFormatFlags.RightToLeft | TextFormatFlags.Right;
+                    }
+
+                    // The native theme ignores group foreground colors. Repaint only the label,
+                    // preserving native padding, collapse controls, focus cues, and hit testing.
+                    using (Graphics graphics = Graphics.FromHdc(draw.nmcd.hdc))
+                    using (Font font = Font.FromHdc(draw.nmcd.hdc))
+                    using (Pen separator = new Pen(ObjectListViewTheme.Current.GroupHeaderSeparatorColor)) {
+                        bool explicitForeground = TypeDescriptor.GetProperties(this)[nameof(this.ForeColor)].ShouldSerializeValue(this);
+                        Color foreground = explicitForeground ? this.ForeColor : ObjectListViewTheme.Current.GroupHeaderTextColor;
+                        Rectangle caption = bounds;
+                        if (string.IsNullOrEmpty(group.Task)) {
+                            int affordance = group.Collapsible ? draw.rcText.bottom - draw.rcText.top : 0;
+                            caption.Width = Math.Max(caption.Width, draw.rcText.right - affordance - caption.Left);
+                        }
+                        using (Brush background = new SolidBrush(this.BackColor))
+                        {
+                            graphics.FillRectangle(background, caption);
+                        }
+                        TextRenderer.DrawText(graphics, group.Header, font, bounds, foreground, flags);
+                        graphics.DrawLine(separator, draw.rcText.left, draw.rcText.bottom - 1,
+                            draw.rcText.right - 1, draw.rcText.bottom - 1);
+                    }
+                }
+                return;
+            }
+        }
+
         /// <summary>
         /// Handle the Custom draw series of notifications
         /// </summary>
@@ -6531,6 +6753,23 @@ namespace BrightIdeasSoftware
             //const int CDRF_NOTIFYSUBITEMDRAW = 0x20; // same value as above!
             const int CDRF_NOTIFYPOSTERASE = 0x40;
 
+            NativeMethods.NMLVCUSTOMDRAW nmcustomdraw = (NativeMethods.NMLVCUSTOMDRAW)m.GetLParam(typeof(NativeMethods.NMLVCUSTOMDRAW));
+            //System.Diagnostics.Debug.WriteLine(String.Format("cd: {0:x}, {1}, {2}", nmcustomdraw.nmcd.dwDrawStage, nmcustomdraw.dwItemType, nmcustomdraw.nmcd.dwItemSpec));
+
+            // Group captions also paint through WM_PRINT, outside the row-paint guards below.
+            if (nmcustomdraw.dwItemType == 1) {
+                if (ObjectListViewTheme.IsDarkMode || (!SystemInformation.HighContrast
+                    && ObjectListViewTheme.HasGroupHeaderColorOverrides)) {
+                    int stage = nmcustomdraw.nmcd.dwDrawStage & 0xFFFF;
+                    if (stage == CDDS_PREPAINT) {
+                        m.Result = (IntPtr)CDRF_NOTIFYPOSTPAINT;
+                    } else if (stage == CDDS_POSTPAINT) {
+                        this.DrawDarkGroupHeader(nmcustomdraw);
+                    }
+                }
+                return true;
+            }
+
             // There is a bug in owner drawn virtual lists which causes lots of custom draw messages
             // to be sent to the control *outside* of a WmPaint event. AFAIK, these custom draw events
             // are spurious and only serve to make the control flicker annoyingly.
@@ -6545,24 +6784,6 @@ namespace BrightIdeasSoftware
             // flicker. So, we only do the custom drawing once per WmPaint event.
             if (!this.shouldDoCustomDrawing)
             {
-                return true;
-            }
-
-            NativeMethods.NMLVCUSTOMDRAW nmcustomdraw = (NativeMethods.NMLVCUSTOMDRAW)m.GetLParam(typeof(NativeMethods.NMLVCUSTOMDRAW));
-            //System.Diagnostics.Debug.WriteLine(String.Format("cd: {0:x}, {1}, {2}", nmcustomdraw.nmcd.dwDrawStage, nmcustomdraw.dwItemType, nmcustomdraw.nmcd.dwItemSpec));
-
-            // Ignore drawing of group items
-            if (nmcustomdraw.dwItemType == 1) {
-                // This is the basis of an idea about how to owner draw group headers
-
-                //nmcustomdraw.clrText = ColorTranslator.ToWin32(Color.DeepPink);
-                //nmcustomdraw.clrFace = ColorTranslator.ToWin32(Color.DeepPink);
-                //nmcustomdraw.clrTextBk = ColorTranslator.ToWin32(Color.DeepPink);
-                //Marshal.StructureToPtr(nmcustomdraw, m.LParam, false);
-                //using (Graphics g = Graphics.FromHdc(nmcustomdraw.nmcd.hdc)) {
-                //    g.DrawRectangle(Pens.Red, Rectangle.FromLTRB(nmcustomdraw.rcText.left, nmcustomdraw.rcText.top, nmcustomdraw.rcText.right, nmcustomdraw.rcText.bottom));
-                //}
-                //m.Result = (IntPtr)((int)m.Result | CDRF_SKIPDEFAULT);
                 return true;
             }
 
@@ -8014,6 +8235,7 @@ namespace BrightIdeasSoftware
                 this.AddItemsToColumnSelectMenu(strip.Items);
             }
 
+            FormTheme.ApplyMenu(this.FindForm(), strip);
             return strip;
         }
 
@@ -8098,7 +8320,9 @@ namespace BrightIdeasSoftware
                 return strip;
             }
 
-            return strategy.MakeFilterMenu(strip, this, column);
+            ToolStripDropDown menu = strategy.MakeFilterMenu(strip, this, column);
+            FormTheme.ApplyMenu(this.FindForm(), menu);
+            return menu;
         }
 
         /// <summary>
@@ -9525,6 +9749,9 @@ namespace BrightIdeasSoftware
             lvi.Font = this.Font;
             lvi.BackColor = this.BackColor;
             lvi.ForeColor = this.ForeColor;
+            var defaults = this.rowThemeColors.GetOrCreateValue(lvi);
+            defaults.BackColor = this.BackColor;
+            defaults.ForeColor = this.ForeColor;
 
             // Should the row be selectable?
             lvi.Enabled = !this.IsDisabled(rowObject);
@@ -9751,6 +9978,7 @@ namespace BrightIdeasSoftware
             if (this.UseAlternatingBackColors && this.View == View.Details && olvi.Enabled) {
                 olvi.UseItemStyleForSubItems = true;
                 olvi.BackColor = displayIndex % 2 == 1 ? this.AlternateRowBackColorOrDefault : this.BackColor;
+                this.rowThemeColors.GetOrCreateValue(olvi).BackColor = olvi.BackColor;
             }
             if (this.ShowImagesOnSubItems && !this.VirtualMode)
             {
@@ -10042,7 +10270,7 @@ namespace BrightIdeasSoftware
                         using (Image image = source.Images[i])
                         using (Bitmap bitmap = MakeResizedImage(width, height, image, source.TransparentColor))
                         {
-                            il.Images.Add(keys[i], bitmap);
+                            il.Images.Add(i < keys.Count ? keys[i] : string.Empty, bitmap);
                         }
                     }
                 }
@@ -10098,44 +10326,56 @@ namespace BrightIdeasSoftware
                 return;
             }
 
-            if (this.StateImageList == null) {
-                this.StateImageList = new ImageList();
-                this.StateImageList.ImageSize = new Size(16, this.RowHeight == -1 ? 16 : this.RowHeight);
-                this.StateImageList.ColorDepth = ColorDepth.Depth32Bit;
-            }
-
-            if (this.RowHeight != -1 &&
-                this.View == View.Details &&
-                this.StateImageList.ImageSize.Height != this.RowHeight) {
-                this.StateImageList = new ImageList();
-                this.StateImageList.ImageSize = new Size(16, this.RowHeight);
-                this.StateImageList.ColorDepth = ColorDepth.Depth32Bit;
-            }
-
-            // The internal logic of ListView cycles through the state images when the primary
-            // checkbox is clicked. So we have to get exactly the right number of images in the 
-            // image list.
-            if (this.StateImageList.Images.Count == 0)
+            ImageList source = this.StateImageList;
+            bool resize = source != null && this.RowHeight != -1 && this.View == View.Details
+                && source.ImageSize.Height != this.RowHeight;
+            bool removeMixed = source != null && !this.TriStateCheckBoxes && source.Images.ContainsKey(INDETERMINATE_KEY);
+            if (source != null && !resize && !removeMixed && source.Images.Count >= (this.TriStateCheckBoxes ? 3 : 2))
             {
-                AddCheckStateBitmap(this.StateImageList, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
+                return;
             }
 
-            if (this.StateImageList.Images.Count <= 1)
-            {
-                AddCheckStateBitmap(this.StateImageList, CHECKED_KEY, CheckBoxState.CheckedNormal);
-            }
-
-            if (this.TriStateCheckBoxes && this.StateImageList.Images.Count <= 2)
-            {
-                AddCheckStateBitmap(this.StateImageList, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
-            }
-            else {
-                if (this.StateImageList.Images.ContainsKey(INDETERMINATE_KEY))
+            int width = source == null || resize ? 16 : source.ImageSize.Width;
+            int height = source == null ? this.RowHeight == -1 ? 16 : this.RowHeight
+                : resize ? this.RowHeight : source.ImageSize.Height;
+            ImageList images = MakeResizedImageList(width, height, resize ? null : source);
+            bool attached = false;
+            try {
+                if (source == null || resize)
                 {
-                    this.StateImageList.Images.RemoveByKey(INDETERMINATE_KEY);
+                    images.ColorDepth = ColorDepth.Depth32Bit;
+                }
+                // Populate before attaching: ImageList changes on a live checkbox control can recreate its HWND.
+                if (images.Images.Count == 0)
+                {
+                    AddCheckStateBitmap(images, UNCHECKED_KEY, CheckBoxState.UncheckedNormal);
+                }
+                if (images.Images.Count <= 1)
+                {
+                    AddCheckStateBitmap(images, CHECKED_KEY, CheckBoxState.CheckedNormal);
+                }
+                if (this.TriStateCheckBoxes && images.Images.Count <= 2)
+                {
+                    AddCheckStateBitmap(images, INDETERMINATE_KEY, CheckBoxState.MixedNormal);
+                }
+                if (removeMixed)
+                {
+                    images.Images.RemoveByKey(INDETERMINATE_KEY);
+                }
+
+                this.StateImageList = images;
+                ImageList previous = this.primaryCheckBoxImageList;
+                this.primaryCheckBoxImageList = images;
+                attached = true;
+                previous?.Dispose();
+            } finally {
+                if (!attached)
+                {
+                    images.Dispose();
                 }
             }
         }
+        private ImageList primaryCheckBoxImageList;
 
         /// <summary>
         /// The name of the image used when a check box is checked
@@ -10674,9 +10914,19 @@ namespace BrightIdeasSoftware
         protected override void OnHandleCreated(EventArgs e) {
             //Debug.WriteLine("OnHandleCreated");
             base.OnHandleCreated(e);
+            NativeMethods.SetListViewColors(this);
             this.RescaleColumnWidthsForDpi(this.GetWindowDpi());
 
             this.Invoke((MethodInvoker)this.OnControlCreated);
+        }
+
+        /// <inheritdoc />
+        protected override void OnEnabledChanged(EventArgs e) {
+            base.OnEnabledChanged(e);
+            if (this.IsHandleCreated)
+            {
+                NativeMethods.SetListViewColors(this);
+            }
         }
 
         /// <summary>
@@ -12004,9 +12254,8 @@ namespace BrightIdeasSoftware
             this.standardEmptyListMsgOverlay?.Dispose();
             this.standardEmptyListMsgOverlay = overlay;
             overlay.Alignment = System.Drawing.ContentAlignment.MiddleCenter;
-            overlay.TextColor = ObjectListViewTheme.EmptyListTextColor;
-            overlay.BackColor = ObjectListViewTheme.EmptyListBackColor;
-            overlay.BorderColor = ObjectListViewTheme.ControlDarkColor;
+            IThemeColors colors = ObjectListViewTheme.Current;
+            overlay.InitializeDefaultColors(colors.EmptyListTextColor, colors.EmptyListBackgroundColor, colors.ControlDarkColor);
             overlay.BorderWidth = 2.0f;
             this.EmptyListMsgOverlay = overlay;
         }

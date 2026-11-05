@@ -17,7 +17,7 @@ namespace ObjectListViewDemo
         public TabTreeListView()
         {
             InitializeComponent();
-            DemoTheme.ApplyInformationBanner(this.label32);
+            this.InformationBanner = this.label32;
             this.ListView = treeListView;
             this.ListView.CellClick += (sender, args) => Debug.WriteLine("CellClicked: {0}", args);
         }

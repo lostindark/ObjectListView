@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using BrightIdeasSoftware;
 
 namespace ListViewPrinterDemo
 {
@@ -22,6 +23,7 @@ namespace ListViewPrinterDemo
 #endif
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            FormTheme.SetColorMode(ObjectListViewColorMode.System);
             Application.Run(new Form1());
         }
     }

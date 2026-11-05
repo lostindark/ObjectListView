@@ -33,11 +33,9 @@ namespace BrightIdeasSoftware {
 
     /// <summary>Determines the application-wide default palette for ObjectListView.</summary>
     public enum ObjectListViewColorMode {
-        /// <summary>Follow WinForms on .NET 10; retain the classic palette on .NET Framework.</summary>
-        Default,
-        /// <summary>Use the Windows application color preference sampled at configuration time.</summary>
+        /// <summary>Follow the app's WinForms mode on .NET 10, or the sampled Windows preference on Framework.</summary>
         System,
-        /// <summary>Use the classic light palette.</summary>
+        /// <summary>Use native Windows light colors.</summary>
         Light,
         /// <summary>Use the dark palette unless high contrast is enabled.</summary>
         Dark

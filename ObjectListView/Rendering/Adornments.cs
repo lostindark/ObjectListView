@@ -494,7 +494,10 @@ namespace BrightIdeasSoftware
          DefaultValue(typeof(Color), "")]
         public Color BackColor {
             get { return this.backColor; }
-            set { this.backColor = value; }
+            set {
+                this.backColor = value;
+                this.useDefaultBackColor = false;
+            }
         }
         private Color backColor = Color.Empty;
 
@@ -517,7 +520,10 @@ namespace BrightIdeasSoftware
          DefaultValue(typeof(Color), "")]
         public Color BorderColor {
             get { return this.borderColor; }
-            set { this.borderColor = value; }
+            set {
+                this.borderColor = value;
+                this.useDefaultBorderColor = false;
+            }
         }
         private Color borderColor = Color.Empty;
 
@@ -700,9 +706,33 @@ namespace BrightIdeasSoftware
          NotifyParentProperty(true)]
         public Color TextColor {
             get { return this.textColor; }
-            set { this.textColor = value; }
+            set {
+                this.textColor = value;
+                this.useDefaultTextColor = false;
+            }
         }
         private Color textColor = Color.DarkBlue;
+        private bool useDefaultTextColor, useDefaultBackColor, useDefaultBorderColor;
+
+        internal void InitializeDefaultColors(Color text, Color background, Color border) {
+            this.useDefaultTextColor = this.useDefaultBackColor = this.useDefaultBorderColor = true;
+            this.UpdateDefaultColors(text, background, border);
+        }
+
+        internal void UpdateDefaultColors(Color text, Color background, Color border) {
+            if (this.useDefaultTextColor)
+            {
+                this.textColor = text;
+            }
+            if (this.useDefaultBackColor)
+            {
+                this.backColor = background;
+            }
+            if (this.useDefaultBorderColor)
+            {
+                this.borderColor = border;
+            }
+        }
 
         /// <summary>
         /// Gets or sets whether the text will wrap when it exceeds its bounds

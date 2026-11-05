@@ -11,7 +11,7 @@ namespace ObjectListViewDemo
     public partial class TabPrinting : OlvDemoTab {
         public TabPrinting() {
             InitializeComponent();
-            DemoTheme.ApplyInformationBanner(this.label12);
+            this.InformationBanner = this.label12;
         }
 
         [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]

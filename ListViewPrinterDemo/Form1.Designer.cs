@@ -45,7 +45,11 @@
             BrightIdeasSoftware.PenData penData6 = new BrightIdeasSoftware.PenData();
             BrightIdeasSoftware.SolidBrushData solidBrushData7 = new BrightIdeasSoftware.SolidBrushData();
             BrightIdeasSoftware.SolidBrushData solidBrushData8 = new BrightIdeasSoftware.SolidBrushData();
+#if NETFRAMEWORK
+            this.tabControl1 = new BrightIdeasSoftware.ThemedTabControl();
+#else
             this.tabControl1 = new System.Windows.Forms.TabControl();
+#endif
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.imageList1 = new System.Windows.Forms.ImageList(this.components);
@@ -804,4 +808,3 @@
         private BrightIdeasSoftware.OLVColumn olvColumnHeight;
     }
 }
-

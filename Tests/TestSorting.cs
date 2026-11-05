@@ -637,7 +637,7 @@ namespace BrightIdeasSoftware.Tests
                         if (fieldCount > 1) {
                             using (Graphics expectedGraphics = Graphics.FromImage(withoutIndicators))
                             {
-                                TextRenderer.DrawText(expectedGraphics, label, priorityFont, labelBounds, SystemColors.GrayText,
+                                TextRenderer.DrawText(expectedGraphics, label, priorityFont, labelBounds, ObjectListViewTheme.Current.GrayTextColor,
                                     flags | TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.PreserveGraphicsClipping);
                             }
                         }

@@ -35,7 +35,7 @@ namespace ObjectListViewDemo
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel3 = new System.Windows.Forms.ToolStripStatusLabel();
 #if NETFRAMEWORK
-            this.tabControl1 = new ObjectListViewDemo.ThemedTabControl();
+            this.tabControl1 = new BrightIdeasSoftware.ThemedTabControl();
 #else
             this.tabControl1 = new System.Windows.Forms.TabControl();
 #endif

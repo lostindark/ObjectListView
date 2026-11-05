@@ -53,7 +53,13 @@ namespace ObjectListViewDemo {
             }
 
             private void CreateMainForm() {
-                DemoTheme.SetColorMode(this.colorMode);
+#if NET10_0_OR_GREATER
+                if (this.colorMode == ObjectListViewColorMode.System)
+                {
+                    Application.SetColorMode(SystemColorMode.System);
+                }
+#endif
+                FormTheme.SetColorMode(this.colorMode);
                 var form = new MainForm();
                 if (this.windowBounds.HasValue) {
                     form.StartPosition = FormStartPosition.Manual;
@@ -91,7 +97,7 @@ namespace ObjectListViewDemo {
             // The InitializeComponent() call is required for Windows Forms designer support.
             //
             InitializeComponent();
-            DemoTheme.Apply(this);
+            FormTheme.Attach(this, prepareFirstFrame: true);
             InitializeExamples();
             InitializeThemeMenu();
         }
@@ -118,7 +124,7 @@ namespace ObjectListViewDemo {
         private void AddThemeMenuItem(ToolStripDropDownButton menu, string text, ObjectListViewColorMode mode) {
             var item = new ToolStripMenuItem(text) {
                 Checked = ObjectListViewTheme.ColorMode == mode,
-                ForeColor = ObjectListViewTheme.TextColor,
+                ForeColor = ObjectListViewTheme.Current.TextColor,
                 ToolTipText = "Reload the demo using this theme; example edits will be reset."
             };
             item.Click += delegate {

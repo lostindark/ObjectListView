@@ -13,8 +13,6 @@ namespace ObjectListViewDemo {
         {
             this.owner = owner;
             this.owner.Disposed += this.OwnerDisposed;
-            this.businessCardRenderer.HeaderBackColor = DemoTheme.IsDarkMode ? ObjectListViewTheme.ControlLightColor : Color.DarkBlue;
-            this.businessCardRenderer.BorderColor = DemoTheme.IsDarkMode ? ObjectListViewTheme.ControlDarkColor : Color.DarkBlue;
             this.businessCardRenderer.BorderWidth = 2;
             this.Transparency = 255;
         }

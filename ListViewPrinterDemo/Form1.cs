@@ -15,11 +15,32 @@ using BrightIdeasSoftware;
 
 namespace ListViewPrinterDemo
 {
-    public partial class Form1 : Form
+    public partial class Form1 : Form, IThemeAware
     {
         public Form1()
         {
             InitializeComponent();
+            FormTheme.Attach(this, prepareFirstFrame: true);
+        }
+
+        public void ApplyTheme(IThemeColors colors)
+        {
+            this.label1.BackColor = colors.InformationBackColor;
+            this.label1.ForeColor = colors.InformationTextColor;
+            this.propertyGrid1.ViewBackColor = colors.WindowColor;
+            this.propertyGrid1.ViewForeColor = colors.TextColor;
+            this.propertyGrid1.ViewBorderColor = colors.ControlDarkColor;
+            this.propertyGrid1.HelpBackColor = colors.ControlColor;
+            this.propertyGrid1.HelpForeColor = colors.TextColor;
+            this.propertyGrid1.HelpBorderColor = colors.ControlDarkColor;
+            this.propertyGrid1.CategoryForeColor = colors.TextColor;
+            this.propertyGrid1.CategorySplitterColor = colors.ControlDarkColor;
+            this.propertyGrid1.CommandsBackColor = colors.ControlColor;
+            this.propertyGrid1.CommandsForeColor = colors.LinkColor;
+            this.propertyGrid1.CommandsBorderColor = colors.ControlDarkColor;
+            this.propertyGrid1.LineColor = colors.ControlDarkColor;
+            this.propertyGrid1.SelectedItemWithFocusBackColor = colors.HighlightColor;
+            this.propertyGrid1.SelectedItemWithFocusForeColor = colors.HighlightTextColor;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -139,6 +160,12 @@ namespace ListViewPrinterDemo
             else if (this.rbStyleCustom.Checked == true)
             {
                 this.ApplyCustomFormatting();
+            }
+
+            // Report cells must not inherit the dark list's screen background.
+            if (this.listViewPrinter1.CellFormat.BackgroundBrush == null)
+            {
+                this.listViewPrinter1.CellFormat.BackgroundBrush = Brushes.White;
             }
 
             if (this.cbUseGridLines.Checked == false)

@@ -1305,6 +1305,10 @@ namespace BrightIdeasSoftware {
             {
                 color = defaultColor;
             }
+            if (ObjectListViewTheme.IsDarkMode && !this.ListView.Enabled)
+            {
+                color = ObjectListViewTheme.Current.GrayTextColor;
+            }
 
             const int imageTextGap = 3;
 

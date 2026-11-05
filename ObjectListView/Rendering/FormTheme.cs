@@ -1105,6 +1105,18 @@ namespace BrightIdeasSoftware
                 base.OnRenderItemText(e);
             }
 
+            protected override void OnRenderToolStripStatusLabelBackground(ToolStripItemRenderEventArgs e)
+            {
+                if (e.Item.BackColor != e.ToolStrip.BackColor)
+                {
+                    using (var brush = new SolidBrush(e.Item.BackColor))
+                    {
+                        e.Graphics.FillRectangle(brush, new Rectangle(Point.Empty, e.Item.Size));
+                    }
+                }
+                base.OnRenderToolStripStatusLabelBackground(e);
+            }
+
             protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
             {
                 e.ArrowColor = !e.Item.Enabled ? this.colors.GrayTextColor

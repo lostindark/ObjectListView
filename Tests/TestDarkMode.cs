@@ -16,6 +16,202 @@ namespace BrightIdeasSoftware.Tests
         [TestMethod]
         [DataRow(false)]
         [DataRow(true)]
+        public void Test_GroupHeaderSeparator_KeepsTheNativeLightLayoutInDarkMode(bool rtl) {
+            Application.EnableVisualStyles();
+            ObjectListViewTheme.ColorMode = ObjectListViewColorMode.Light;
+            using (Form form = new Form { ClientSize = new Size(400, 240), Opacity = 0, ShowInTaskbar = false })
+            using (DarkListProbe list = new DarkListProbe {
+                View = View.Details, ShowGroups = true, Size = new Size(350, 200),
+                RightToLeft = rtl ? RightToLeft.Yes : RightToLeft.No, RightToLeftLayout = rtl
+            })
+            using (Bitmap bitmap = new Bitmap(350, 200)) {
+                OLVColumn column = new OLVColumn("Class", "Name") { Width = 300 };
+                list.Columns.Add(column);
+                list.PrimarySortColumn = column;
+                list.PrimarySortOrder = SortOrder.Ascending;
+                list.SetObjects(new[] { new { Name = "Group A" }, new { Name = "Group B" } });
+                form.Controls.Add(list);
+                form.Show();
+                Application.DoEvents();
+                OLVGroup group = list.OLVGroups[0];
+                Rectangle label = GetGroupLabelBounds(list, group.GroupId);
+                int sampleX = rtl ? 40 : list.ClientSize.Width - 40;
+                list.DrawToBitmap(bitmap, list.ClientRectangle);
+                int[] nativeLine = Enumerable.Range(label.Top, label.Height)
+                    .Where(y => bitmap.GetPixel(sampleX, y).ToArgb() != list.BackColor.ToArgb()).ToArray();
+                Assert.AreEqual(1, nativeLine.Length, "The native separator should be inline with the caption.");
+
+                ObjectListViewTheme.ColorMode = ObjectListViewColorMode.Dark;
+                list.RefreshTheme();
+                list.DrawToBitmap(bitmap, list.ClientRectangle);
+                int[] darkLine = Enumerable.Range(label.Top, label.Height)
+                    .Where(y => bitmap.GetPixel(sampleX, y).ToArgb()
+                        == ObjectListViewTheme.Current.GroupHeaderSeparatorColor.ToArgb()).ToArray();
+                Assert.AreEqual(1, darkLine.Length);
+                Assert.IsTrue(Math.Abs(nativeLine[0] - darkLine[0]) <= 1,
+                    "The separator must stay inline with the caption, allowing one pixel for native font rounding.");
+                Assert.AreEqual(label, GetGroupLabelBounds(list, group.GroupId));
+                Assert.AreSame(group, list.OLVGroups[0]);
+            }
+        }
+
+        [TestMethod]
+        [DataRow(false, false, false, false)]
+        [DataRow(false, true, false, false)]
+        [DataRow(true, false, false, false)]
+        [DataRow(true, true, false, false)]
+        [DataRow(false, true, true, false)]
+        [DataRow(true, true, true, false)]
+        [DataRow(false, true, false, true)]
+        [DataRow(true, true, false, true)]
+        public void Test_DisabledDarkList_DoesNotPaintLightRowOrGroupBands(bool grouped, bool gridLines, bool explorerTheme, bool rtl) {
+            Application.EnableVisualStyles();
+            using (Form form = new Form { ClientSize = new Size(400, 280), Opacity = 0, ShowInTaskbar = false })
+            using (DarkListProbe list = new DarkListProbe {
+                View = View.Details, ShowGroups = grouped, GridLines = gridLines,
+                Size = new Size(350, 240), CheckBoxes = true, UseExplorerTheme = explorerTheme,
+                RightToLeft = rtl ? RightToLeft.Yes : RightToLeft.No, RightToLeftLayout = rtl
+            })
+            using (Bitmap bitmap = new Bitmap(350, 240)) {
+                OLVColumn groupColumn = new OLVColumn("Class", "Class") { Width = 150 };
+                list.Columns.Add(groupColumn);
+                list.Columns.Add(new OLVColumn("Name", "Name") { Width = 180 });
+                list.PrimarySortColumn = groupColumn;
+                list.PrimarySortOrder = SortOrder.Ascending;
+                var rows = new[] {
+                    new { Class = "Group A", Name = "First" },
+                    new { Class = "Group A", Name = "Second" },
+                    new { Class = "Group B", Name = "Third" },
+                    new { Class = "Group B", Name = "Fourth" }
+                };
+                list.SetObjects(rows);
+                list.CheckedObject = rows[0];
+                form.Controls.Add(list);
+                form.Show();
+                Application.DoEvents();
+                list.Enabled = false;
+                Application.DoEvents();
+                list.CaptureClientPaint(bitmap);
+                var brightRows = Enumerable.Range(35, 185)
+                    .Where(y => bitmap.GetPixel(300, y).GetBrightness() > 0.7f).ToArray();
+                Assert.AreEqual(0, brightRows.Length,
+                    "Disabled dark lists must not expose light native bands at rows: " + string.Join(", ", brightRows.Take(12)));
+                var brightColumns = Enumerable.Range(2, list.ClientSize.Width - 4)
+                    .Where(x => bitmap.GetPixel(x, 210).GetBrightness() > 0.7f).ToArray();
+                Assert.AreEqual(0, brightColumns.Length,
+                    "Native vertical grid lines must remain dark at columns: " + string.Join(", ", brightColumns.Take(12)));
+                Assert.IsFalse(list.Enabled);
+                Assert.AreSame(rows[0], list.CheckedObject);
+                Assert.AreEqual(4, list.GetItemCount());
+                if (!explorerTheme && !rtl) {
+                    foreach (OLVListItem item in list.Items) {
+                        Assert.IsTrue(ContainsColor(bitmap, ObjectListViewTheme.Current.GrayTextColor, item.GetSubItemBounds(1)),
+                            "Repainting the disabled background must not erase owner-drawn row text.");
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void Test_DisabledDarkList_MutesTextAndRestoresEnabledStyles(bool explorerTheme) {
+            Application.EnableVisualStyles();
+            using (Form form = new Form { ClientSize = new Size(400, 280), Opacity = 0, ShowInTaskbar = false })
+            using (DarkListProbe list = new DarkListProbe {
+                View = View.Details, ShowGroups = true, Size = new Size(350, 240), UseExplorerTheme = explorerTheme
+            })
+            using (Bitmap bitmap = new Bitmap(350, 240))
+            using (Bitmap headerBitmap = new Bitmap(200, 40))
+            using (Graphics headerGraphics = Graphics.FromImage(headerBitmap)) {
+                OLVColumn column = new OLVColumn("Class", "Class") { Width = 150 };
+                list.Columns.Add(column);
+                list.Columns.Add(new OLVColumn("Name", "Name") { Width = 180 });
+                list.PrimarySortColumn = column;
+                list.PrimarySortOrder = SortOrder.Ascending;
+                list.SetObjects(new[] { new { Class = "Group", Name = "Driver" } });
+                OLVListItem item = list.GetItem(0);
+                item.UseItemStyleForSubItems = false;
+                item.ForeColor = Color.Yellow;
+                item.SubItems[1].ForeColor = Color.Yellow;
+                form.Controls.Add(list);
+                form.Show();
+                Application.DoEvents();
+                var header = new DarkHeaderProbe(list);
+                try {
+                    foreach (bool enabled in new[] { true, false, true }) {
+                        list.Enabled = enabled;
+                        list.CaptureClientPaint(bitmap);
+                        Color expected = enabled ? Color.Yellow : ObjectListViewTheme.Current.GrayTextColor;
+                        Assert.IsTrue(ContainsColor(bitmap, expected, item.GetSubItemBounds(1)));
+                        Color groupColor = enabled ? ObjectListViewTheme.Current.GroupHeaderTextColor
+                            : ObjectListViewTheme.Current.GrayTextColor;
+                        Assert.IsTrue(ContainsColor(bitmap, groupColor, GetGroupLabelBounds(list, list.OLVGroups[0].GroupId)));
+                        Rectangle bounds = new Rectangle(Point.Empty, headerBitmap.Size);
+                        header.DrawBackground(headerGraphics, bounds, false, false, new HeaderStateStyle());
+                        header.DrawText(headerGraphics, bounds, column, new HeaderStateStyle { ForeColor = Color.Yellow });
+                        Color headerColor = enabled && list.HeaderUsesThemes ? ObjectListViewTheme.Current.TextColor : expected;
+                        Assert.IsTrue(ContainsColor(headerBitmap, headerColor));
+                        Assert.AreEqual(Color.Yellow, item.ForeColor);
+                        Assert.AreEqual(Color.Yellow, item.SubItems[1].ForeColor);
+                    }
+                } finally {
+                    header.ReleaseHandle();
+                }
+            }
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void Test_DisabledDarkList_PreservesStylesAndChecksWhileRowsAreRemovedAndHandlesRecreated(bool explorerTheme) {
+            Application.EnableVisualStyles();
+            using (Form form = new Form { ClientSize = new Size(400, 280), Opacity = 0, ShowInTaskbar = false })
+            using (DarkListProbe list = new DarkListProbe {
+                View = View.Details, ShowGroups = true, GridLines = true, CheckBoxes = true,
+                UseExplorerTheme = explorerTheme, Size = new Size(350, 240)
+            })
+            using (Bitmap bitmap = new Bitmap(350, 240)) {
+                OLVColumn column = new OLVColumn("Class", "Class") { Width = 330 };
+                list.Columns.Add(column);
+                list.PrimarySortColumn = column;
+                list.PrimarySortOrder = SortOrder.Ascending;
+                var rows = new[] { new { Class = "Group A" }, new { Class = "Group B" } };
+                list.SetObjects(rows);
+                list.CheckedObject = rows[0];
+                list.FormatRow += (sender, e) => e.Item.BackColor = Color.Navy;
+                list.RefreshObjects(rows);
+                form.Controls.Add(list);
+                form.Show();
+                Application.DoEvents();
+                list.Enabled = false;
+                list.RemoveObject(rows[1]);
+                list.RecreateTestHandle();
+                list.Enabled = true;
+                list.Enabled = false;
+                foreach (ObjectListViewColorMode mode in new[] { ObjectListViewColorMode.Light, ObjectListViewColorMode.Dark }) {
+                    ObjectListViewTheme.ColorMode = mode;
+                    list.RefreshTheme();
+                    list.CaptureClientPaint(bitmap);
+                    Assert.IsFalse(list.Enabled);
+                    Assert.AreSame(rows[0], list.CheckedObject);
+                    Assert.AreEqual(1, list.GetItemCount());
+                    Assert.AreEqual(Color.Navy, list.GetItem(0).BackColor);
+                    if (mode == ObjectListViewColorMode.Dark) {
+                        Rectangle row = list.GetItem(0).Bounds;
+                        Color rowBackground = explorerTheme ? Color.Navy : ObjectListViewTheme.Current.ControlColor;
+                        Assert.AreEqual(rowBackground.ToArgb(), bitmap.GetPixel(300, row.Top + row.Height / 2).ToArgb());
+                        Assert.AreEqual(list.BackColor.ToArgb(), bitmap.GetPixel(300, 210).ToArgb());
+                    } else {
+                        Assert.AreEqual(SystemColors.Control.ToArgb(), bitmap.GetPixel(300, 210).ToArgb());
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
         public void Test_RefreshTheme_UpdatesEmptyListDefaultsWithoutReplacingExplicitColors(bool customize) {
             ObjectListViewTheme.ColorMode = ObjectListViewColorMode.Light;
             using (var list = new ObjectListView { EmptyListMsg = "Loading" }) {
@@ -294,6 +490,43 @@ namespace BrightIdeasSoftware.Tests
                 foreach (Rectangle arrow in new[] { leading, trailing }) {
                     Assert.IsFalse(ContainsColor(idle, Color.Lime, arrow), "Idle scrollbars should hide both arrows.");
                     Assert.IsTrue(ContainsColor(hover, Color.Lime, arrow), "Hovering anywhere in the track should show both arrows.");
+                }
+                ObjectListViewTheme.SetDarkColor(nameof(IThemeColors.ScrollBarArrowColor), Color.Empty);
+                using (Graphics graphics = Graphics.FromImage(hover))
+                    paint.Invoke(null, new object[] { graphics, info, new Rectangle(Point.Empty, size), vertical, true, vertical ? new Point(2, 40) : new Point(40, 2) });
+                Point arrowCenter = vertical ? new Point(10, 5) : new Point(5, 10);
+                Assert.AreEqual(ObjectListViewTheme.Current.GrayTextColor.ToArgb(),
+                    hover.GetPixel(arrowCenter.X, arrowCenter.Y).ToArgb(),
+                    "Default arrows should use muted gray rather than bright caption text.");
+            }
+        }
+
+        [TestMethod]
+        [DataRow(true, false, 17)]
+        [DataRow(true, true, 17)]
+        [DataRow(false, false, 17)]
+        [DataRow(false, true, 17)]
+        [DataRow(true, false, 34)]
+        [DataRow(false, true, 34)]
+        public void Test_ScrollbarArrow_UsesAFilledGlyphAtNativeAndScaledSizes(bool vertical, bool forward, int size) {
+            ObjectListViewTheme.SetDarkColor(nameof(IThemeColors.ScrollBarArrowColor), Color.Magenta);
+            Type theme = typeof(ObjectListView).Assembly.GetType("BrightIdeasSoftware.NativeListViewTheme");
+            MethodInfo draw = theme.GetMethod("DrawArrow", BindingFlags.Static | BindingFlags.NonPublic);
+            using (Bitmap bitmap = new Bitmap(size + 10, size + 10))
+            using (Graphics graphics = Graphics.FromImage(bitmap)) {
+                foreach (bool enabled in new[] { true, false }) {
+                    graphics.Clear(ObjectListViewTheme.Current.ScrollBarTrackColor);
+                    graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+                    draw.Invoke(null, new object[] { graphics, new Rectangle(5, 5, size, size), vertical, forward, enabled });
+                    int inset = size / 8;
+                    int direction = forward ? 1 : -1;
+                    Point interior = new Point(5 + size / 2 - (vertical ? 0 : direction * inset),
+                        5 + size / 2 - (vertical ? direction * inset : 0));
+                    Color foreground = enabled ? Color.Magenta : ObjectListViewTheme.Current.ControlDarkColor;
+                    Assert.AreEqual(foreground.ToArgb(), bitmap.GetPixel(interior.X, interior.Y).ToArgb(),
+                        "The arrow interior must be filled like the native light scrollbar, not an open chevron.");
+                    Assert.AreEqual(ObjectListViewTheme.Current.ScrollBarTrackColor.ToArgb(), bitmap.GetPixel(5, 5).ToArgb());
+                    Assert.AreEqual(System.Drawing.Drawing2D.SmoothingMode.None, graphics.SmoothingMode);
                 }
             }
         }
@@ -1198,6 +1431,48 @@ namespace BrightIdeasSoftware.Tests
         {
             public int NativeNonClientPaints;
             public int NativeNonClientMoves;
+            private Bitmap paintCapture;
+            private bool paintCaptured;
+
+            public void CaptureClientPaint(Bitmap bitmap) {
+                this.paintCaptured = false;
+                this.paintCapture = bitmap;
+                try {
+                    this.Refresh();
+                    Assert.IsTrue(this.paintCaptured);
+                } finally {
+                    this.paintCapture = null;
+                }
+            }
+
+            protected override bool HandleCustomDraw(ref Message m) {
+                bool result = base.HandleCustomDraw(ref m);
+                if (this.paintCapture != null) {
+                    Type type = typeof(ObjectListView).Assembly.GetType("BrightIdeasSoftware.NativeMethods+NMLVCUSTOMDRAW");
+                    object draw = Marshal.PtrToStructure(m.LParam, type);
+                    object custom = type.GetField("nmcd").GetValue(draw);
+                    Type customType = custom.GetType();
+                    if ((int)customType.GetField("dwDrawStage").GetValue(custom) == 2
+                        && (int)type.GetField("dwItemType").GetValue(draw) != 1) {
+                        using (Graphics graphics = Graphics.FromImage(this.paintCapture)) {
+                            IntPtr target = graphics.GetHdc();
+                            try {
+                                Assert.IsTrue(CopyPaint(target, 0, 0, this.paintCapture.Width, this.paintCapture.Height,
+                                    (IntPtr)customType.GetField("hdc").GetValue(custom), 0, 0, 0xCC0020));
+                                this.paintCaptured = true;
+                            } finally {
+                                graphics.ReleaseHdc(target);
+                            }
+                        }
+                    }
+                }
+                return result;
+            }
+
+            [DllImport("gdi32.dll", EntryPoint = "BitBlt", ExactSpelling = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            private static extern bool CopyPaint(IntPtr target, int x, int y, int width, int height,
+                IntPtr source, int sourceX, int sourceY, uint operation);
 
             protected override void DefWndProc(ref Message m) {
                 if (m.Msg == 0x85)

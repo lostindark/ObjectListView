@@ -1057,6 +1057,11 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <returns>The text color of the subitem</returns>
         public virtual Color GetForegroundColor() {
+            if (ObjectListViewTheme.IsDarkMode && !this.ListView.Enabled)
+            {
+                return ObjectListViewTheme.Current.GrayTextColor;
+            }
+
             if (this.IsItemSelected && 
                 !this.ListView.UseTranslucentSelection &&
                 (this.ColumnIsPrimary || this.ListView.FullRowSelect))

@@ -10,6 +10,31 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace BrightIdeasSoftware.Tests {
     [STATestClass]
     public class TestFormTheme : ThemeTestFixture {
+        [TestMethod]
+        [DataRow(100, 75, 15)]
+        [DataRow(125, 35, 45)]
+        [DataRow(30, 80, 45)]
+        public void Test_StatusLabel_RendersCustomBackgroundAfterThemeRefresh(int red, int green, int blue) {
+            using (Form form = new Form())
+            using (StatusStrip strip = new StatusStrip { Size = new Size(300, 24), AutoSize = false })
+            using (ToolStripStatusLabel label = new ToolStripStatusLabel("Status") { Spring = true }) {
+                strip.Items.Add(label);
+                form.Controls.Add(strip);
+                FormTheme theme = FormTheme.Attach(form);
+                label.BackColor = Color.FromArgb(red, green, blue);
+                for (int refresh = 0; refresh < 2; refresh++) {
+                    strip.PerformLayout();
+                    using (Bitmap bitmap = new Bitmap(strip.Width, strip.Height)) {
+                        strip.DrawToBitmap(bitmap, strip.ClientRectangle);
+                        Assert.AreEqual(label.BackColor.ToArgb(),
+                            bitmap.GetPixel(label.Bounds.Right - 10, label.Bounds.Top + label.Height / 2).ToArgb());
+                        Assert.AreNotEqual(strip.BackColor.ToArgb(), label.BackColor.ToArgb());
+                    }
+                    theme.Apply(new ThemePalette(true, false));
+                }
+            }
+        }
+
 #if NETFRAMEWORK
         [TestMethod]
         [DataRow(TabDrawMode.Normal)]

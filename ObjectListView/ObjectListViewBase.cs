@@ -6682,6 +6682,43 @@ namespace BrightIdeasSoftware
         }
         readonly IntPtr minusOne = new IntPtr(-1);
 
+        private void DrawDarkDisabledGridLines(Graphics graphics) {
+            if (!ObjectListViewTheme.IsDarkMode || this.Enabled || !this.GridLines
+                || this.View != View.Details || this.ShowGroups || this.GetItemCount() == 0)
+            {
+                return;
+            }
+
+            OLVListItem first = this.GetItem(this.TopItemIndex);
+            if (first == null || first.Bounds.Height <= 0)
+            {
+                return;
+            }
+
+            Rectangle row = first.Bounds;
+            var state = graphics.Save();
+            try {
+                if (this.RightToLeftLayout && this.RightToLeft == RightToLeft.Yes)
+                {
+                    // GDI+ does not inherit the native DC's mirrored layout.
+                    graphics.TranslateTransform(this.ClientSize.Width - 1, 0);
+                    graphics.ScaleTransform(-1, 1);
+                }
+                using (Pen pen = new Pen(ObjectListViewTheme.Current.ControlDarkColor)) {
+                    for (int y = row.Bottom - 1; y < this.ClientSize.Height; y += row.Height)
+                    {
+                        graphics.DrawLine(pen, 0, y, this.ClientSize.Width - 1, y);
+                    }
+                    foreach (OLVColumn column in this.Columns) {
+                        Point sides = NativeMethods.GetScrolledColumnSides(this, column.Index);
+                        graphics.DrawLine(pen, sides.Y, row.Top, sides.Y, this.ClientSize.Height - 1);
+                    }
+                }
+            } finally {
+                graphics.Restore(state);
+            }
+        }
+
         private void DrawDarkGroupHeader(NativeMethods.NMLVCUSTOMDRAW draw) {
             foreach (OLVGroup group in this.OLVGroups) {
                 if (group.GroupId != draw.nmcd.dwItemSpec.ToInt64())
@@ -6709,7 +6746,9 @@ namespace BrightIdeasSoftware
                     using (Font font = Font.FromHdc(draw.nmcd.hdc))
                     using (Pen separator = new Pen(ObjectListViewTheme.Current.GroupHeaderSeparatorColor)) {
                         bool explicitForeground = TypeDescriptor.GetProperties(this)[nameof(this.ForeColor)].ShouldSerializeValue(this);
-                        Color foreground = explicitForeground ? this.ForeColor : ObjectListViewTheme.Current.GroupHeaderTextColor;
+                        Color foreground = ObjectListViewTheme.IsDarkMode && !this.Enabled
+                            ? ObjectListViewTheme.Current.GrayTextColor
+                            : explicitForeground ? this.ForeColor : ObjectListViewTheme.Current.GroupHeaderTextColor;
                         Rectangle caption = bounds;
                         if (string.IsNullOrEmpty(group.Task)) {
                             int affordance = group.Collapsible ? draw.rcText.bottom - draw.rcText.top : 0;
@@ -6719,9 +6758,18 @@ namespace BrightIdeasSoftware
                         {
                             graphics.FillRectangle(background, caption);
                         }
+                        if (string.IsNullOrEmpty(group.Task))
+                        {
+                            int gap = (int)Math.Ceiling(4 * graphics.DpiX / 96f);
+                            int start = bounds.Right + gap;
+                            int end = caption.Right - 1;
+                            if (start < end)
+                            {
+                                int middle = bounds.Top + (bounds.Height + 1) / 2;
+                                graphics.DrawLine(separator, start, middle, end, middle);
+                            }
+                        }
                         TextRenderer.DrawText(graphics, group.Header, font, bounds, foreground, flags);
-                        graphics.DrawLine(separator, draw.rcText.left, draw.rcText.bottom - 1,
-                            draw.rcText.right - 1, draw.rcText.bottom - 1);
                     }
                 }
                 return;
@@ -6755,6 +6803,17 @@ namespace BrightIdeasSoftware
 
             NativeMethods.NMLVCUSTOMDRAW nmcustomdraw = (NativeMethods.NMLVCUSTOMDRAW)m.GetLParam(typeof(NativeMethods.NMLVCUSTOMDRAW));
             //System.Diagnostics.Debug.WriteLine(String.Format("cd: {0:x}, {1}, {2}", nmcustomdraw.nmcd.dwDrawStage, nmcustomdraw.dwItemType, nmcustomdraw.nmcd.dwItemSpec));
+
+            if (ObjectListViewTheme.IsDarkMode && !this.Enabled && nmcustomdraw.dwItemType != 1
+                && nmcustomdraw.nmcd.dwDrawStage == CDDS_PREPAINT)
+            {
+                // Native disabled painting ignores LVM_SETBKCOLOR, leaving light gaps around owner-drawn rows.
+                using (Graphics graphics = Graphics.FromHdc(nmcustomdraw.nmcd.hdc))
+                using (Brush background = new SolidBrush(this.BackColor))
+                {
+                    graphics.FillRectangle(background, this.ClientRectangle);
+                }
+            }
 
             // Group captions also paint through WM_PRINT, outside the row-paint guards below.
             if (nmcustomdraw.dwItemType == 1) {
@@ -6822,6 +6881,7 @@ namespace BrightIdeasSoftware
 
                         // Draw our overlays after everything has been drawn
                         using (Graphics g = Graphics.FromHdc(nmcustomdraw.nmcd.hdc)) {
+                            this.DrawDarkDisabledGridLines(g);
                             this.DrawAllDecorations(g, this.drawnItems);
                         }
                     }
@@ -6850,6 +6910,19 @@ namespace BrightIdeasSoftware
                         base.WndProc(ref m);
                     }
 
+                    if (ObjectListViewTheme.IsDarkMode && !this.Enabled && !this.OwnerDraw)
+                    {
+                        nmcustomdraw = (NativeMethods.NMLVCUSTOMDRAW)m.GetLParam(typeof(NativeMethods.NMLVCUSTOMDRAW));
+                        nmcustomdraw.clrText = ColorTranslator.ToWin32(ObjectListViewTheme.Current.GrayTextColor);
+                        OLVListItem nativeItem = this.GetItem(checked((int)nmcustomdraw.nmcd.dwItemSpec));
+                        if (nativeItem != null)
+                        {
+                            nmcustomdraw.clrTextBk = ColorTranslator.ToWin32(nativeItem.BackColor);
+                            nmcustomdraw.clrFace = nmcustomdraw.clrTextBk;
+                            Marshal.StructureToPtr(nmcustomdraw, m.LParam, false);
+                        }
+                    }
+
                     m.Result = (IntPtr)((int)m.Result | CDRF_NOTIFYPOSTPAINT | CDRF_NOTIFYPOSTERASE);
                     return true;
 
@@ -6868,6 +6941,15 @@ namespace BrightIdeasSoftware
 
                 case CDDS_SUBITEMPREPAINT:
                     //System.Diagnostics.Debug.WriteLine(String.Format("CDDS_SUBITEMPREPAINT ({0},{1})", (int)nmcustomdraw.nmcd.dwItemSpec, nmcustomdraw.iSubItem));
+
+                    if (ObjectListViewTheme.IsDarkMode && !this.Enabled && !this.OwnerDraw)
+                    {
+                        base.WndProc(ref m);
+                        nmcustomdraw = (NativeMethods.NMLVCUSTOMDRAW)m.GetLParam(typeof(NativeMethods.NMLVCUSTOMDRAW));
+                        nmcustomdraw.clrText = ColorTranslator.ToWin32(ObjectListViewTheme.Current.GrayTextColor);
+                        Marshal.StructureToPtr(nmcustomdraw, m.LParam, false);
+                        return true;
+                    }
 
                     // There is a bug in the .NET framework which appears when column 0 of an owner drawn listview
                     // is dragged to another column position.
@@ -10926,6 +11008,7 @@ namespace BrightIdeasSoftware
             if (this.IsHandleCreated)
             {
                 NativeMethods.SetListViewColors(this);
+                this.HeaderControl.Invalidate();
             }
         }
 

@@ -266,14 +266,20 @@ namespace BrightIdeasSoftware {
             }
             float x = bounds.Left + bounds.Width / 2f;
             float y = bounds.Top + bounds.Height / 2f;
-            float radius = Math.Max(2, Math.Min(bounds.Width, bounds.Height) / 6f);
+            float radius = Math.Max(2, Math.Min(bounds.Width, bounds.Height) / 4f);
             float direction = forward ? 1 : -1;
             PointF[] points = vertical
-                ? new[] { new PointF(x - radius, y - direction * radius / 2), new PointF(x, y + direction * radius / 2), new PointF(x + radius, y - direction * radius / 2) }
-                : new[] { new PointF(x - direction * radius / 2, y - radius), new PointF(x + direction * radius / 2, y), new PointF(x - direction * radius / 2, y + radius) };
-            using (Pen pen = new Pen(enabled ? ObjectListViewTheme.Current.ScrollBarArrowColor : ObjectListViewTheme.Current.ControlDarkColor, Math.Max(1f, bounds.Width / 16f)))
-            {
-                graphics.DrawLines(pen, points);
+                ? new[] { new PointF(x - radius, y - direction * radius * 0.75f), new PointF(x, y + direction * radius * 0.75f), new PointF(x + radius, y - direction * radius * 0.75f) }
+                : new[] { new PointF(x - direction * radius * 0.75f, y - radius), new PointF(x + direction * radius * 0.75f, y), new PointF(x - direction * radius * 0.75f, y + radius) };
+            var state = graphics.Save();
+            try {
+                graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (Brush brush = new SolidBrush(enabled ? ObjectListViewTheme.Current.ScrollBarArrowColor : ObjectListViewTheme.Current.ControlDarkColor))
+                {
+                    graphics.FillPolygon(brush, points);
+                }
+            } finally {
+                graphics.Restore(state);
             }
         }
 

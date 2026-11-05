@@ -59,7 +59,7 @@ namespace BrightIdeasSoftware {
             [nameof(IThemeColors.GroupHeaderSeparatorColor)] = new(SystemColors.ControlDark, nameof(IThemeColors.ControlDarkColor)),
             [nameof(IThemeColors.ScrollBarTrackColor)] = new(SystemColors.Control, nameof(IThemeColors.ControlColor)),
             [nameof(IThemeColors.ScrollBarThumbColor)] = new(SystemColors.GrayText, nameof(IThemeColors.GrayTextColor)),
-            [nameof(IThemeColors.ScrollBarArrowColor)] = new(SystemColors.WindowText, nameof(IThemeColors.TextColor)),
+            [nameof(IThemeColors.ScrollBarArrowColor)] = new(SystemColors.WindowText, nameof(IThemeColors.GrayTextColor)),
             [nameof(IThemeColors.EmptyListTextColor)] = new(SystemColors.WindowText, nameof(IThemeColors.TextColor)),
             [nameof(IThemeColors.EmptyListBackgroundColor)] = new(SystemColors.Window, nameof(IThemeColors.ControlLightColor))
         };

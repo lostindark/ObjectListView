@@ -712,6 +712,11 @@ namespace BrightIdeasSoftware
             if (disposing)
             {
                 this.DropSink = null;
+                // ListView.Dispose clears StateImageList before WM_DESTROY can protect its handle.
+                if (this.IsHandleCreated && this.StateImageList != null)
+                {
+                    NativeMethods.SetStateImageList(this, null);
+                }
             }
 
             base.Dispose(disposing);
@@ -6071,6 +6076,7 @@ namespace BrightIdeasSoftware
 
         private bool paintingScrollBars;
         private GlassPanelForm scrollBarGlass;
+        private bool protectingStateImages;
 
         /// <summary>
         /// Override the basic message pump for this control
@@ -6078,6 +6084,20 @@ namespace BrightIdeasSoftware
         /// <param name="m"></param>
         protected override void WndProc(ref Message m)
         {
+            // Native checkbox/theme refreshes can destroy even a managed state image list.
+            if (!this.protectingStateImages && this.IsHandleCreated && this.StateImageList != null &&
+                (m.Msg == 0x031A || m.Msg == 0x1036)) { // WM_THEMECHANGED, LVM_SETEXTENDEDLISTVIEWSTYLE
+                this.protectingStateImages = true;
+                try {
+                    NativeMethods.SetStateImageList(this, null);
+                    base.WndProc(ref m);
+                } finally {
+                    this.protectingStateImages = false;
+                    if (this.IsHandleCreated)
+                        NativeMethods.SetStateImageList(this, this.StateImageList);
+                }
+                return;
+            }
             // System.Diagnostics.Debug.WriteLine(m.Msg);
             switch (m.Msg) {
                 case 2: // WM_DESTROY

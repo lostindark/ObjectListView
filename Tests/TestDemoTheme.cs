@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.Windows.Forms;
@@ -7,6 +8,7 @@ using System.Windows.Forms.VisualStyles;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using ThreadExceptionEventArgs = System.Threading.ThreadExceptionEventArgs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -61,6 +63,57 @@ namespace BrightIdeasSoftware.Tests
             foreach (var form in Application.OpenForms.OfType<ObjectListViewDemo.MainForm>().ToArray())
             {
                 form.Close();
+            }
+        }
+
+        [TestMethod]
+        public void Test_ManagedCheckboxImages_SurviveNativeRefreshAndDisposal() {
+            using (var images = new ImageList())
+            using (var icons = new ImageList())
+            using (var bitmap = new Bitmap(16, 16))
+            using (var form = new Form { ClientSize = new Size(300, 180), Opacity = 0, ShowInTaskbar = false }) {
+                IntPtr handle = images.Handle;
+                images.Images.Add(bitmap);
+                images.Images.Add(bitmap);
+                images.Images.Add(bitmap);
+                icons.Images.Add(bitmap);
+                using (var list = new ObjectListView {
+                    CheckBoxes = true, TriStateCheckBoxes = true, UseCompatibleStateImageBehavior = false,
+                    View = View.Details, StateImageList = images, ShowGroups = false
+                }) {
+                    list.Columns.Add(new OLVColumn("Name", "Name"));
+                    form.Controls.Add(list);
+                    form.Show();
+                    Assert.AreEqual(3, images.Images.Count);
+                    list.LargeImageList = icons;
+                    list.FullRowSelect = true;
+                    list.RefreshTheme();
+                    using (Process process = Process.GetCurrentProcess()) {
+                        int before = GetGuiResources(process.Handle, 1);
+                        for (int i = 0; i < 10; i++) {
+                            list.FullRowSelect = !list.FullRowSelect;
+                            list.RefreshTheme();
+                            Assert.AreEqual(3, images.Images.Count);
+                            Assert.AreEqual(handle, SendMessage(list.Handle, 0x1002, new IntPtr(2), IntPtr.Zero),
+                                "The native control must retain the managed state images.");
+                        }
+                        Assert.IsLessThanOrEqualTo(before + 5, GetGuiResources(process.Handle, 1));
+                    }
+                    list.Dispose();
+                    Assert.AreEqual(3, images.Images.Count, "Disposing a list must not destroy application-owned state images.");
+                }
+            }
+        }
+
+        [TestMethod]
+        public void Test_FastTab_DesignerImagesSurviveRepeatedDarkConstruction() {
+            for (int i = 0; i < 10; i++) {
+                using (var tab = new ObjectListViewDemo.TabFastList()) {
+                    Assert.AreEqual(18, tab.ListView.LargeImageList.Images.Count);
+                    Assert.AreEqual(2, tab.ListView.LargeImageList.Images.IndexOfKey("down"));
+                }
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
             }
         }
 
@@ -456,6 +509,12 @@ namespace BrightIdeasSoftware.Tests
                 }
             }
         }
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern IntPtr SendMessage(IntPtr handle, int message, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        private static extern int GetGuiResources(IntPtr process, int flags);
 
 #if NETFRAMEWORK
         [TestMethod]

@@ -1129,8 +1129,8 @@ namespace BrightIdeasSoftware {
         /// Create sorting event arguments with an ordered collection of sort fields.
         /// </summary>
         public BeforeSortingEventArgs(OLVColumn groupColumn, SortOrder groupOrder, IEnumerable<OLVSortDescription> sortDescriptions) {
-            this.ColumnToGroupBy = groupColumn;
-            this.GroupByOrder = groupOrder;
+            this.columnToGroupBy = groupColumn;
+            this.groupByOrder = groupOrder;
             this.sortDescriptions = new SortDescriptionCollection(sortDescriptions);
         }
 
@@ -1142,12 +1142,28 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// What column will be used for grouping
         /// </summary>
-        public OLVColumn ColumnToGroupBy { get; set; }
+        public OLVColumn ColumnToGroupBy {
+            get { return this.columnToGroupBy; }
+            set {
+                this.columnToGroupBy = value;
+                this.GroupingColumnChanged = true;
+            }
+        }
+        private OLVColumn columnToGroupBy;
+        internal bool GroupingColumnChanged { get; private set; }
 
         /// <summary>
         /// How will groups be ordered
         /// </summary>
-        public SortOrder GroupByOrder { get; set; }
+        public SortOrder GroupByOrder {
+            get { return this.groupByOrder; }
+            set {
+                this.groupByOrder = value;
+                this.GroupingOrderChanged = true;
+            }
+        }
+        private SortOrder groupByOrder;
+        internal bool GroupingOrderChanged { get; private set; }
 
         /// <summary>
         /// What column will be used for sorting

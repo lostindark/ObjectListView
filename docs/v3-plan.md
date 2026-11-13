@@ -31,15 +31,15 @@ January 12, 2027. Changes to Windows compatibility require a separate support de
 | DPI and demo layout | Implemented: host DPI configuration, column scaling, and corrected layout/drawing geometry |
 | Dark mode | Implemented: shared palette, independent list refresh, opt-in extensible form theming, stock .NET 10 controls, and Framework fallbacks |
 | Modern designer | Implemented for NuGet: client/server/protocol integration, header resize/Undo, smart tags, and column/printer editors |
-| Grouping redesign | Planned |
+| Grouping redesign | Implemented: explicit policy, deprecated setting adapters, independent item ordering, cancellation, and collapsed-state restoration |
 | Unified style precedence | Planned; dark mode does not complete this phase |
 | Shared rendering/hit-test layout | Planned |
 | Final API cleanup and release | Pending |
 
 ## Platform migration checkpoint
 
-The runtime migration and NuGet designer integration are implemented. The grouping,
-styling, and layout redesigns remain separate workstreams.
+The runtime migration, NuGet designer integration, and grouping redesign are
+implemented. Styling and layout redesigns remain separate workstreams.
 
 ### Implemented foundations
 
@@ -178,21 +178,29 @@ Preserve these invariants:
 - Typed commands dispatch through the existing virtual pipeline; accepted event
   batches are private, validated snapshots.
 
-Generic virtual/tree controls and replacement data-source interfaces remain
-separate work, not implied by the current typed control.
+Generic virtual, fast, tree, and data-bound controls are also implemented.
+Replacement data-source interfaces remain separate work.
 
 ## Phase 3: explicit grouping configuration
 
-Replace `AlwaysGroupByColumn` and `AlwaysGroupBySortOrder` with one configuration
-built on `GroupingParameters`.
+**Implemented.** `GroupingConfiguration` selects following sorting or fixed
+grouping, independently of item ordering. Fresh `GroupingParameters` retain
+operation-local event customization. Header clicks, menus, programmatic calls,
+and virtual grouping use the same resolution pipeline. Regular and fast virtual
+groups share one construction algorithm; policy and orchestration live in
+`ObjectListViewBase.Grouping.cs` rather than expanding the main control file.
 
-Separate group column/order from item sort column/order, with an explicit choice
-between following sorting and fixed grouping. Use the same model for header
-clicks, menus, programmatic calls, and virtual grouping. Retire related switches
-only after their useful behavior has a replacement.
+`AlwaysGroupByColumn`, `AlwaysGroupBySortOrder`, and the column-zero item-ordering
+switch remain supported as deprecated adapters. See the migration guide for
+the default-ordering change and explicit compatibility opt-in.
 
-**Acceptance:** independent group/item ordering, cancellation, custom comparers,
-non-groupable columns, collapsed-group state, and virtual grouping.
+Focused regressions cover independent directions, multi-sort/header clicks,
+unsorted grouped items, cancellation, model/group comparers, non-groupable and
+hidden columns, null keys, collapsed state, menus, legacy settings, and regular,
+fast, and custom virtual strategies. Custom strategies must not publish lookup
+mappings for groups that have not been accepted. Rebuilds invalidate applied
+groups before replacing rows, so canceled regrouping cannot retain stale row
+references or virtual mappings.
 
 ## Phase 4: unified style resolution
 

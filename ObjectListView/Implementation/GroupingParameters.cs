@@ -66,7 +66,7 @@ namespace BrightIdeasSoftware {
             this.GroupByColumn = groupByColumn;
             this.GroupByOrder = groupByOrder;
             this.sortDescriptions = new SortDescriptionCollection(sortDescriptions);
-            this.SortItemsByPrimaryColumn = sortItemsByPrimaryColumn;
+            this.sortItemsByPrimaryColumn = sortItemsByPrimaryColumn;
             this.TitleFormat = titleFormat;
             this.TitleSingularFormat = titleSingularFormat;
         }
@@ -117,6 +117,12 @@ namespace BrightIdeasSoftware {
         private IComparer<OLVListItem> itemComparer;
 
         /// <summary>
+        /// Gets or sets the model comparer used within groups on both regular and virtual lists.
+        /// Takes precedence over ItemComparer and SortDescriptions.
+        /// </summary>
+        public IComparer<object> ModelComparer { get; set; }
+
+        /// <summary>
         /// Gets or sets the column that will be the primary sort
         /// </summary>
         public OLVColumn PrimarySort {
@@ -157,9 +163,44 @@ namespace BrightIdeasSoftware {
         private readonly SortDescriptionCollection sortDescriptions;
 
         internal IList<OLVSortDescription> GetItemSortDescriptions() {
-            return this.SortItemsByPrimaryColumn
+            return this.sortItemsByPrimaryColumn
                 ? this.sortDescriptions.WithPrimary(this.ListView.GetColumn(0), this.sortDescriptions.GetOrder(0)).GetActiveDescriptions()
                 : this.sortDescriptions.GetActiveDescriptions();
+        }
+
+        internal IList<OLVGroup> MakeGroups<T>(IEnumerable<T> members, Func<T, object> getModel,
+            IComparer<T> itemComparer, Action<OLVGroup, List<T>> setMembers) {
+            NullableDictionary<object, List<T>> map = new NullableDictionary<object, List<T>>();
+            List<object> keys = new List<object>();
+            foreach (T member in members) {
+                object key = this.GroupByColumn.GetGroupKey(getModel(member));
+                if (!map.TryGetValue(key, out List<T> groupMembers)) {
+                    groupMembers = new List<T>();
+                    map[key] = groupMembers;
+                    keys.Add(key);
+                }
+                groupMembers.Add(member);
+            }
+
+            if (itemComparer != null) {
+                foreach (object key in keys)
+                {
+                    map[key].Sort(itemComparer);
+                }
+            }
+            List<OLVGroup> groups = new List<OLVGroup>();
+            foreach (object key in keys) {
+                List<T> groupMembers = map[key];
+                OLVGroup group = this.CreateGroup(key, groupMembers.Count, this.ListView.HasCollapsibleGroups);
+                setMembers(group, groupMembers);
+                this.GroupByColumn.GroupFormatter?.Invoke(group, this);
+                groups.Add(group);
+            }
+            if (this.GroupComparer != null || this.GroupByOrder != SortOrder.None)
+            {
+                groups.Sort(this.GroupComparer ?? new OLVGroupComparer(this.GroupByOrder));
+            }
+            return groups;
         }
 
         /// <summary>
@@ -183,6 +224,7 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// Gets or sets whether the items should be sorted by the primary column
         /// </summary>
+        [Obsolete("Use SortDescriptions to configure item ordering explicitly.")]
         public bool SortItemsByPrimaryColumn {
             get { return this.sortItemsByPrimaryColumn; }
             set { this.sortItemsByPrimaryColumn = value; }

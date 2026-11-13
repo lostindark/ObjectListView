@@ -567,6 +567,25 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
+        [DataRow(0)]
+        [DataRow(1)]
+        public void TestFixedGroupingSurvivesMultiSortAndHeaderChanges(int kind) {
+            TypedObjectListView<object> list = this.CreateList(kind);
+            list.Grouping = GroupingConfiguration.Fixed(list.GetColumn(1), SortOrder.Descending);
+            list.ShowGroups = true;
+            SortFourFields(list);
+            Assert.AreEqual(4, list.SortDescriptions.Count);
+            Assert.AreSame(list.GetColumn(1), list.OLVGroups[0].Column);
+            Assert.AreEqual(1, list.OLVGroups[0].Key);
+
+            ClickHeader(list, 2, Keys.None);
+            Assert.AreEqual(1, list.SortDescriptions.Count);
+            Assert.AreSame(list.GetColumn(2), list.PrimarySortColumn);
+            Assert.AreSame(list.GetColumn(1), list.OLVGroups[0].Column);
+            Assert.AreEqual(1, list.OLVGroups[0].Key);
+        }
+
+        [TestMethod]
         public void TestTreeChildrenRetainMultiSortWhenExpanded() {
             TreeListView list = (TreeListView)this.CreateList(2);
             SortFourFields(list);

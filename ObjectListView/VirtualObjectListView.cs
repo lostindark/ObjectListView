@@ -381,6 +381,14 @@ namespace BrightIdeasSoftware
             }
         }
         private bool showGroups;
+        private bool virtualGroupsEnabled;
+
+        private bool HasVirtualGroups {
+            get {
+                return this.ShowGroups && this.virtualGroupsEnabled && !this.Disposing &&
+                    this.IsHandleCreated && this.OLVGroups != null && this.OLVGroups.Count > 0;
+            }
+        }
 
 
         /// <summary>
@@ -661,7 +669,7 @@ namespace BrightIdeasSoftware
         /// <para>This only works when the list is showing groups (obviously).</para>
         /// </remarks>
         public virtual void EnsureNthGroupVisible(int groupIndex) {
-            if (!this.ShowGroups)
+            if (!this.HasVirtualGroups)
             {
                 return;
             }
@@ -995,9 +1003,10 @@ namespace BrightIdeasSoftware
         /// </remarks>
         public override void BuildList(bool shouldPreserveState) {
             this.InvalidateModelRows();
+            this.ClearGrouping();
             this.UpdateVirtualListSize();
             this.ClearCachedInfo();
-            if (this.ShowGroups)
+            if (this.ShowGroups && this.CanShowGroups)
             {
                 this.BuildGroups();
             }
@@ -1025,6 +1034,11 @@ namespace BrightIdeasSoftware
             // In a virtual list, we cannot touch the Groups property.
             // It was obviously not written for virtual list and often throws exceptions.
 
+            this.virtualGroupsEnabled = false;
+            if (this.OLVGroups == null || this.OLVGroups.Count == 0) {
+                this.DisableVirtualGroups();
+                return;
+            }
             NativeMethods.ClearGroups(this);
 
             this.EnableVirtualGroups();
@@ -1035,12 +1049,14 @@ namespace BrightIdeasSoftware
 
                 group.InsertGroupNewStyle(this);
             }
+            this.ClearCachedInfo();
         }
 
         /// <summary>
         /// Do the plumbing to disable groups on a virtual list
         /// </summary>
         protected void DisableVirtualGroups() {
+            this.virtualGroupsEnabled = false;
             NativeMethods.ClearGroups(this);
             //System.Diagnostics.Debug.WriteLine(err);
 
@@ -1051,6 +1067,7 @@ namespace BrightIdeasSoftware
             const int LVM_SETOWNERDATACALLBACK = 0x10BB;
             IntPtr x2 = NativeMethods.SendMessage(this.Handle, LVM_SETOWNERDATACALLBACK, 0, 0);
             //System.Diagnostics.Debug.WriteLine(x2);
+            this.ClearCachedInfo();
         }
 
         /// <summary>
@@ -1071,6 +1088,7 @@ namespace BrightIdeasSoftware
             Marshal.Release(ptr);
 
             const int LVM_ENABLEGROUPVIEW = 0x1000 + 157;
+            this.virtualGroupsEnabled = true;
             x = NativeMethods.SendMessage(this.Handle, LVM_ENABLEGROUPVIEW, 1, 0);
             //System.Diagnostics.Debug.WriteLine(x);
         }
@@ -1084,14 +1102,14 @@ namespace BrightIdeasSoftware
         /// <param name="itemIndex"></param>
         /// <returns></returns>
         public override int GetDisplayOrderOfItemIndex(int itemIndex) {
-            if (!this.ShowGroups)
+            if (!this.HasVirtualGroups)
             {
                 return itemIndex;
             }
 
             int groupIndex = this.GroupingStrategy.GetGroup(itemIndex);
             int displayIndex = 0;
-            for (int i = 0; i < groupIndex - 1; i++)
+            for (int i = 0; i < groupIndex; i++)
             {
                 displayIndex += this.OLVGroups[i].VirtualItemCount;
             }
@@ -1108,20 +1126,15 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <returns></returns>
         public override OLVListItem GetLastItemInDisplayOrder() {
-            if (!this.ShowGroups)
+            if (!this.HasVirtualGroups)
             {
-                return base.GetLastItemInDisplayOrder();
+                return this.GetItem(this.GetItemCount() - 1);
             }
 
-            if (this.OLVGroups.Count > 0) {
-                OLVGroup lastGroup = this.OLVGroups[this.OLVGroups.Count - 1];
-                if (lastGroup.VirtualItemCount > 0)
-                {
-                    return this.GetItem(this.GroupingStrategy.GetGroupMember(lastGroup, lastGroup.VirtualItemCount - 1));
-                }
-            }
-
-            return null;
+            OLVGroup lastGroup = this.OLVGroups[this.OLVGroups.Count - 1];
+            return lastGroup.VirtualItemCount > 0
+                ? this.GetItem(this.GroupingStrategy.GetGroupMember(lastGroup, lastGroup.VirtualItemCount - 1))
+                : null;
         }
 
         /// <summary>
@@ -1132,7 +1145,7 @@ namespace BrightIdeasSoftware
         /// <param name="n"></param>
         /// <returns></returns>
         public override OLVListItem GetNthItemInDisplayOrder(int n) {
-            if (!this.ShowGroups || this.OLVGroups == null || this.OLVGroups.Count == 0)
+            if (!this.HasVirtualGroups)
             {
                 return this.GetItem(n);
             }
@@ -1157,15 +1170,9 @@ namespace BrightIdeasSoftware
         /// <param name="itemToFind">The item that is before the item that is returned, or null</param>
         /// <returns>A OLVListItem</returns>
         public override OLVListItem GetNextItem(OLVListItem itemToFind) {
-            if (!this.ShowGroups)
+            if (!this.HasVirtualGroups)
             {
-                return base.GetNextItem(itemToFind);
-            }
-
-            // Sanity
-            if (this.OLVGroups == null || this.OLVGroups.Count == 0)
-            {
-                return null;
+                return this.GetItem(itemToFind == null ? 0 : itemToFind.Index + 1);
             }
 
             // If the given item is null, return the first member of the first group
@@ -1201,15 +1208,9 @@ namespace BrightIdeasSoftware
         /// <param name="itemToFind">The item that is before the item that is returned</param>
         /// <returns>A ListViewItem</returns>
         public override OLVListItem GetPreviousItem(OLVListItem itemToFind) {
-            if (!this.ShowGroups)
+            if (!this.HasVirtualGroups)
             {
-                return base.GetPreviousItem(itemToFind);
-            }
-
-            // Sanity
-            if (this.OLVGroups == null || this.OLVGroups.Count == 0)
-            {
-                return null;
+                return this.GetItem(itemToFind == null ? this.GetItemCount() - 1 : itemToFind.Index - 1);
             }
 
             // If the given items is null, return the last member of the last group

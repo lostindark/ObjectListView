@@ -6,6 +6,97 @@
 changes, not a completed release. Recompile consumers and update affected
 overrides; v3 is not a drop-in binary replacement.
 
+## Grouping independently of item sorting
+
+`Grouping` is an immutable configuration, applied on the next sort, `BuildGroups()`,
+or rebuild. `ShowGroups` still enables/disables grouping without forgetting it.
+The default follows the primary item-sort column and direction:
+
+```csharp
+list.Grouping = GroupingConfiguration.FollowSorting();
+list.Grouping = GroupingConfiguration.FollowSorting(SortOrder.Ascending);
+
+// Keep departments ascending while sorting their items by name descending.
+list.Grouping = GroupingConfiguration.Fixed(departmentColumn, SortOrder.Ascending);
+list.ShowGroups = true;
+list.Sort(nameColumn, SortOrder.Descending);
+```
+
+Add a fixed column to the list before assigning the configuration. It must be
+groupable and belong to `AllColumns` or the visible columns; hidden columns are
+supported. A removed or subsequently non-groupable fixed column is an error on
+the next grouping operation. Tree controls do not support grouping, and virtual
+controls require a grouping strategy.
+
+The optional group order is independent of item ordering:
+
+- `null` follows the primary item-sort direction, defaulting to ascending without
+  an item sort. `Fixed(column)` uses this behavior.
+- `Ascending` / `Descending` fix group direction.
+- `None` preserves group discovery order, including null keys.
+
+Grouped items now use all active `SortDescriptions`, without implicitly sorting
+by column zero. An empty sort collection removes item sorting while keeping
+grouping enabled; `Unsort()` retains its existing behavior of also disabling
+groups. `BuildGroups()` no longer invents an item sort. The retained
+`BuildGroups(column, order)` overload still requests that item sort and retains
+its legacy default-direction behavior for `None`.
+
+Following a non-groupable sort column retains the last valid grouping column
+and group order. Without one, the first visible groupable column is used; with
+no eligible column, rows are displayed flat and item sorting still works.
+Header clicks update item sorting. The "Group by" menu now selects fixed grouping
+without changing item sorting; unlocking restores follow-sorting mode.
+
+### Deprecated grouping settings
+
+The old settings still compile and work, but produce obsolete warnings:
+
+| Old setting | Replacement |
+| --- | --- |
+| `AlwaysGroupByColumn = column` | `GroupingConfiguration.Fixed(column, groupOrder)` |
+| `AlwaysGroupByColumn = null` | `GroupingConfiguration.FollowSorting(groupOrder)` |
+| `AlwaysGroupBySortOrder = None` | Pass `null` for `groupOrder`, not `None` |
+| `SortGroupItemsByPrimaryColumn = true` | Explicitly sort items by column zero |
+| `GroupingParameters.SortItemsByPrimaryColumn` | Edit `SortDescriptions` instead |
+
+The column and direction adapters share the new configuration and can still be
+assigned in either order. Explicitly assigning `SortGroupItemsByPrimaryColumn`
+retains its legacy conditional column-zero behavior: it applies only when
+following sorting with one active sort field. Its historical getter/default
+value remains `true`, but an unassigned setting no longer opts into that legacy
+behavior. Assigning `Grouping` resets this compatibility override.
+
+### Grouping callbacks and state
+
+`GroupingParameters` remains a fresh, mutable operation-local extension point.
+Changes made by events do not rewrite the persistent grouping policy.
+`BeforeSorting` changes to item sorting are reflected in follow-sorting grouping,
+unless the handler explicitly overrides the grouping column or order.
+
+Use `GroupingParameters.ModelComparer` for custom item ordering on both regular
+and virtual lists, even without item-sort fields. It takes precedence over
+`ItemComparer` and sort descriptions. The existing list-item `ItemComparer`
+remains supported on regular lists; built-in virtual grouping rejects it unless
+`ModelComparer` is also supplied. A custom `GroupComparer` takes precedence even
+when group order is `None`.
+
+Canceling a sort/regroup at either pre-creation event leaves accepted groups,
+sorting metadata, and built-in virtual mappings unchanged; completion events
+are not raised for canceled operations. Source changes are separate accepted
+operations: rebuilding rows clears their old applied groups first. If regrouping
+is canceled during that rebuild, the new rows remain accessible without groups;
+the source change is not rolled back.
+
+Custom virtual strategies must also keep their lookups tied to accepted
+`ListView.OLVGroups`, not publish mappings during `GetGroups`, since prepared
+groups can be discarded. The control copies accepted group containers, so a
+strategy can reuse its preparation list without mutating the applied view.
+
+Collapsed state is restored by grouping-column identity and group key, including
+null, when the effective grouping column is unchanged. `AboutToCreateGroups`
+can override this restored state before groups are committed.
+
 ## Theme configuration and color access
 
 `ObjectListViewColorMode` now contains only `System`, `Light`, and `Dark`.

@@ -310,7 +310,6 @@
             this.olvSimple.ShowHeaderInAllViews = false;
             this.olvSimple.ShowItemToolTips = true;
             this.olvSimple.Size = new System.Drawing.Size(799, 383);
-            this.olvSimple.SortGroupItemsByPrimaryColumn = false;
             this.olvSimple.TabIndex = 30;
             this.olvSimple.TriStateCheckBoxes = true;
             this.olvSimple.UseAlternatingBackColors = true;

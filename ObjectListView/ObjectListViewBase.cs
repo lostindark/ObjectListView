@@ -1075,30 +1075,6 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// This property forces the ObjectListView to always group items by the given column.
-        /// </summary>
-        [Browsable(false),
-        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public virtual OLVColumn AlwaysGroupByColumn {
-            get { return alwaysGroupByColumn; }
-            set { alwaysGroupByColumn = value; }
-        }
-        private OLVColumn alwaysGroupByColumn;
-
-        /// <summary>
-        /// If AlwaysGroupByColumn is not null, this property will be used to decide how
-        /// those groups are sorted. If this property has the value SortOrder.None, then
-        /// the sort order will toggle according to the users last header click.
-        /// </summary>
-        [Browsable(false),
-        DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public virtual SortOrder AlwaysGroupBySortOrder {
-            get { return alwaysGroupBySortOrder; }
-            set { alwaysGroupBySortOrder = value; }
-        }
-        private SortOrder alwaysGroupBySortOrder = SortOrder.None;
-
-        /// <summary>
         /// Give access to the image list that is actually being used by the control
         /// </summary>
         /// <remarks>
@@ -2663,7 +2639,7 @@ namespace BrightIdeasSoftware
                     return;
                 }
 
-                Hashtable shouldCollapse = new Hashtable();
+                NullableDictionary<object, bool> shouldCollapse = new NullableDictionary<object, bool>();
                 if (value != null)
                 {
                     foreach (OLVGroup group in value)
@@ -2927,12 +2903,43 @@ namespace BrightIdeasSoftware
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public IList<OLVSortDescription> SortDescriptions {
             get {
-                return this.sortDescriptionsInProgress ?? this.sortDescriptions.GetActiveDescriptions();
+                return this.sortOperation?.Descriptions ?? this.sortDescriptions.GetActiveDescriptions();
             }
         }
         private readonly SortDescriptionCollection sortDescriptions = new SortDescriptionCollection();
         private SortDescriptionCollection requestedSortDescriptions;
-        private IList<OLVSortDescription> sortDescriptionsInProgress;
+        private SortOperation sortOperation;
+
+        private sealed class SortOperation {
+            internal SortOperation(IEnumerable<OLVSortDescription> descriptions) {
+                this.Configuration = new SortDescriptionCollection(descriptions);
+                this.Descriptions = this.Configuration.GetActiveDescriptions();
+            }
+
+            internal readonly SortDescriptionCollection Configuration;
+            internal readonly IList<OLVSortDescription> Descriptions;
+            internal bool Canceled {
+                get { return this.state == State.Canceled; }
+            }
+
+            internal void Cancel() {
+                if (this.state != State.Committed)
+                {
+                    this.state = State.Canceled;
+                }
+            }
+
+            internal void Commit() {
+                this.state = State.Committed;
+            }
+
+            private State state;
+            private enum State {
+                Pending,
+                Canceled,
+                Committed
+            }
+        }
 
         /// <summary>
         /// Gets the one-based sort priority of a column, or zero if it is not sorted.
@@ -3470,24 +3477,6 @@ namespace BrightIdeasSoftware
                 return this.BaseSmallImageList == null ? new Size(16, 16) : this.BaseSmallImageList.ImageSize;
             }
         }
-
-        /// <summary>
-        /// When the listview is grouped, should the items be sorted by the primary column?
-        /// If this is false, the items will be sorted by the same column as they are grouped.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// The primary column is always column 0 and is unrelated to the PrimarySort column.
-        /// </para>
-        /// </remarks>
-        [Category("ObjectListView"),
-         Description("When the listview is grouped, should the items be sorted by the primary column? If this is false, the items will be sorted by the same column as they are grouped."),
-         DefaultValue(true)]
-        public virtual bool SortGroupItemsByPrimaryColumn {
-            get { return this.sortGroupItemsByPrimaryColumn; }
-            set { this.sortGroupItemsByPrimaryColumn = value; }
-        }
-        private bool sortGroupItemsByPrimaryColumn = true;
 
         /// <summary>
         /// When the listview is grouped, how many pixels should exist between the end of one group and the
@@ -4484,244 +4473,6 @@ namespace BrightIdeasSoftware
         }
 
         /// <summary>
-        /// Organise the view items into groups, based on the last sort column or the first column
-        /// if there is no last sort column
-        /// </summary>
-        public virtual void BuildGroups() {
-            this.BuildGroups(this.sortDescriptions.GetColumn(0),
-                this.sortDescriptions.GetOrder(0) == SortOrder.None ? SortOrder.Ascending : this.sortDescriptions.GetOrder(0));
-        }
-
-        /// <summary>
-        /// Organise the view items into groups, based on the given column
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// If the AlwaysGroupByColumn property is not null,
-        /// the list view items will be organised by that column,
-        /// and the 'column' parameter will be ignored.
-        /// </para>
-        /// <para>This method triggers sorting events: BeforeSorting and AfterSorting.</para>
-        /// </remarks>
-        /// <param name="column">The column whose values should be used for sorting.</param>
-        /// <param name="order"></param>
-        public virtual void BuildGroups(OLVColumn column, SortOrder order) {
-            // Sanity
-            if (this.GetItemCount() == 0 || this.Columns.Count == 0)
-            {
-                return;
-            }
-
-            if (order == SortOrder.None) {
-                order = this.Sorting;
-                if (order == SortOrder.None)
-                {
-                    order = SortOrder.Ascending;
-                }
-            }
-
-            BeforeSortingEventArgs args = this.BuildBeforeSortingEventArgs(column, order);
-            this.OnBeforeSorting(args);
-            if (args.Canceled)
-            {
-                return;
-            }
-
-            this.BuildGroups(args.ColumnToGroupBy, args.GroupByOrder, args.SortDescriptions);
-
-            this.OnAfterSorting(new AfterSortingEventArgs(args));
-        }
-
-        private BeforeSortingEventArgs BuildBeforeSortingEventArgs(OLVColumn column, SortOrder order) {
-            return this.BuildBeforeSortingEventArgs(this.requestedSortDescriptions ?? this.sortDescriptions.WithPrimary(column, order));
-        }
-
-        private BeforeSortingEventArgs BuildBeforeSortingEventArgs(SortDescriptionCollection descriptions) {
-            OLVColumn column = descriptions.GetColumn(0);
-            SortOrder order = descriptions.GetOrder(0);
-            OLVColumn groupBy = this.AlwaysGroupByColumn ?? column ?? this.GetColumn(0);
-            SortOrder groupByOrder = this.AlwaysGroupBySortOrder;
-            if (groupByOrder == SortOrder.None)
-            {
-                groupByOrder = order;
-            }
-
-            BeforeSortingEventArgs args = new BeforeSortingEventArgs(groupBy, groupByOrder, descriptions);
-            foreach (OLVSortDescription description in descriptions)
-            {
-                args.Canceled |= description.Column != null && !description.Column.Sortable;
-            }
-
-            return args;
-        }
-
-        /// <summary>
-        /// Build groups using an ordered collection of sort fields.
-        /// </summary>
-        public virtual void BuildGroups(OLVColumn groupByColumn, SortOrder groupByOrder,
-            IEnumerable<OLVSortDescription> sortDescriptions) {
-            SortDescriptionCollection descriptions = new SortDescriptionCollection(sortDescriptions);
-            IList<OLVSortDescription> previous = this.sortDescriptionsInProgress;
-            this.sortDescriptionsInProgress = descriptions.GetActiveDescriptions();
-            try {
-                this.BuildGroups(groupByColumn, groupByOrder, descriptions.GetColumn(0), descriptions.GetOrder(0),
-                    descriptions.GetColumn(1), descriptions.GetOrder(1));
-            } finally {
-                this.sortDescriptionsInProgress = previous;
-            }
-        }
-
-        /// <summary>
-        /// Organise the view items into groups, based on the given columns
-        /// </summary>
-        /// <param name="groupByColumn">What column will be used for grouping</param>
-        /// <param name="groupByOrder">What ordering will be used for groups</param>
-        /// <param name="column">The column whose values should be used for sorting. Cannot be null</param>
-        /// <param name="order">The order in which the values from column will be sorted</param>
-        /// <param name="secondaryColumn">When the values from 'column' are equal, use the values provided by this column</param>
-        /// <param name="secondaryOrder">How will the secondary values be sorted</param>
-        /// <remarks>This method does not trigger sorting events. Use BuildGroups() to do that</remarks>
-        public virtual void BuildGroups(OLVColumn groupByColumn, SortOrder groupByOrder,
-            OLVColumn column, SortOrder order, OLVColumn secondaryColumn, SortOrder secondaryOrder) {
-            // Sanity checks
-            if (groupByColumn == null)
-            {
-                return;
-            }
-
-            // Getting the Count forces any internal cache of the ListView to be flushed. Without
-            // this, iterating over the Items will not work correctly if the ListView handle
-            // has not yet been created.
-#pragma warning disable 168
-            // ReSharper disable once UnusedVariable
-            int dummy = this.Items.Count;
-#pragma warning restore 168
-
-            // Collect all the information that governs the creation of groups
-            GroupingParameters parms = this.CollectGroupingParameters(groupByColumn, groupByOrder,
-                column, order, secondaryColumn, secondaryOrder);
-
-            // Trigger an event to let the world create groups if they want
-            CreateGroupsEventArgs args = new CreateGroupsEventArgs(parms);
-            if (parms.GroupByColumn != null)
-            {
-                args.Canceled = !parms.GroupByColumn.Groupable;
-            }
-
-            this.OnBeforeCreatingGroups(args);
-            if (args.Canceled)
-            {
-                return;
-            }
-
-            // If the event didn't create them for us, use our default strategy
-            if (args.Groups == null)
-            {
-                args.Groups = this.MakeGroups(parms);
-            }
-
-            // Give the world a chance to munge the groups before they are created
-            this.OnAboutToCreateGroups(args);
-            if (args.Canceled)
-            {
-                return;
-            }
-
-            // Create the groups now
-            this.OLVGroups = args.Groups;
-            this.CreateGroups(args.Groups);
-
-            // Tell the world that new groups have been created
-            this.OnAfterCreatingGroups(args);
-            lastGroupingParameters = args.Parameters;
-        }
-        private GroupingParameters lastGroupingParameters;
-
-        /// <summary>
-        /// Collect and return all the variables that influence the creation of groups
-        /// </summary>
-        /// <returns></returns>
-        protected virtual GroupingParameters CollectGroupingParameters(OLVColumn groupByColumn, SortOrder groupByOrder,
-            OLVColumn sortByColumn, SortOrder sortByOrder, OLVColumn secondaryColumn, SortOrder secondaryOrder) {
-            
-            // If the user tries to group by a non-groupable column, keep the current group by
-            // settings, but use the non-groupable column for sorting
-            if (!groupByColumn.Groupable && lastGroupingParameters != null) {
-                sortByColumn = groupByColumn;
-                sortByOrder = groupByOrder;
-                groupByColumn = lastGroupingParameters.GroupByColumn;
-                groupByOrder = lastGroupingParameters.GroupByOrder;
-            }
-
-            string titleFormat = this.ShowItemCountOnGroups ? groupByColumn.GroupWithItemCountFormatOrDefault : null;
-            string titleSingularFormat = this.ShowItemCountOnGroups ? groupByColumn.GroupWithItemCountSingularFormatOrDefault : null;
-            SortDescriptionCollection descriptions = this.sortDescriptionsInProgress != null
-                ? new SortDescriptionCollection(this.sortDescriptionsInProgress).WithPrimary(sortByColumn, sortByOrder)
-                : new SortDescriptionCollection(sortByColumn, sortByOrder, secondaryColumn, secondaryOrder);
-            GroupingParameters parms = new GroupingParameters(this, groupByColumn, groupByOrder,
-                descriptions,
-                titleFormat, titleSingularFormat, 
-                this.SortGroupItemsByPrimaryColumn && this.AlwaysGroupByColumn == null && descriptions.GetActiveDescriptions().Count < 2);
-            return parms;
-        }
-
-        /// <summary>
-        /// Make a list of groups that should be shown according to the given parameters
-        /// </summary>
-        /// <param name="parms"></param>
-        /// <returns>The list of groups to be created</returns>
-        /// <remarks>This should not change the state of the control. It is possible that the
-        /// groups created will not be used. They may simply be discarded.</remarks>
-        protected virtual IList<OLVGroup> MakeGroups(GroupingParameters parms) {
-
-            // There is a lot of overlap between this method and FastListGroupingStrategy.MakeGroups()
-            // Any changes made here may need to be reflected there
-
-            // Separate the list view items into groups, using the group key as the descrimanent
-            NullableDictionary<object, List<OLVListItem>> map = new NullableDictionary<object, List<OLVListItem>>();
-            foreach (OLVListItem olvi in parms.ListView.Items) {
-                object key = parms.GroupByColumn.GetGroupKey(olvi.RowObject);
-                if (!map.TryGetValue(key, out List<OLVListItem> groupItems))
-                {
-                    groupItems = new List<OLVListItem>();
-                    map[key] = groupItems;
-                }
-
-                groupItems.Add(olvi);
-            }
-
-            // Sort the items within each group (unless specifically turned off)
-            IList<OLVSortDescription> descriptions = parms.GetItemSortDescriptions();
-            if (descriptions.Count > 0) {
-                IComparer<OLVListItem> itemSorter = parms.ItemComparer ?? new ColumnComparer(descriptions);
-                foreach (object key in map.Keys) {
-                    map[key].Sort(itemSorter);
-                }
-            }
-
-            // Make a list of the required groups
-            List<OLVGroup> groups = new List<OLVGroup>();
-            foreach (object key in map.Keys) {
-                OLVGroup lvg = parms.CreateGroup(key, map[key].Count, HasCollapsibleGroups);
-                lvg.Items = map[key];
-                if (parms.GroupByColumn.GroupFormatter != null)
-                {
-                    parms.GroupByColumn.GroupFormatter(lvg, parms);
-                }
-
-                groups.Add(lvg);
-            }
-
-            // Sort the groups
-            if (parms.GroupByOrder != SortOrder.None)
-            {
-                groups.Sort(parms.GroupComparer ?? new OLVGroupComparer(parms.GroupByOrder));
-            }
-
-            return groups;
-        }
-
-        /// <summary>
         /// Build/rebuild all the list view items in the list, preserving as much state as is possible
         /// </summary>
         public virtual void BuildList() {
@@ -4776,6 +4527,7 @@ namespace BrightIdeasSoftware
 
             this.BeginUpdate();
             try {
+                this.ClearGrouping();
                 this.Items.Clear();
                 this.ListViewItemSorter = null;
 
@@ -5034,7 +4786,7 @@ namespace BrightIdeasSoftware
         /// <param name="itemToFind">The item that is before the item that is returned, or null</param>
         /// <returns>A ListViewItem</returns>
         public virtual OLVListItem GetNextItem(OLVListItem itemToFind) {
-            if (this.ShowGroups) {
+            if (this.ShowGroups && this.Groups.Count > 0) {
                 bool isFound = (itemToFind == null);
                 foreach (ListViewGroup group in this.Groups) {
                     foreach (OLVListItem olvi in group.Items) {
@@ -5073,7 +4825,7 @@ namespace BrightIdeasSoftware
         /// </summary>
         /// <returns></returns>
         public virtual OLVListItem GetLastItemInDisplayOrder() {
-            if (!this.ShowGroups)
+            if (!this.ShowGroups || this.Groups.Count == 0)
             {
                 return this.GetItem(this.GetItemCount() - 1);
             }
@@ -5151,7 +4903,7 @@ namespace BrightIdeasSoftware
         /// <param name="itemToFind">The item that is before the item that is returned</param>
         /// <returns>A ListViewItem</returns>
         public virtual OLVListItem GetPreviousItem(OLVListItem itemToFind) {
-            if (this.ShowGroups) {
+            if (this.ShowGroups && this.Groups.Count > 0) {
                 OLVListItem previousItem = null;
                 foreach (ListViewGroup group in this.Groups) {
                     foreach (OLVListItem lvi in group.Items) {
@@ -8236,31 +7988,28 @@ namespace BrightIdeasSoftware
                 label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelGroupBy, column.Text);
                 if (column.Groupable && !String.IsNullOrEmpty(label)) {
                     strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
+                        this.Grouping = GroupingConfiguration.Fixed(column, SortOrder.Ascending);
                         this.ShowGroups = true;
-                        this.PrimarySortColumn = column;
-                        this.PrimarySortOrder = SortOrder.Ascending;
-                        this.BuildList();
+                        this.BuildGroups();
                     });
                 }
             }
             if (this.ShowGroups) {
-                if (this.AlwaysGroupByColumn == column) {
+                if (this.grouping.Column == column) {
                     label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelUnlockGroupingOn, column.Text);
                     if (!String.IsNullOrEmpty(label)) {
                         strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
-                            this.AlwaysGroupByColumn = null;
-                            this.AlwaysGroupBySortOrder = SortOrder.None;
-                            this.BuildList();
+                            this.Grouping = GroupingConfiguration.FollowSorting();
+                            this.BuildGroups();
                         });
                     }
                 } else {
                     label = String.Format(CultureInfo.CurrentCulture, this.MenuLabelLockGroupingOn, column.Text);
                     if (column.Groupable && !String.IsNullOrEmpty(label)) {
                         strip.Items.Add(label, null, (EventHandler)delegate(object sender, EventArgs args) {
+                            this.Grouping = GroupingConfiguration.Fixed(column, SortOrder.Ascending);
                             this.ShowGroups = true;
-                            this.AlwaysGroupByColumn = column;
-                            this.AlwaysGroupBySortOrder = SortOrder.Ascending;
-                            this.BuildList();
+                            this.BuildGroups();
                         });
                     }
                 }
@@ -9495,10 +9244,8 @@ namespace BrightIdeasSoftware
         /// <param name="columnToSort">The column whose values will be used for the sorting.
         /// If null, the first column will be used.</param>
         /// <param name="order">The ordering to use. None preserves item order and disables
-        /// automatic sorting. Grouped lists still use Sorting or Ascending as their default order.</param>
-        /// <remarks>If ShowGroups is true, the rows will be grouped by the given column.
-        /// If AlwaysGroupsByColumn is not null, the rows will be grouped by that column,
-        /// and the rows within each group will be sorted by the given column.</remarks>
+        /// automatic item sorting, including within groups.</param>
+        /// <remarks>Grouping follows Grouping configuration independently of item sorting.</remarks>
         public virtual void Sort(OLVColumn columnToSort, SortOrder order) {
             if (this.InvokeRequired) {
                 this.Invoke((MethodInvoker)delegate { this.Sort(columnToSort, order); });
@@ -9544,7 +9291,12 @@ namespace BrightIdeasSoftware
             }
             SortDescriptionCollection descriptions = new SortDescriptionCollection(sortDescriptions);
             if (descriptions.Count == 0) {
-                this.Unsort();
+                if (this.ShowGroups && this.CanShowGroups) {
+                    this.DoSort(descriptions);
+                    this.PostProcessRows();
+                } else {
+                    this.Unsort();
+                }
                 return;
             }
             SortDescriptionCollection previous = this.requestedSortDescriptions;
@@ -9557,35 +9309,59 @@ namespace BrightIdeasSoftware
         }
 
         internal ModelObjectComparer CreateModelObjectComparer(OLVColumn column, SortOrder order) {
-            return new ModelObjectComparer(this.sortDescriptionsInProgress ??
+            return new ModelObjectComparer(this.sortOperation?.Descriptions ??
                 this.sortDescriptions.WithPrimary(column, order).GetActiveDescriptions());
         }
 
-        private void DoSort(SortDescriptionCollection descriptions) {
-            // Sanity checks
-            if (this.GetItemCount() == 0 || this.Columns.Count == 0)
+        private BeforeSortingEventArgs BuildBeforeSortingEventArgs(SortDescriptionCollection descriptions, bool buildGroups) {
+            OLVColumn groupBy = null;
+            SortOrder groupByOrder = SortOrder.None;
+            if (buildGroups)
+            {
+                this.ResolveGrouping(descriptions, out groupBy, out groupByOrder);
+            }
+            BeforeSortingEventArgs args = new BeforeSortingEventArgs(groupBy, groupByOrder, descriptions);
+            foreach (OLVSortDescription description in descriptions.GetActiveDescriptions())
+            {
+                args.Canceled |= !description.Column.Sortable;
+            }
+            return args;
+        }
+
+        private void DoSort(SortDescriptionCollection descriptions, bool forceGroups = false) {
+            if (this.Columns.Count == 0)
             {
                 return;
             }
-
-            // Fill in default values, if the parameters don't make sense
-            if (this.ShowGroups) {
-                descriptions = descriptions.WithPrimary(descriptions.GetColumn(0) ?? this.GetColumn(0),
-                    descriptions.GetOrder(0) == SortOrder.None
-                        ? (this.Sorting == SortOrder.None ? SortOrder.Ascending : this.Sorting)
-                        : descriptions.GetOrder(0));
+            if (forceGroups && !this.CanShowGroups)
+            {
+                throw new NotSupportedException("This control does not support grouping without a grouping strategy.");
             }
+            bool buildGroups = forceGroups || (this.ShowGroups && this.CanShowGroups);
 
             // Give the world a chance to fiddle with or completely avoid the sorting process
-            BeforeSortingEventArgs args = this.BuildBeforeSortingEventArgs(descriptions);
+            BeforeSortingEventArgs args = this.BuildBeforeSortingEventArgs(descriptions, buildGroups);
             this.OnBeforeSorting(args);
             if (args.Canceled)
             {
                 return;
             }
+            if (buildGroups) {
+                this.ResolveGrouping(new SortDescriptionCollection(args.SortDescriptions),
+                    out OLVColumn groupColumn, out SortOrder groupOrder);
+                if (!args.GroupingColumnChanged)
+                {
+                    args.ColumnToGroupBy = groupColumn;
+                }
+                if (!args.GroupingOrderChanged)
+                {
+                    args.GroupByOrder = groupOrder;
+                }
+            }
 
-            IList<OLVSortDescription> previousDescriptions = this.sortDescriptionsInProgress;
-            this.sortDescriptionsInProgress = args.GetActiveSortDescriptions();
+            SortOperation previous = this.sortOperation;
+            SortOperation operation = new SortOperation(args.GetActiveSortDescriptions());
+            this.sortOperation = operation;
             try {
                 // Virtual lists don't preserve selection, so we have to do it specifically
                 IList selection = this.VirtualMode ? this.SelectedModelObjects : null;
@@ -9595,29 +9371,35 @@ namespace BrightIdeasSoftware
 
                     // An event handler may have already performed the sort.
                     if (!args.Handled) {
-                        if (this.sortDescriptionsInProgress.Count == 0 && !this.VirtualMode)
-                        {
-                            this.ListViewItemSorter = null;
-                        }
-
-                        if (this.sortDescriptionsInProgress.Count > 0) {
-                            if (this.ShowGroups)
+                        if (buildGroups && args.ColumnToGroupBy != null) {
+                            this.BuildGroups(args.ColumnToGroupBy, args.GroupByOrder, args.SortDescriptions);
+                            if (operation.Canceled)
                             {
-                                this.BuildGroups(args.ColumnToGroupBy, args.GroupByOrder, args.SortDescriptions);
+                                return;
                             }
-                            else if (this.CustomSorter != null)
-                            {
-                                this.CustomSorter(args.ColumnToSort, args.SortOrder);
+                        } else {
+                            if (buildGroups) {
+                                this.ClearGrouping();
                             }
-                            else
+                            if (operation.Descriptions.Count == 0 && !this.VirtualMode)
                             {
-                                this.ListViewItemSorter = new ColumnComparer(this.sortDescriptionsInProgress);
+                                this.ListViewItemSorter = null;
+                            }
+                            if (operation.Descriptions.Count > 0) {
+                                if (this.CustomSorter != null)
+                                {
+                                    this.CustomSorter(args.ColumnToSort, args.SortOrder);
+                                }
+                                else
+                                {
+                                    this.ListViewItemSorter = new ColumnComparer(operation.Descriptions);
+                                }
                             }
                         }
                     }
 
-                    this.sortDescriptions.ReplaceWith(this.sortDescriptionsInProgress.Count > 0
-                        ? this.sortDescriptionsInProgress : args.SortDescriptions);
+                    this.sortDescriptions.ReplaceWith(operation.Descriptions.Count > 0
+                        ? operation.Descriptions : args.SortDescriptions);
                     if (this.TintSortColumn)
                     {
                         this.SelectedColumn = this.sortDescriptions.GetColumn(0);
@@ -9637,9 +9419,10 @@ namespace BrightIdeasSoftware
                 }
 
                 this.RefreshHotItem();
+                operation.Commit();
                 this.OnAfterSorting(new AfterSortingEventArgs(args));
             } finally {
-                this.sortDescriptionsInProgress = previousDescriptions;
+                this.sortOperation = previous;
             }
         }
 
@@ -10033,7 +9816,7 @@ namespace BrightIdeasSoftware
 #pragma warning restore 168
 
             int i = 0;
-            if (this.ShowGroups) {
+            if (this.ShowGroups && this.Groups.Count > 0) {
                 foreach (ListViewGroup group in this.Groups) {
                     foreach (OLVListItem olvi in group.Items) {
                         this.PostProcessOneRow(olvi.Index, i, olvi);

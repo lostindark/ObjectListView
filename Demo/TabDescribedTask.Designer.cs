@@ -156,7 +156,6 @@
             this.olvTasks.ShowHeaderInAllViews = false;
             this.olvTasks.ShowItemToolTips = true;
             this.olvTasks.Size = new System.Drawing.Size(675, 439);
-            this.olvTasks.SortGroupItemsByPrimaryColumn = false;
             this.olvTasks.TabIndex = 36;
             this.olvTasks.TriStateCheckBoxes = true;
             this.olvTasks.UseAlternatingBackColors = true;

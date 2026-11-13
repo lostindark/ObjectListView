@@ -31,6 +31,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 
@@ -44,6 +45,10 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Return the list of groups that should be shown according to the given parameters
         /// </summary>
+        /// <remarks>
+        /// Preparation can be canceled. Do not publish lookup mappings here; lookups must
+        /// describe the accepted groups in parameters.ListView.OLVGroups.
+        /// </remarks>
         /// <param name="parameters"></param>
         /// <returns></returns>
         IList<OLVGroup> GetGroups(GroupingParameters parameters);
@@ -147,70 +152,24 @@ namespace BrightIdeasSoftware
         /// <param name="parameters"></param>
         /// <returns></returns>
         public override IList<OLVGroup> GetGroups(GroupingParameters parameters) {
-
-            // There is a lot of overlap between this method and ObjectListView.MakeGroups()
-            // Any changes made here may need to be reflected there
-
-            // This strategy can only be used on FastObjectListViews
             ObjectListViewBase folv = parameters.ListView;
-
-            // Separate the list view items into groups, using the group key as the descrimanent
-            int objectCount = 0;
-            NullableDictionary<object, List<object>> map = new NullableDictionary<object, List<object>>();
-            foreach (object model in folv.FilteredObjects) {
-                object key = parameters.GroupByColumn.GetGroupKey(model);
-                if (!map.TryGetValue(key, out List<object> groupItems))
-                {
-                    groupItems = new List<object>();
-                    map[key] = groupItems;
-                }
-
-                groupItems.Add(model);
-                objectCount++;
-            }
-
-            // Sort the items within each group
-            ModelObjectComparer sorter = new ModelObjectComparer(parameters.GetItemSortDescriptions());
-            foreach (object key in map.Keys) {
-                map[key].Sort(sorter);
-            }
-
-            // Make a list of the required groups
-            List<OLVGroup> groups = new List<OLVGroup>();
-            foreach (object key in map.Keys) {
-                OLVGroup lvg = parameters.CreateGroup(key, map[key].Count, folv.HasCollapsibleGroups);
-                lvg.Contents = map[key].ConvertAll<int>(delegate(object x) { return folv.IndexOf(x); });
-                lvg.VirtualItemCount = map[key].Count;
-                if (parameters.GroupByColumn.GroupFormatter != null)
-                {
-                    parameters.GroupByColumn.GroupFormatter(lvg, parameters);
-                }
-
-                groups.Add(lvg);
-            }
-
-            // Sort the groups
-            if (parameters.GroupByOrder != SortOrder.None)
+            this.listView = folv;
+            if (parameters.ModelComparer == null && parameters.ItemComparer != null)
             {
-                groups.Sort(parameters.GroupComparer ?? new OLVGroupComparer(parameters.GroupByOrder));
+                throw new NotSupportedException("Virtual grouping requires ModelComparer instead of ItemComparer.");
             }
-
-            // Build an array that remembers which group each item belongs to.
-            this.indexToGroupMap = new List<int>(objectCount);
-            this.indexToGroupMap.AddRange(new int[objectCount]);
-
-            for (int i = 0; i < groups.Count; i++) {
-                OLVGroup group = groups[i];
-                List<int> members = (List<int>)group.Contents;
-                foreach (int j in members)
-                {
-                    this.indexToGroupMap[j] = i;
-                }
-            }
-
-            return groups;
+            IList<OLVSortDescription> descriptions = parameters.GetItemSortDescriptions();
+            IComparer<object> comparer = parameters.ModelComparer ??
+                (descriptions.Count > 0 ? new ModelObjectComparer(descriptions) : null);
+            return parameters.MakeGroups(folv.FilteredObjects.Cast<object>(), model => model, comparer,
+                (group, members) => {
+                    group.Contents = members.ConvertAll(folv.IndexOf);
+                    group.VirtualItemCount = members.Count;
+                });
         }
-        private List<int> indexToGroupMap;
+        private ObjectListViewBase listView;
+        private IList<OLVGroup> indexedGroups;
+        private Dictionary<int, int> indexToGroupMap;
 
         /// <summary>
         /// 
@@ -228,6 +187,18 @@ namespace BrightIdeasSoftware
         /// <param name="itemIndex"></param>
         /// <returns></returns>
         public override int GetGroup(int itemIndex) {
+            IList<OLVGroup> groups = this.listView.OLVGroups;
+            if (!ReferenceEquals(groups, this.indexedGroups)) {
+                Dictionary<int, int> map = new Dictionary<int, int>();
+                for (int i = 0; i < groups.Count; i++) {
+                    foreach (int member in groups[i].Contents)
+                    {
+                        map[member] = i;
+                    }
+                }
+                this.indexToGroupMap = map;
+                this.indexedGroups = groups;
+            }
             return this.indexToGroupMap[itemIndex];
         }
 

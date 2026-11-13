@@ -838,6 +838,14 @@ namespace BrightIdeasSoftware {
                 return true;
             }
 
+            if (this.ListView.HasHeaderAppearance(null))
+                return true;
+
+            foreach (OLVColumn column in this.ListView.Columns) {
+                if (this.ListView.HasHeaderAppearance(column))
+                    return true;
+            }
+
             if (this.ListView.HeaderUsesThemes)
             {
                 return false;
@@ -928,9 +936,14 @@ namespace BrightIdeasSoftware {
                     return;
                 }
             }
+            if (SystemInformation.HighContrast) {
+                stateStyle.ForeColor = this.ListView.Enabled ? SystemColors.WindowText : SystemColors.GrayText;
+                stateStyle.BackColor = SystemColors.Control;
+                stateStyle.FrameColor = SystemColors.WindowText;
+            }
 
             // Draw the background
-            if (this.ListView.HeaderUsesThemes &&
+            if (this.ListView.HeaderUsesThemes && !this.ListView.HasHeaderAppearance(column) &&
                 (ObjectListViewTheme.IsDarkMode || (VisualStyleRenderer.IsSupported &&
                 VisualStyleRenderer.IsElementDefined(VisualStyleElement.Header.Item.Normal))))
             {
@@ -945,7 +958,8 @@ namespace BrightIdeasSoftware {
 
             // Draw the sort indicator if this column has one
             if (this.HasSortIndicator(column)) {
-                Font font = this.ListView.HeaderUsesThemes ? this.ListView.Font : stateStyle.Font ?? this.ListView.Font;
+                Font font = this.ListView.HeaderUsesThemes && !this.ListView.HasHeaderAppearance(column) ?
+                    this.ListView.Font : stateStyle.Font ?? this.ListView.Font;
                 int priority = this.ListView.GetSortPriority(column);
                 string label = priority.ToString(CultureInfo.CurrentCulture);
                 int width = this.CalculateSortIndicatorWidth(g, column, font);
@@ -1287,25 +1301,35 @@ namespace BrightIdeasSoftware {
         protected void DrawHeaderImageAndText(Graphics g, Rectangle r, OLVColumn column, HeaderStateStyle stateStyle) {
 
             TextFormatFlags flags = this.TextFormatFlags;
-            flags |= TextFormatFlags.VerticalCenter;
-            if (column.HeaderTextAlignOrDefault == HorizontalAlignment.Center)
+            StringAlignment vertical = stateStyle.ResolvedValues?.VerticalAlignment ?? StringAlignment.Center;
+            flags |= vertical == StringAlignment.Near ? TextFormatFlags.Top :
+                vertical == StringAlignment.Far ? TextFormatFlags.Bottom : TextFormatFlags.VerticalCenter;
+            HorizontalAlignment alignment = stateStyle.ResolvedValues?.HorizontalAlignment ?? column.HeaderTextAlignOrDefault;
+            if (stateStyle.ResolvedValues?.Padding is Rectangle padding) {
+                r = new Rectangle(r.X + padding.X, r.Y + padding.Y,
+                    Math.Max(0, r.Width - padding.X - padding.Width),
+                    Math.Max(0, r.Height - padding.Y - padding.Height));
+            }
+            if (alignment == HorizontalAlignment.Center)
             {
                 flags |= TextFormatFlags.HorizontalCenter;
             }
 
-            if (column.HeaderTextAlignOrDefault == HorizontalAlignment.Right)
+            if (alignment == HorizontalAlignment.Right)
             {
                 flags |= TextFormatFlags.Right;
             }
 
-            Font f = this.ListView.HeaderUsesThemes ? this.ListView.Font : stateStyle.Font ?? this.ListView.Font;
+            bool useNative = this.ListView.HeaderUsesThemes && !this.ListView.HasHeaderAppearance(column);
+            Font f = useNative ? this.ListView.Font : stateStyle.Font ?? this.ListView.Font;
             Color defaultColor = ObjectListViewTheme.Current.TextColor;
-            Color color = this.ListView.HeaderUsesThemes ? defaultColor : stateStyle.ForeColor;
+            Color color = useNative ? defaultColor : stateStyle.ForeColor;
             if (color.IsEmpty)
             {
                 color = defaultColor;
             }
-            if (ObjectListViewTheme.IsDarkMode && !this.ListView.Enabled)
+            if (ObjectListViewTheme.IsDarkMode && !this.ListView.Enabled &&
+                !this.ListView.HasHeaderAppearance(column))
             {
                 color = ObjectListViewTheme.Current.GrayTextColor;
             }
@@ -1411,23 +1435,50 @@ namespace BrightIdeasSoftware {
         /// <param name="isPressed"></param>
         /// <returns></returns>
         protected HeaderStateStyle CalculateStateStyle(OLVColumn column, bool isHot, bool isPressed) {
-            HeaderFormatStyle headerStyle = this.CalculateHeaderStyle(column);
             if (this.ListView.IsDesignMode)
-            {
-                return headerStyle.Normal;
-            }
-
-            if (isPressed)
-            {
-                return headerStyle.Pressed;
-            }
-
+                isHot = isPressed = false;
+            StyleValues defaults = new StyleValues {
+                Font = this.ListView.Font,
+                ForeColor = this.ListView.Enabled ? ObjectListViewTheme.Current.TextColor :
+                    ObjectListViewTheme.Current.GrayTextColor
+            };
+            OverlayHeaderStyle(defaults, this.ListView.HeaderFormatStyle, isHot, isPressed);
+            OverlayHeaderStyle(defaults, column.HeaderFormatStyle, isHot, isPressed);
+            StyleState state = this.ListView.GetStyleState(null);
             if (isHot)
-            {
-                return headerStyle.Hot;
-            }
+                state |= StyleState.Hot;
+            if (isPressed)
+                state |= StyleState.Pressed;
+            StyleValues values = this.ListView.ResolveStyle(StyleTarget.Header, column, null,
+                this.GetItemRect(column.Index), state, defaults);
+            return new HeaderStateStyle {
+                Font = values.Font, ForeColor = values.ForeColor ?? Color.Empty,
+                BackColor = values.BackColor ?? Color.Empty,
+                FrameColor = values.BorderColor ?? Color.Empty,
+                FrameWidth = values.BorderWidth ?? 0, ResolvedValues = values
+            };
+        }
 
-            return headerStyle.Normal;
+        private static void OverlayHeaderStyle(StyleValues values, HeaderFormatStyle style, bool hot, bool pressed) {
+            if (style == null)
+                return;
+            OverlayHeaderState(values, style.Normal);
+            if (hot)
+                OverlayHeaderState(values, style.Hot);
+            if (pressed)
+                OverlayHeaderState(values, style.Pressed);
+        }
+
+        private static void OverlayHeaderState(StyleValues values, HeaderStateStyle style) {
+            if (style == null)
+                return;
+            values.Overlay(new StyleValues {
+                Font = style.Font,
+                ForeColor = style.ForeColor.IsEmpty ? (Color?)null : style.ForeColor,
+                BackColor = style.BackColor.IsEmpty ? (Color?)null : style.BackColor,
+                BorderColor = style.FrameColor.IsEmpty ? (Color?)null : style.FrameColor,
+                BorderWidth = style.ShouldSerializeFrameWidth() ? (float?)style.FrameWidth : null
+            });
         }
 
         /// <summary>

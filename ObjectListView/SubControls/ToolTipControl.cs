@@ -223,11 +223,7 @@ namespace BrightIdeasSoftware
                 return this.hasBorder;
             }
             set {
-                if (this.hasBorder == value)
-                {
-                    return;
-                }
-
+                this.hasBorder = value;
                 if (value) {
                     this.WindowStyle |= WS_BORDER;
                 } else {
@@ -246,13 +242,8 @@ namespace BrightIdeasSoftware
                 return ColorTranslator.FromWin32(color);
             }
             set {
-                // For some reason, setting the color fails on Vista and messes up later ops.
-                // So we don't even try to set it.
-                if (!ObjectListViewBase.IsVistaOrLater) {
-                    int color = ColorTranslator.ToWin32(value);
-                    NativeMethods.SendMessage(this.Handle, TTM_SETTIPBKCOLOR, color, 0);
-                    //int x2 = Marshal.GetLastWin32Error();
-                }
+                int color = ColorTranslator.ToWin32(value);
+                NativeMethods.SendMessage(this.Handle, TTM_SETTIPBKCOLOR, color, 0);
             }
         }
 
@@ -265,12 +256,8 @@ namespace BrightIdeasSoftware
                 return ColorTranslator.FromWin32(color);
             }
             set {
-                // For some reason, setting the color fails on Vista and messes up later ops.
-                // So we don't even try to set it.
-                if (!ObjectListViewBase.IsVistaOrLater) {
-                    int color = ColorTranslator.ToWin32(value);
-                    NativeMethods.SendMessage(this.Handle, TTM_SETTIPTEXTCOLOR, color, 0);
-                }
+                int color = ColorTranslator.ToWin32(value);
+                NativeMethods.SendMessage(this.Handle, TTM_SETTIPTEXTCOLOR, color, 0);
             }
         }
 
@@ -322,6 +309,8 @@ namespace BrightIdeasSoftware
         /// <remarks>Setting this to null reverts to the default font.</remarks>
         public Font Font {
             get {
+                if (this.font != null)
+                    return this.font;
                 IntPtr hfont = NativeMethods.SendMessage(this.Handle, WM_GETFONT, 0, 0);
                 if (hfont == IntPtr.Zero)
                 {
@@ -329,7 +318,9 @@ namespace BrightIdeasSoftware
                 }
                 else
                 {
-                    return Font.FromHfont(hfont);
+                    if (this.nativeFont == null)
+                        this.nativeFont = Font.FromHfont(hfont);
+                    return this.nativeFont;
                 }
             }
             set {
@@ -340,11 +331,31 @@ namespace BrightIdeasSoftware
                 }
 
                 this.font = newFont;
-                IntPtr hfont = this.font.ToHfont(); // THINK: When should we delete this hfont?
+                IntPtr hfont = this.font.ToHfont();
                 NativeMethods.SendMessage(this.Handle, WM_SETFONT, hfont, 0);
+                if (this.ownedFontHandle != IntPtr.Zero)
+                    NativeMethods.DeleteObject(this.ownedFontHandle);
+                this.ownedFontHandle = hfont;
             }
         }
         private Font font;
+        private Font nativeFont;
+        private IntPtr ownedFontHandle;
+
+        /// <summary>Native tooltip margins: left, top, right, bottom.</summary>
+        public Rectangle Padding {
+            get {
+                NativeMethods.RECT rect = new NativeMethods.RECT();
+                NativeMethods.SendMessageRECT(this.Handle, 0x400 + 27, 0, ref rect); // TTM_GETMARGIN
+                return new Rectangle(rect.left, rect.top, rect.right, rect.bottom);
+            }
+            set {
+                NativeMethods.RECT rect = new NativeMethods.RECT {
+                    left = value.X, top = value.Y, right = value.Width, bottom = value.Height
+                };
+                NativeMethods.SendMessageRECT(this.Handle, 0x400 + 26, 0, ref rect); // TTM_SETMARGIN
+            }
+        }
 
         /// <summary>
         /// Gets or sets how many milliseconds the tooltip will remain visible while the mouse
@@ -431,8 +442,16 @@ namespace BrightIdeasSoftware
             this.settings["InitialDelay"] = this.InitialDelay;
             this.settings["ReshowDelay"] = this.ReshowDelay;
             this.settings["Font"] = this.Font;
+            this.settings["Padding"] = this.Padding;
+            this.settings["CustomColors"] = this.customColors;
         }
         private Hashtable settings;
+        private bool preserveSettingsOnDestroy;
+
+        internal void PreserveSettingsForHandleRecreation() {
+            this.PushSettings();
+            this.preserveSettingsOnDestroy = true;
+        }
 
         /// <summary>
         /// Restore the settings of the tooltip as they were when PushSettings()
@@ -445,6 +464,7 @@ namespace BrightIdeasSoftware
             }
 
             this.IsBalloon = (bool)this.settings["IsBalloon"];
+            this.SetCustomColors((bool)this.settings["CustomColors"]);
             this.HasBorder = (bool)this.settings["HasBorder"];
             this.BackColor = (Color)this.settings["BackColor"];
             this.ForeColor = (Color)this.settings["ForeColor"];
@@ -454,6 +474,7 @@ namespace BrightIdeasSoftware
             this.InitialDelay = (int)this.settings["InitialDelay"];
             this.ReshowDelay = (int)this.settings["ReshowDelay"];
             this.Font = (Font)this.settings["Font"];
+            this.Padding = (Rectangle)this.settings["Padding"];
 
             this.settings = null;
         }
@@ -591,12 +612,20 @@ namespace BrightIdeasSoftware
                 args.Title == null &&
                 !args.StandardIcon.HasValue &&
                 !args.AutoPopDelay.HasValue &&
+                !args.Padding.HasValue &&
+                !args.HasBorder.HasValue &&
                 args.Font == null)
             {
                 return;
             }
 
             this.PushSettings();
+            if (args.BackColor.HasValue || args.ForeColor.HasValue)
+                this.SetCustomColors(true);
+            if (args.Padding.HasValue)
+                this.Padding = args.Padding.Value;
+            if (args.HasBorder.HasValue)
+                this.HasBorder = args.HasBorder.Value;
             if (args.IsBalloon.HasValue)
             {
                 this.IsBalloon = args.IsBalloon.Value;
@@ -631,6 +660,15 @@ namespace BrightIdeasSoftware
             {
                 this.Title = args.Title;
             }
+        }
+
+        private bool customColors;
+        private void SetCustomColors(bool value) {
+            if (this.customColors == value)
+                return;
+            int result = NativeMethods.SetWindowTheme(this.Handle, value ? "" : null, value ? "" : null);
+            Marshal.ThrowExceptionForHR(result);
+            this.customColors = value;
         }
 
         /// <summary>
@@ -721,6 +759,21 @@ namespace BrightIdeasSoftware
         [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
 #endif
         override protected void WndProc(ref Message m) {
+            if (m.Msg == 0x82) { // WM_NCDESTROY
+                base.WndProc(ref m);
+                if (this.ownedFontHandle != IntPtr.Zero)
+                    NativeMethods.DeleteObject(this.ownedFontHandle);
+                this.ownedFontHandle = IntPtr.Zero;
+                if (!this.preserveSettingsOnDestroy) {
+                    this.nativeFont?.Dispose();
+                    this.nativeFont = null;
+                    this.settings = null;
+                }
+                this.font = null;
+                this.preserveSettingsOnDestroy = false;
+                this.customColors = false;
+                return;
+            }
             //System.Diagnostics.Trace.WriteLine(String.Format("xx {0:x}", m.Msg));
             switch (m.Msg) {
                 case 0x4E: // WM_NOTIFY

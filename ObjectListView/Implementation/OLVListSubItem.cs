@@ -39,6 +39,37 @@ namespace BrightIdeasSoftware {
     /// </summary>
     [Browsable(false)]
     public class OLVListSubItem : ListViewItem.ListViewSubItem {
+        /// <summary>Per-cell overrides of inherited appearance.</summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+        public StyleSheet Appearance => this.appearance ?? (this.appearance = new StyleSheet());
+        private StyleSheet appearance;
+        internal StyleSheet AppearanceOrNull => this.appearance;
+
+        internal CellStyleChanges FormattingChanges { get; set; }
+
+        /// <summary>Cell font, including explicit assignments made during FormatRow.</summary>
+        public new Font Font {
+            get { return base.Font; }
+            set { base.Font = value; this.RecordFormattingChange(CellStyleChanges.Font); }
+        }
+
+        /// <summary>Cell text color, including explicit assignments made during FormatRow.</summary>
+        public new Color ForeColor {
+            get { return base.ForeColor; }
+            set { base.ForeColor = value; this.RecordFormattingChange(CellStyleChanges.ForeColor); }
+        }
+
+        /// <summary>Cell background, including explicit assignments made during FormatRow.</summary>
+        public new Color BackColor {
+            get { return base.BackColor; }
+            set { base.BackColor = value; this.RecordFormattingChange(CellStyleChanges.BackColor); }
+        }
+
+        private void RecordFormattingChange(CellStyleChanges change) {
+            if ((this.FormattingChanges & CellStyleChanges.Tracking) != 0)
+                this.FormattingChanges |= change;
+        }
+
         #region Constructors
 
         /// <summary>

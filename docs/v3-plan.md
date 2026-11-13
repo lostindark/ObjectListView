@@ -32,14 +32,15 @@ January 12, 2027. Changes to Windows compatibility require a separate support de
 | Dark mode | Implemented: shared palette, independent list refresh, opt-in extensible form theming, stock .NET 10 controls, and Framework fallbacks |
 | Modern designer | Implemented for NuGet: client/server/protocol integration, header resize/Undo, smart tags, and column/printer editors |
 | Grouping redesign | Implemented: explicit policy, deprecated setting adapters, independent item ordering, cancellation, and collapsed-state restoration |
-| Unified style precedence | Planned; dark mode does not complete this phase |
+| Unified style precedence | Implemented: per-property sheets, combined-state rules, callbacks, and legacy adapters |
 | Shared rendering/hit-test layout | Planned |
 | Final API cleanup and release | Pending |
 
 ## Platform migration checkpoint
 
 The runtime migration, NuGet designer integration, and grouping redesign are
-implemented. Styling and layout redesigns remain separate workstreams.
+implemented. Shared style resolution is implemented; shared layout remains a
+separate workstream.
 
 ### Implemented foundations
 
@@ -204,8 +205,9 @@ references or virtual mappings.
 
 ## Phase 4: unified style resolution
 
-Unify shared row/cell, header, and tooltip concepts without creating an oversized
-renderer interface:
+**Implemented.** Shared row/cell, header, and tooltip concepts use `StyleSheet`,
+`StyleValues`, ordered `StyleRule` state overrides, and `StyleContext`, without an
+oversized renderer interface:
 
 | Concept | Responsibility |
 | --- | --- |
@@ -214,11 +216,24 @@ renderer interface:
 | Resolution | Per-property inheritance, explicit overrides, and callback precedence |
 | Context | Bounds, DPI, RTL, model, column, and state |
 
-Distinguish unspecified values from explicit overrides. Integrate rows/cells,
-then headers, then tooltips; temporary adapters need a retirement plan.
+Null means unspecified; explicit Regular, zero borders, and empty padding are
+preserved. Normal cell values precede legacy format events; owner-drawn state
+rules and the final `StyleResolving` callback consume their results. Headers
+inherit per property from legacy styles before shared overrides; native tooltips
+apply shared/event overrides temporarily and restore their settings when popped.
+High contrast keeps system colors authoritative, and derived fonts are
+control-owned. Existing style APIs remain adapters until final API cleanup
+establishes their migration/removal policy.
 
-**Acceptance:** state combinations, column overrides, callbacks, high contrast,
-resource ownership, and designer serialization.
+Focused regressions cover combined/excluded states, scope and callback
+precedence, regular/virtual/tile rows, pressed capture loss, actual cell/header
+drawing, native tooltip restoration, high-contrast color decisions, font reuse
+and ownership, and designer content/explicit-default serialization.
+See the [migration guide](v3-migration.md#unified-style-resolution) for precedence
+and backend limits: native cells use normal styling; state rules/custom cell
+geometry require owner drawing, and native tooltips do not support arbitrary
+border colors/widths or content alignment. Shared header image/vertical-text
+geometry is deferred to Phase 5, as is broader rendering/hit-test layout.
 
 ## Phase 5: shared rendering and hit-test layout
 

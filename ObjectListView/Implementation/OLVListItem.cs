@@ -34,6 +34,7 @@
  */
 
 using System;
+using System.ComponentModel;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -48,6 +49,44 @@ namespace BrightIdeasSoftware {
     /// also know the image they should draw against themselves
     /// </summary>
     public class OLVListItem : ListViewItem {
+        /// <summary>Per-row overrides of control and column appearance.</summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+        public StyleSheet Appearance => this.appearance ?? (this.appearance = new StyleSheet());
+        private StyleSheet appearance;
+        internal StyleSheet AppearanceOrNull => this.appearance;
+
+        internal StyleValues FormattingOverrides { get; set; }
+
+        /// <summary>Row font, including explicit assignments made during FormatRow.</summary>
+        public new Font Font {
+            get { return base.Font; }
+            set {
+                base.Font = value;
+                if (this.FormattingOverrides != null)
+                    this.FormattingOverrides.Font = base.Font;
+            }
+        }
+
+        /// <summary>Row text color, including explicit assignments made during FormatRow.</summary>
+        public new Color ForeColor {
+            get { return base.ForeColor; }
+            set {
+                base.ForeColor = value;
+                if (this.FormattingOverrides != null)
+                    this.FormattingOverrides.ForeColor = base.ForeColor;
+            }
+        }
+
+        /// <summary>Row background, including explicit assignments made during FormatRow.</summary>
+        public new Color BackColor {
+            get { return base.BackColor; }
+            set {
+                base.BackColor = value;
+                if (this.FormattingOverrides != null)
+                    this.FormattingOverrides.BackColor = base.BackColor;
+            }
+        }
+
         #region Constructors
 
         /// <summary>

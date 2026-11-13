@@ -741,6 +741,7 @@ namespace BrightIdeasSoftware
             }
 
             this.UnsubscribeNotifications(null);
+            this.DisposeStyleFonts();
         }
 
         #endregion
@@ -5993,7 +5994,9 @@ namespace BrightIdeasSoftware
             this.BuildCellEvent(e, this.PointToClient(Cursor.Position));
             if (e.Item != null) {
                 e.Text = this.GetCellToolTip(e.ColumnIndex, e.RowIndex);
+                this.ApplyToolTipAppearance(e);
                 this.OnCellToolTip(e);
+                ApplyToolTipAccessibility(e);
             }
         }
 
@@ -6023,7 +6026,9 @@ namespace BrightIdeasSoftware
             e.Column = this.GetColumn(e.ColumnIndex);
             e.Text = this.GetHeaderToolTip(e.ColumnIndex);
             e.ListView = this;
+            this.ApplyToolTipAppearance(e);
             this.OnHeaderToolTip(e);
+            ApplyToolTipAccessibility(e);
         }
 
         /// <summary>
@@ -6801,8 +6806,8 @@ namespace BrightIdeasSoftware
             this.headerControl = null;
 
             // When the underlying control is destroyed, we need to recreate and reconfigure its tooltip
-            if (this.cellToolTip != null) {
-                this.cellToolTip.PushSettings();
+            if (this.cellToolTip != null && !this.Disposing && !this.IsDisposed) {
+                this.cellToolTip.PreserveSettingsForHandleRecreation();
                 this.BeginInvoke((MethodInvoker)delegate {
                     this.UpdateCellToolTipHandle();
                     this.cellToolTip.PopSettings();
@@ -9850,11 +9855,12 @@ namespace BrightIdeasSoftware
                 this.SetSubItemImages(rowIndex, olvi);
             }
 
-            bool needToTriggerFormatCellEvents = this.TriggerFormatRowEvent(rowIndex, displayIndex, olvi);
+            bool needToTriggerFormatCellEvents = this.FormatRowWithAppearance(rowIndex, displayIndex, olvi);
 
             // We only need cell level events if we are in details view
             if (this.View != View.Details)
             {
+                this.ApplyNativeStyleAccessibility(olvi);
                 return;
             }
 
@@ -9871,6 +9877,7 @@ namespace BrightIdeasSoftware
                 PropagateFormatFromRowToCells(olvi);
                 this.ApplyHyperlinkStyle(olvi);
             }
+            this.ApplyNativeStyleAccessibility(olvi);
         }
 
         /// <summary>
@@ -10440,6 +10447,11 @@ namespace BrightIdeasSoftware
             this.lastMouseDownClickCount = e.Clicks;
             this.lastMouseDownButton = e.Button;
             base.OnMouseDown(e);
+            if (e.Button == MouseButtons.Left && this.IsHandleCreated) {
+                this.UpdateHotItem(e.Location);
+                this.pressedStyleRowIndex = this.OlvHitTest(e.X, e.Y).RowIndex;
+                this.Invalidate();
+            }
         }
         private int lastMouseDownClickCount;
         private MouseButtons lastMouseDownButton;
@@ -10502,6 +10514,8 @@ namespace BrightIdeasSoftware
             //System.Diagnostics.Debug.WriteLine(String.Format("OnMouseUp: {0}, {1}", e.Button, e.Clicks));
 
             base.OnMouseUp(e);
+            this.pressedStyleRowIndex = -1;
+            this.Invalidate();
 
             if (!this.Created)
             {
@@ -11763,9 +11777,9 @@ namespace BrightIdeasSoftware
 
             Font font = style.Font ?? olvi.Font;
 
-            if (style.FontStyle != FontStyle.Regular)
+            if (HasItemFontStyle(style))
             {
-                font = new Font(font ?? this.Font, style.FontStyle);
+                font = this.ResolveStyleFont(font, style.FontStyle);
             }
 
             if (!Equals(font, olvi.Font)) {
@@ -11834,9 +11848,9 @@ namespace BrightIdeasSoftware
                 subItem.Font = style.Font;
             }
 
-            if (style.FontStyle != FontStyle.Regular)
+            if (HasItemFontStyle(style))
             {
-                subItem.Font = new Font(subItem.Font ?? olvi.Font ?? this.Font, style.FontStyle);
+                subItem.Font = this.ResolveStyleFont(subItem.Font ?? olvi.Font, style.FontStyle);
             }
 
             if (!style.ForeColor.IsEmpty)

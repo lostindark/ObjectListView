@@ -87,14 +87,17 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the style of font that will be applied by this style
         /// </summary>
-        [DefaultValue(FontStyle.Regular)]
         public FontStyle FontStyle
         {
-            get { return this.fontStyle; }
+            get { return this.fontStyle ?? FontStyle.Regular; }
             set { this.fontStyle = value; }
         }
 
-        private FontStyle fontStyle;
+        private FontStyle? fontStyle;
+        /// <summary>Whether a font style was explicitly assigned.</summary>
+        public bool ShouldSerializeFontStyle() { return this.fontStyle.HasValue; }
+        /// <summary>Restore font-style inheritance.</summary>
+        public void ResetFontStyle() { this.fontStyle = null; }
 
         /// <summary>
         /// Gets or sets the color of the text that will be applied by this style
@@ -181,12 +184,15 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the style of font that will be applied by this style
         /// </summary>
-        [DefaultValue(FontStyle.Regular)]
         public FontStyle FontStyle {
-            get { return this.fontStyle; }
+            get { return this.fontStyle ?? FontStyle.Regular; }
             set { this.fontStyle = value; }
         }
-        private FontStyle fontStyle;
+        private FontStyle? fontStyle;
+        /// <summary>Whether a font style was explicitly assigned.</summary>
+        public bool ShouldSerializeFontStyle() { return this.fontStyle.HasValue; }
+        /// <summary>Restore font-style inheritance.</summary>
+        public void ResetFontStyle() { this.fontStyle = null; }
 
         /// <summary>
         /// Gets or sets the color of the text that will be applied by this style
@@ -281,6 +287,7 @@ namespace BrightIdeasSoftware
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public class HeaderStateStyle
     {
+        internal StyleValues ResolvedValues { get; set; }
         /// <summary>
         /// Gets or sets the font that will be applied by this style
         /// </summary>
@@ -324,12 +331,17 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Gets or sets the width of the frame that will be drawn around the header for this column
         /// </summary>
-        [DefaultValue(0.0f)]
         public float FrameWidth {
             get { return this.frameWidth; }
-            set { this.frameWidth = value; }
+            set { this.frameWidth = value; this.frameWidthSpecified = true; }
         }
         private float frameWidth;
+        private bool frameWidthSpecified;
+
+        /// <summary>Whether a frame width was explicitly assigned, including zero.</summary>
+        public bool ShouldSerializeFrameWidth() { return this.frameWidthSpecified; }
+        /// <summary>Restore frame-width inheritance.</summary>
+        public void ResetFrameWidth() { this.frameWidth = 0; this.frameWidthSpecified = false; }
     }
 
     /// <summary>

@@ -334,7 +334,8 @@ namespace BrightIdeasSoftware {
         [Browsable(false)]
         public HorizontalAlignment CellHorizontalAlignment
         {
-            get { return this.Column == null ? HorizontalAlignment.Left : this.Column.TextAlign; }
+            get { return this.ResolvedAppearance?.HorizontalAlignment ??
+                (this.Column == null ? HorizontalAlignment.Left : this.Column.TextAlign); }
         }
 
         /// <summary>
@@ -361,6 +362,9 @@ namespace BrightIdeasSoftware {
         [Browsable(false)]
         protected virtual Rectangle? EffectiveCellPadding {
             get {
+                if (this.ResolvedAppearance?.Padding != null)
+                    return this.ResolvedAppearance.Padding;
+
                 if (this.cellPadding.HasValue)
                 {
                     return this.cellPadding.Value;
@@ -397,6 +401,9 @@ namespace BrightIdeasSoftware {
         [Browsable(false)]
         protected virtual StringAlignment EffectiveCellVerticalAlignment {
             get {
+                if (this.ResolvedAppearance?.VerticalAlignment != null)
+                    return this.ResolvedAppearance.VerticalAlignment.Value;
+
                 if (this.cellVerticalAlignment.HasValue)
                 {
                     return this.cellVerticalAlignment.Value;
@@ -558,6 +565,9 @@ namespace BrightIdeasSoftware {
          DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Font Font {
             get {
+                if (this.ResolvedAppearance != null)
+                    return this.font ?? this.ResolvedAppearance.Font;
+
                 if (this.font != null || this.ListItem == null)
                 {
                     return this.font;
@@ -574,6 +584,35 @@ namespace BrightIdeasSoftware {
         }
 
         private Font font;
+
+        private StyleValues resolvedAppearance;
+        private StyleValues ResolvedAppearance {
+            get {
+                if (this.ListView == null || this.ListItem == null)
+                    return null;
+                OLVListSubItem cell = this.SubItem as OLVListSubItem;
+                if (!this.ListView.HasCellAppearance(this.Column, this.ListItem, cell))
+                    return null;
+                if (this.resolvedAppearance == null) {
+                    StyleValues defaults = new StyleValues {
+                        Font = this.font ?? (cell == null || this.ListItem.UseItemStyleForSubItems ?
+                            this.ListItem.Font : cell.Font),
+                        ForeColor = this.GetLegacyForegroundColor(),
+                        BackColor = this.GetLegacyBackgroundColor(),
+                        Padding = this.cellPadding ?? cell?.CellPadding ?? this.ListItem.CellPadding ??
+                            this.Column?.CellPadding ?? this.ListView.CellPadding,
+                        VerticalAlignment = this.cellVerticalAlignment ?? cell?.CellVerticalAlignment ??
+                            this.ListItem.CellVerticalAlignment ?? this.Column?.CellVerticalAlignment ??
+                            this.ListView.CellVerticalAlignment,
+                        HorizontalAlignment = this.Column?.TextAlign ?? HorizontalAlignment.Left
+                    };
+                    this.ListView.ApplyCellGeometry(defaults, this.Column, this.ListItem, cell);
+                    this.resolvedAppearance = this.ListView.ResolveStyle(StyleTarget.Cell, this.Column,
+                        this.ListItem, this.Bounds, this.ListView.GetStyleState(this.ListItem), defaults, false);
+                }
+                return this.resolvedAppearance;
+            }
+        }
 
         /// <summary>
         /// Gets the image list from which keyed images will be fetched
@@ -726,6 +765,7 @@ namespace BrightIdeasSoftware {
         private bool useCustomCheckboxImages;
 
         private void ClearState() {
+            this.resolvedAppearance = null;
             this.Event = null;
             this.DrawItemEvent = null;
             this.Aspect = null;
@@ -1016,6 +1056,10 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <returns>The background color of the subitem</returns>
         public virtual Color GetBackgroundColor() {
+            return this.ResolvedAppearance?.BackColor ?? this.GetLegacyBackgroundColor();
+        }
+
+        private Color GetLegacyBackgroundColor() {
             if (!this.ListView.Enabled)
             {
                 return ObjectListViewTheme.Current.ControlColor;
@@ -1057,6 +1101,10 @@ namespace BrightIdeasSoftware {
         /// </summary>
         /// <returns>The text color of the subitem</returns>
         public virtual Color GetForegroundColor() {
+            return this.ResolvedAppearance?.ForeColor ?? this.GetLegacyForegroundColor();
+        }
+
+        private Color GetLegacyForegroundColor() {
             if (ObjectListViewTheme.IsDarkMode && !this.ListView.Enabled)
             {
                 return ObjectListViewTheme.Current.GrayTextColor;
@@ -1608,6 +1656,13 @@ namespace BrightIdeasSoftware {
             using (Brush brush = new SolidBrush(backgroundColor)) {
                 g.FillRectangle(brush, r.X - 1, r.Y - 1, r.Width + 2, r.Height + 2);
             }
+            StyleValues style = this.ResolvedAppearance;
+            if (style?.BorderWidth > 0 && style.BorderColor.HasValue && r.Width > 0 && r.Height > 0) {
+                float width = style.BorderWidth.Value;
+                using (Pen pen = new Pen(style.BorderColor.Value, width))
+                    g.DrawRectangle(pen, r.X + width / 2, r.Y + width / 2,
+                        Math.Max(0, r.Width - width), Math.Max(0, r.Height - width));
+            }
         }
 
         /// <summary>
@@ -1955,7 +2010,8 @@ namespace BrightIdeasSoftware {
                 StringFormat fmt = new StringFormat();
                 fmt.LineAlignment = this.EffectiveCellVerticalAlignment;
                 fmt.Trimming = StringTrimming.EllipsisCharacter;
-                fmt.Alignment = this.Column == null ? StringAlignment.Near : this.Column.TextStringAlign;
+                fmt.Alignment = this.CellHorizontalAlignment == HorizontalAlignment.Center ? StringAlignment.Center :
+                    this.CellHorizontalAlignment == HorizontalAlignment.Right ? StringAlignment.Far : StringAlignment.Near;
                 if (!this.CanWrapOrDefault)
                 {
                     fmt.FormatFlags = StringFormatFlags.NoWrap;

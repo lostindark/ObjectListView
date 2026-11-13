@@ -1717,13 +1717,11 @@ namespace BrightIdeasSoftware {
         /// <summary>
         /// What color should be used for the background of the tooltip
         /// </summary>
-        /// <remarks>Setting this does nothing under Vista</remarks>
         public Color? BackColor { get; set; }
 
         /// <summary>
         /// What color should be used for the foreground of the tooltip
         /// </summary>
-        /// <remarks>Setting this does nothing under Vista</remarks>
         public Color? ForeColor { get; set; }
 
         /// <summary>
@@ -1746,6 +1744,12 @@ namespace BrightIdeasSoftware {
         /// What font should be used to draw the text of the tooltip?
         /// </summary>
         public Font Font { get; set; }
+
+        /// <summary>Optional tooltip margins: left, top, right, bottom.</summary>
+        public Rectangle? Padding { get; set; }
+
+        /// <summary>Optional native tooltip border visibility.</summary>
+        public bool? HasBorder { get; set; }
     }
 
     /// <summary>

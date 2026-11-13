@@ -97,6 +97,90 @@ Collapsed state is restored by grouping-column identity and group key, including
 null, when the effective grouping column is unchanged. `AboutToCreateGroups`
 can override this restored state before groups are committed.
 
+## Unified style resolution
+
+`StyleSheet` is the shared appearance model for cells, headers, and tooltips.
+`StyleValues` contains optional font, font style, colors, padding, alignment, and
+border properties. `null` inherits; explicit `FontStyle.Regular`, zero border
+width, and empty padding override inherited values. Set a property back to
+`null` to restore inheritance.
+
+```csharp
+list.OwnerDraw = true; // Required for cell state rules and custom cell geometry.
+list.RowAppearance.Normal.BackColor = Color.Beige;
+nameColumn.CellAppearance.Normal.ForeColor = Color.Navy;
+
+var selected = new StyleRule {
+    RequiredState = StyleState.Selected | StyleState.Focused,
+    ExcludedState = StyleState.Disabled
+};
+selected.Values.ForeColor = Color.White;
+selected.Values.BackColor = Color.DarkBlue;
+list.RowAppearance.States.Add(selected);
+
+list.HeaderAppearance.Normal.FontStyle = FontStyle.Bold;
+nameColumn.ToolTipAppearance.Normal.Padding = new Rectangle(4, 2, 4, 2);
+```
+
+Rules match all `RequiredState` flags and none of the `ExcludedState` flags.
+Matching rules apply in collection order, not by inferred specificity.
+Selected, focused, hot, pressed, and disabled are independent flags.
+`UseHotControls` (enabled by default), hyperlinks, or hot-item tracking must be
+enabled for pointer states. Pressed rows reset on mouse-up or capture loss.
+
+Cell normal values resolve from control `RowAppearance`, column `CellAppearance`,
+row `Appearance`, then subitem `Appearance`, per property. They are applied while
+rows are built, before `FormatRow` and `FormatCell`. Existing row formatters,
+alternating colors, disabled styles, hyperlinks, and hot styles remain supported.
+Their existing pipeline is retained; shared normal values precede the format
+events, and shared state rules overlay the resulting legacy appearance when
+owner-drawn. State scopes use the same control/column/row/subitem order.
+Explicit typed row assignments in `FormatRow` override shared normal column
+values even when assigning the current value. Use `Item.GetSubItem(index)` for
+typed cell assignments when explicitly preserving that cell's current value
+against a row override in the same handler. Untyped `SubItems` changes to other
+values are also preserved; callbacks without shared normal styling retain their
+legacy behavior.
+Change normal values before setting objects, or rebuild/refresh the affected
+rows afterward. Invalidate the control after changing state rules.
+
+Headers and tooltips resolve the control sheet, then the column sheet; each
+scope applies normal values followed by matching rules. Header customization
+works with either value of `HeaderUsesThemes`. Legacy `HeaderFormatStyle` now
+inherits **per property** across normal/hot/pressed states and control/column
+styles, instead of replacing an entire inherited style with an empty state.
+An explicitly assigned legacy frame width of zero suppresses the inherited
+frame; `ResetFrameWidth()` restores inheritance. `SimpleItemStyle` and
+`CellStyle` likewise distinguish an assigned `FontStyle.Regular` from an unset
+font style; `ResetFontStyle()` restores inheritance.
+
+`StyleResolving` receives an independent value snapshot and a `StyleContext`
+containing the target, model, column, bounds, DPI, RTL, and combined state.
+It runs after shared inheritance/state rules. Existing `HeaderDrawing` and
+tooltip events still run afterward, so their drawing/event overrides remain
+authoritative. Windows high-contrast colors take priority over resolved colors;
+fonts, spacing, and geometry remain customizable. Native cell painting uses
+normal values and existing native selection behavior; use owner drawing for
+state callbacks and custom borders/alignment. Custom renderers can opt into
+`ResolveStyle(...)`; `BaseRenderer` consumes it automatically.
+
+Native tooltips consume font, colors, padding, and border visibility. Explicit
+event colors temporarily disable visual theming so Windows actually displays
+them; popping the tooltip restores its prior settings. Arbitrary tooltip border
+colors/widths and content alignment are not supported by the native tooltip
+backend. Header image/vertical-text layout retains its existing alignment rules;
+the shared alignment applies to ordinary horizontal text. Shared layout and
+hit-test redesign remains a separate phase.
+
+Styles and rules serialize as nested designer content, including explicit zero
+and Regular values. Application-supplied fonts remain application-owned and must
+outlive their use. Fonts derived by OLV are cached per control and disposed with
+it; returned resolved fonts must not be disposed by callers.
+
+The legacy style types are retained as input adapters, not a second rendering
+API. Their removal, if any, belongs to the final API-cleanup phase after
+consumer/designer migration; this phase does not obsolete or remove them.
+
 ## Theme configuration and color access
 
 `ObjectListViewColorMode` now contains only `System`, `Light`, and `Dark`.

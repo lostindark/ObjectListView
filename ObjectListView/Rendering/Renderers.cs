@@ -2535,6 +2535,16 @@ namespace BrightIdeasSoftware {
     /// </summary>
     public class CheckStateRenderer : BaseRenderer {
         /// <inheritdoc />
+        protected override Rectangle GetContentBounds(Rectangle cellBounds) {
+            return this.ApplyCellPadding(cellBounds);
+        }
+
+        /// <inheritdoc />
+        protected override Size CalculateContentSize(Graphics g, Rectangle r) {
+            return this.CalculateCheckBoxSize(g);
+        }
+
+        /// <inheritdoc />
         protected override CellLayout CalculateCellLayout(Graphics g, Rectangle cellBounds) {
             Rectangle content = this.ApplyCellPadding(cellBounds);
             return new CellLayout(cellBounds, content, this.CalculateCheckBoxBounds(g, content),
@@ -4139,6 +4149,16 @@ namespace BrightIdeasSoftware {
                 return this.ButtonSize ?? r.Size;
             }
 
+            return this.CalculateTextSizedContent(g, r);
+        }
+
+        /// <inheritdoc />
+        protected override Size CalculatePreferredContentSize(Graphics g, Rectangle contentBounds) {
+            return this.SizingMode == OLVColumn.ButtonSizingMode.FixedBounds && this.ButtonSize.HasValue ?
+                this.ButtonSize.Value : this.CalculateTextSizedContent(g, contentBounds);
+        }
+
+        private Size CalculateTextSizedContent(Graphics g, Rectangle r) {
             Image image = this.GetImage();
             Size textSize = this.CalculateButtonContentSize(g, r, this.GetText(), image == null ? Size.Empty : image.Size);
 

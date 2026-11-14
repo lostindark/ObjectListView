@@ -1136,7 +1136,7 @@ namespace BrightIdeasSoftware
         /// <inheritdoc/>
         protected override int CalculateColumnContentWidth(System.Drawing.Graphics graphics, OLVListItem item, OLVColumn column) {
             int width = base.CalculateColumnContentWidth(graphics, item, column);
-            if (column.Index == 0)
+            if (column.Index == 0 && !(this.OwnerDraw && this.GetCellRenderer(item.RowObject, column) is TreeRenderer))
             {
                 width += item.IndentCount * (TreeRenderer.PIXELS_PER_LEVEL - this.SmallImageSize.Width);
             }

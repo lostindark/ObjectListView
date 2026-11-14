@@ -67,6 +67,35 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
+        public void Test_DataSetInitialNameWidthFitsRendererContentAndRetainsUserResizing() {
+            using (var form = new ObjectListViewDemo.MainForm()) {
+                form.ShowInTaskbar = false;
+                form.Show();
+                var tab = Descendants(form).OfType<ObjectListViewDemo.TabDataSet>().Single();
+                var tabs = Descendants(form).OfType<TabControl>().First();
+                tabs.SelectedTab = (TabPage)tab.Parent;
+                Application.DoEvents();
+                ObjectListViewBase list = tab.ListView;
+                OLVColumn column = list.GetColumn(0);
+                Assert.IsTrue(list.GetItemCount() > 0);
+                using (Graphics graphics = list.CreateGraphics())
+                    for (int i = 0; i < list.GetItemCount(); i++) {
+                        OLVListItem item = list.GetItem(i);
+                        var renderer = (BaseRenderer)list.GetCellRenderer(item.RowObject, column);
+                        Assert.IsTrue(column.Width >= renderer.GetPreferredWidth(graphics, item, column.Index));
+                        CellLayout layout = renderer.GetCellLayout(graphics, item.GetSubItemBounds(column.Index), item, column.Index);
+                        Assert.IsTrue(layout.TextBounds.Width >= graphics.MeasureString(item.Text, renderer.Font).Width,
+                            $"Initial name column still wraps or clips '{item.Text}'.");
+                    }
+                column.Width = 90;
+                tabs.SelectedIndex = 0;
+                tabs.SelectedTab = (TabPage)tab.Parent;
+                Application.DoEvents();
+                Assert.AreEqual(90, column.Width);
+            }
+        }
+
+        [TestMethod]
         public void Test_ManagedCheckboxImages_SurviveNativeRefreshAndDisposal() {
             using (var images = new ImageList())
             using (var icons = new ImageList())

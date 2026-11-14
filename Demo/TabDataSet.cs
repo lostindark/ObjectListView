@@ -29,6 +29,7 @@ namespace ObjectListViewDemo
             SetupCellFormatting();
 
             ReloadDataGridAndListView();
+            this.olvData.AutoResizeColumnToContents(0);
         }
 
         private void SetupCellFormatting() {

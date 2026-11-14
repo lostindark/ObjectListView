@@ -7606,6 +7606,12 @@ namespace BrightIdeasSoftware
                             m.Result = (IntPtr)1; // prevent the change from happening
                             isMsgHandled = true;
                         }
+                        else if (this.OwnerDraw && this.View == View.Details &&
+                            (nmheader.nhdr.code == HDN_DIVIDERDBLCLICKA || nmheader.nhdr.code == HDN_DIVIDERDBLCLICKW)) {
+                            this.ResizeOwnerDrawnColumnToContents(column);
+                            m.Result = (IntPtr)1;
+                            isMsgHandled = true;
+                        }
                     }
                     break;
                 case HDN_ENDTRACKA:

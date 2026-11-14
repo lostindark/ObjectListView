@@ -61,6 +61,19 @@ namespace BrightIdeasSoftware {
             return this.CalculateCellLayout(g, cellBounds);
         }
 
+        /// <summary>Measures the width needed to display the complete cell content without wrapping.</summary>
+        public virtual int GetPreferredWidth(Graphics g, OLVListItem item, int subItemIndex) {
+            this.ConfigureCell(item.GetSubItemBounds(subItemIndex), item, subItemIndex);
+            Rectangle cell = new Rectangle(0, 0, int.MaxValue / 2, int.MaxValue / 2);
+            Rectangle content = this.GetContentBounds(cell);
+            return this.CalculatePreferredContentSize(g, content).Width + cell.Width - content.Width + 2;
+        }
+
+        /// <summary>Measures intrinsic content size independently of a renderer's stretch-to-cell policy.</summary>
+        protected virtual Size CalculatePreferredContentSize(Graphics g, Rectangle contentBounds) {
+            return this.CalculateContentSize(g, contentBounds);
+        }
+
         private void ConfigureCell(Rectangle cellBounds, OLVListItem item, int subItemIndex) {
             this.ClearState();
             this.ListView = (ObjectListViewBase)item.ListView;

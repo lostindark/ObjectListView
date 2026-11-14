@@ -190,6 +190,16 @@ target; checkbox-only and button renderers expose their own target bounds.
 Recalculate after scrolling, resizing/reordering columns, changing DPI, or
 changing styles, fonts, or images; snapshots are not live caches.
 
+Double-clicking a header divider in owner-drawn Details view now sizes the column
+using the renderer's full content measurements, including fonts, checkbox/image
+space, padding, and indentation. Regular lists measure all current rows; virtual
+lists retain bounded visible-row sizing. Use `AutoResizeColumnToContents` for
+explicit renderer-aware sizing on any list, including offscreen virtual rows.
+The DataSet demo uses it once after initial binding to fit the Name column.
+Native `AutoResizeColumn`
+and `ColumnHeader.AutoResize` calls remain unchanged. Custom `BaseRenderer`
+subclasses can override `GetPreferredWidth` for bespoke layouts.
+
 Owner-drawn cell bounds now consistently use `OLVListItem.GetSubItemBounds`.
 Standard text editors start at the painted text edge, exclude glyphs and tree
 indentation, and stay within the padded horizontal area. `CellEditUseWholeCell`

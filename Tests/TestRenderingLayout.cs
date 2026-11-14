@@ -541,6 +541,164 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         [TestMethod]
+        [DataRow(false, false, false)]
+        [DataRow(false, true, false)]
+        [DataRow(true, false, false)]
+        [DataRow(true, true, false)]
+        [DataRow(false, false, true)]
+        [DataRow(false, true, true)]
+        public void DividerAutosizingFitsRendererTextImagesCheckboxesAndPadding(bool virtualMode, bool rtl, bool gdi) {
+            using (ObjectListViewBase list = virtualMode ? (ObjectListViewBase)new FastObjectListView() : new LayoutList())
+            using (HighlightTextRenderer renderer = new HighlightTextRenderer { CanWrap = !gdi, UseGdiTextRendering = gdi }) {
+                ConfigureList(list, rtl);
+                list.DefaultRenderer = renderer;
+                list.CheckBoxes = true;
+                list.CellPadding = new Rectangle(11, 3, 9, 3);
+                list.GetColumn(0).ImageGetter = x => gdi ? null : "image";
+                Show(list);
+                const string name = "Jonathan Phillip Piper";
+                list.ModelObjects = new object[] { name };
+                OLVColumn column = list.GetColumn(0);
+                column.Width = 50;
+                column.DisplayIndex = 1;
+                ResizeViaDivider(list, column.Index);
+                list.RowHeight = 90;
+                list.Refresh();
+                OLVListItem item = list.GetItem(0);
+                using (Graphics g = list.CreateGraphics()) {
+                    CellLayout layout = renderer.GetCellLayout(g, item.GetSubItemBounds(0), item, 0);
+                    float textWidth = gdi ? TextRenderer.MeasureText(g, name, list.Font, Size.Empty,
+                        TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix).Width : g.MeasureString(name, list.Font).Width;
+                    Assert.IsTrue(layout.TextBounds.Width >= textWidth);
+                    int singleLineHeight = Math.Max(images.ImageSize.Height, (int)Math.Ceiling(g.MeasureString(name, list.Font).Height) + 1);
+                    Assert.IsTrue(layout.TextBounds.Height <= singleLineHeight,
+                        $"Autosized text still wraps in {layout.TextBounds}.");
+                    Assert.IsFalse(layout.TextBounds.IntersectsWith(layout.ImageBounds));
+                    Assert.IsFalse(layout.TextBounds.IntersectsWith(layout.CheckBoxBounds));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void DividerAutosizingVirtualRowsStaysBoundedButExplicitSizingIncludesOffscreenRows() {
+            using (FastObjectListView list = new FastObjectListView()) {
+                ConfigureList(list, false);
+                List<string> rows = new List<string>();
+                for (int i = 0; i < 199; i++)
+                    rows.Add("short");
+                rows.Add(new string('W', 100));
+                Show(list);
+                list.SetObjects(rows);
+                ResizeViaDivider(list, 0);
+                int visibleWidth = list.GetColumn(0).Width;
+                list.AutoResizeColumnToContents(0);
+                Assert.IsTrue(list.GetColumn(0).Width > visibleWidth);
+            }
+        }
+
+        [TestMethod]
+        [DataRow(OLVColumn.ButtonSizingMode.CellBounds)]
+        [DataRow(OLVColumn.ButtonSizingMode.FixedBounds)]
+        public void DividerAutosizingStretchButtonsMeasuresTheirIntrinsicContent(OLVColumn.ButtonSizingMode sizing) {
+            using (LayoutList list = new LayoutList())
+            using (ColumnButtonRenderer renderer = new ColumnButtonRenderer { SizingMode = sizing }) {
+                ConfigureList(list, false);
+                list.GetColumn(0).Renderer = renderer;
+                Show(list);
+                list.SetObjects(Rows);
+                ResizeViaDivider(list, 0);
+                Assert.IsTrue(list.GetColumn(0).Width >= TextRenderer.MeasureText(Rows[0], list.Font).Width);
+                Assert.IsTrue(list.GetColumn(0).Width < 200);
+            }
+        }
+
+        [TestMethod]
+        public void DividerAutosizingGroupedVirtualRowsMeasuresTheScrolledViewport() {
+            using (FastObjectListView list = new FastObjectListView()) {
+                ConfigureList(list, false);
+                OLVColumn column = list.GetColumn(0);
+                column.GroupKeyGetter = x => ((string)x).StartsWith("first", StringComparison.Ordinal) ? "A" : "B";
+                list.ShowGroups = true;
+                List<string> rows = new List<string>();
+                for (int i = 0; i < 50; i++)
+                    rows.Add("first " + i);
+                string wide = "last " + new string('W', 60);
+                rows.Add(wide);
+                Show(list);
+                list.SetObjects(rows);
+                list.Sort(column, SortOrder.Ascending);
+                OLVListItem item = list.ModelToItem(wide);
+                list.EnsureVisible(item.Index);
+                list.Refresh();
+                Assert.AreEqual(0, list.TopItemIndex);
+                Assert.IsTrue(item.Bounds.IntersectsWith(list.ClientRectangle));
+                ResizeViaDivider(list, 0);
+                Assert.IsTrue(column.Width >= TextRenderer.MeasureText(wide, list.Font).Width);
+            }
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void DividerAutosizingDoesNotMaterializeCollapsedVirtualGroupMembers(bool fullRowSelect) {
+            using (FastObjectListView list = new FastObjectListView()) {
+                ConfigureList(list, false);
+                list.FullRowSelect = fullRowSelect;
+                OLVColumn column = list.GetColumn(0);
+                column.GroupKeyGetter = x => ((string)x).StartsWith("visible", StringComparison.Ordinal) ? "A" : "B";
+                list.ShowGroups = true;
+                List<string> rows = new List<string>();
+                for (int i = 0; i < 5; i++)
+                    rows.Add("visible " + i);
+                for (int i = 0; i < 1000; i++)
+                    rows.Add("hidden " + i);
+                Show(list);
+                list.SetObjects(rows);
+                list.Sort(column, SortOrder.Ascending);
+                list.OLVGroups[1].Collapsed = true;
+                list.Refresh();
+                Application.DoEvents();
+                int collapsedReads = 0;
+                list.RowFormatter = item => {
+                    if (((string)item.RowObject).StartsWith("hidden", StringComparison.Ordinal))
+                        collapsedReads++;
+                };
+                ResizeViaDivider(list, 0);
+                Assert.AreEqual(0, collapsedReads);
+                Assert.IsTrue(column.Width >= TextRenderer.MeasureText("visible 0", list.Font).Width);
+            }
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void DividerAutosizingSingleColumnTreesFindsIndentedRowsWithoutFullRowSelection(bool rtl) {
+            using (TreeListView tree = new TreeListView()) {
+                ConfigureList(tree, rtl);
+                tree.Columns.RemoveAt(1);
+                tree.AllColumns.RemoveAt(1);
+                tree.FullRowSelect = false;
+                tree.GetColumn(0).Width = 80;
+                string root = "root " + new string('W', 30);
+                string child = "child " + new string('W', 60);
+                tree.CanExpandGetter = model => (string)model == root;
+                tree.ChildrenGetter = model => new[] { child };
+                Show(tree);
+                tree.Roots = new[] { root };
+                tree.Expand(root);
+                ResizeViaDivider(tree, 0);
+                OLVListItem item = tree.ModelToItem(child);
+                using (Graphics g = tree.CreateGraphics()) {
+                    CellLayout layout = tree.TreeColumnRenderer.GetCellLayout(g, item.GetSubItemBounds(0), item, 0);
+                    int textWidth = TextRenderer.MeasureText(g, child, tree.Font, Size.Empty,
+                        TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix).Width;
+                    Assert.IsTrue(layout.TextBounds.Width >= textWidth,
+                        $"Indented child still clips after divider sizing: {layout.TextBounds}.");
+                }
+            }
+        }
+
+        [TestMethod]
         [DataRow(false, HorizontalAlignment.Left)]
         [DataRow(false, HorizontalAlignment.Center)]
         [DataRow(false, HorizontalAlignment.Right)]
@@ -581,6 +739,35 @@ namespace BrightIdeasSoftware.Tests {
                     Assert.IsTrue(Math.Abs(firstAnchor - secondAnchor) <= 4, $"Line anchors differ: {first}, {second}");
                 }
             }
+        }
+
+        private static void ResizeViaDivider(ObjectListViewBase list, int column) {
+            HeaderNotification notification = new HeaderNotification {
+                Header = new NotificationHeader { Window = list.HeaderControl.Handle, Code = -325 },
+                Column = column
+            };
+            IntPtr buffer = Marshal.AllocHGlobal(Marshal.SizeOf<HeaderNotification>());
+            try {
+                Marshal.StructureToPtr(notification, buffer, false);
+                Assert.AreEqual((IntPtr)1, SendMessage(list.Handle, 0x4e, IntPtr.Zero, buffer));
+            } finally {
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct NotificationHeader {
+            public IntPtr Window;
+            public IntPtr Id;
+            public int Code;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct HeaderNotification {
+            public NotificationHeader Header;
+            public int Column;
+            public int Button;
+            public IntPtr Item;
         }
 
         private void ConfigureList(ObjectListViewBase list, bool rtl) {
@@ -689,5 +876,7 @@ namespace BrightIdeasSoftware.Tests {
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool ClientToScreen(IntPtr window, ref Point point);
 
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
     }
 }

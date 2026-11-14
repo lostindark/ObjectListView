@@ -177,8 +177,86 @@ outlive their use. Fonts derived by OLV are cached per control and disposed with
 it; returned resolved fonts must not be disposed by callers.
 
 The legacy style types are retained as input adapters, not a second rendering
-API. Their removal, if any, belongs to the final API-cleanup phase after
-consumer/designer migration; this phase does not obsolete or remove them.
+API. The preview cleanup does not obsolete or remove them: existing consumers
+and designer-generated code still use them.
+
+## Preview API cleanup and compatibility policy
+
+The preview establishes the following cleanup decisions. It is not a final API
+freeze; subsequent previews may still introduce documented breaking changes.
+
+| API or extension point | Preview decision |
+| --- | --- |
+| `CheckedObjectsEnumerable` | Removed; use the replacements below |
+| `Objects`, `SelectedObjects`, `CheckedObjects`, enumerable commands, typed adapters, and source hooks | Keep the implemented snapshot/sequence contracts |
+| `Grouping` and operation-local grouping callbacks | Keep; deprecated grouping properties remain working adapters |
+| `StyleSheet`, style callbacks, and renderer layout/hit-test/editor hooks | Keep; no new member is required on `IRenderer` |
+| Legacy cell/header/tooltip styles and format events | Keep as adapters; preserve designer serialization and event precedence |
+| Other already-obsolete members | Retain their existing warning/error and behavior; their attributes identify replacements where available |
+| `IVirtualListDataSource` and custom grouping strategies | Keep the implemented contracts; no replacement interface is introduced in this preview |
+
+### Replacing CheckedObjectsEnumerable
+
+The alias is removed from `ObjectListViewBase` and all derived controls because
+the normal checked-object API already supports snapshots and sequence inputs.
+Replace reads with `CheckedObjects` (or `CheckedModelObjects` through the shared
+base) and sequence writes with `SetCheckedObjects`:
+
+```csharp
+var checkedSnapshot = list.CheckedObjects;
+list.SetCheckedObjects(list.Objects); // Check all source models.
+list.SetCheckedObjects(list.Objects.Where(model => model.IsActive));
+list.SetCheckedObjects(null); // Uncheck all.
+```
+
+This example assumes a typed control and imports `System.Linq`. For non-generic
+controls, query with `Cast<Person>()`. Snapshot, filtering, checkbox-disabled,
+and null behavior are unchanged.
+
+The old alias's setter invoked the virtual checked-object **property**.
+`SetCheckedObjects(IEnumerable)` invokes the virtual **method**, not a property
+override. If a subclass deliberately overrides `CheckedObjects`, preserve that
+path by materializing once and assigning the property:
+
+```csharp
+list.CheckedObjects = models == null ? null : models.ToArray();
+```
+
+On a non-generic control use `models.Cast<object>().ToArray()`; through
+`ObjectListViewBase`, assign `CheckedModelObjects` using
+`ObjectListViewBase.EnumerableToArray(models, alwaysCreate: true)`.
+Update overrides of the removed alias to `CheckedObjects`/`CheckedModelObjects`
+for property customization or `SetCheckedObjects(IEnumerable)` for sequence
+customization. Materialize before mutation to retain enumeration-failure safety.
+
+### Assembly and package versions
+
+The local package default is `3.0.0-preview`. CI retains its `3.0.<run>-preview`
+package naming; publication is an explicit workflow action after successful CI
+and interactive acceptance, not a side effect of building or packing. Stable
+publication must wait for preview feedback and final API acceptance.
+
+`ObjectListView.dll` has a fixed assembly version of `3.0.0.0` instead of the
+V2 date-based wildcard. File versions follow the numeric build `Version`;
+informational versions include the preview/build version and source revision
+when supplied by the SDK. CI builds stable binaries for its stable package,
+then rebuilds Release with the preview version for its preview package.
+Each package's binaries identify the corresponding package version; only
+preview builds receive the `-preview` suffix.
+The original strong-name key is retained. The main demo and ListViewPrinter
+also use SDK-generated version attributes, defaulting to assembly version
+`3.0.0.0` and build `Version` of `3.0.0-preview`. MSBuild can override
+`AssemblyVersion`, `FileVersion`, `InformationalVersion`, and `Version`;
+`FileVersion` otherwise follows the numeric `Version`.
+
+V3 is **not binary compatible with V2**. Recompile applications, custom renderers,
+subclasses, and designer extensions against matching V3 assemblies. A binding
+redirect alone cannot repair removed members or changed signatures. Source
+compatibility is retained only for APIs explicitly kept above; replacements for
+implemented breaking changes are documented throughout this guide.
+Within previews, a shared assembly version does not promise binary compatibility.
+The source-only partial-file split does not change type names, accessibility,
+virtual dispatch, designer metadata, or the saved-layout format.
 
 ## Shared rendering and hit-test layout
 
@@ -548,8 +626,9 @@ and tree expansion; changes invalidate active row enumerators. `ModelObjects`
 is shared source access, not a snapshot or display-order guarantee.
 
 Selection/check property assignments still work. Prefer `SetSelectedObjects`
-and `SetCheckedObjects` for sequence inputs; `CheckedObjectsEnumerable` remains
-a compatibility alias.
+and `SetCheckedObjects` for sequence inputs; see
+[the removed checked-object alias](#replacing-checkedobjectsenumerable) when
+migrating older code.
 
 ## Enumeration, events, and threading
 
@@ -600,7 +679,8 @@ public override void AddObjects(System.Collections.IEnumerable models) {
 controls). To customize sequence-based checking, override
 `SetCheckedObjects(IEnumerable)` and route the property setter through it.
 The method does not automatically invoke a property override; typed property
-assignments and the `CheckedObjectsEnumerable` alias retain that behavior.
+assignments retain that behavior. Replace the removed `CheckedObjectsEnumerable`
+setter with a materialized property assignment when this distinction matters.
 
 For custom `IVirtualListDataSource` implementations, materialize inputs before
 mutation if they refer to the source or require multiple passes:

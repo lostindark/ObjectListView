@@ -1,12 +1,4 @@
 /*
- * Enums - All enum definitions used in ObjectListView
- *
- * Author: Phillip Piper
- * Date: 31-March-2011 5:53 pm
- *
- * Change log:
- * 2011-03-31  JPP  - Split into its own file
- * 
  * Copyright (C) 2011-2014 Phillip Piper
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,18 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BrightIdeasSoftware {
-
-    /// <summary>Determines the application-wide default palette for ObjectListView.</summary>
-    public enum ObjectListViewColorMode {
-        /// <summary>Follow the app's WinForms mode on .NET 10, or the sampled Windows preference on Framework.</summary>
-        System,
-        /// <summary>Use native Windows light colors.</summary>
-        Light,
-        /// <summary>Use the dark palette unless high contrast is enabled.</summary>
-        Dark
-    }
-
+namespace BrightIdeasSoftware
+{
     public partial class ObjectListViewBase {
         /// <summary>
         /// How does a user indicate that they want to edit cells?

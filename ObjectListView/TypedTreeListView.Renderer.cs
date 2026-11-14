@@ -1,5 +1,5 @@
 ﻿/*
- * TreeRenderer - Draw the major column in a TreeListView
+ * TypedTreeListView.Renderer - Draw the major column in a TreeListView
  *
  * Author: Phillip Piper
  * Date: 27/06/2015 

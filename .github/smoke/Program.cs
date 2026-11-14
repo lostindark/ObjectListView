@@ -36,6 +36,16 @@ internal static class Program
                 form.Controls.Add(list);
                 list.SetObjects(models);
                 list.CreateControl();
+                list.CheckBoxes = true;
+                list.SetCheckedObjects(list.Objects.Cast<Row>().Where(model => model.Name == "Ada"));
+                var checkedSnapshot = list.CheckedObjects;
+                list.SetCheckedObjects(null);
+                if (checkedSnapshot.Count != 1 || checkedSnapshot[0] != models[0] ||
+                    list.CheckedObjects.Count != 0)
+                    throw new InvalidOperationException("Checked sequence/snapshot migration failed.");
+                list.CheckedObjects = checkedSnapshot;
+                if (list.CheckedObject != models[0])
+                    throw new InvalidOperationException("Checked snapshot assignment failed.");
                 byte[] original = list.SaveState();
                 if (args[0] == "write")
                     File.WriteAllBytes(args[1], original);

@@ -27,14 +27,6 @@ using System.Runtime.InteropServices;
 // If you need to expose a type to COM, use [ComVisible(true)] on that type.
 [assembly: ComVisible(false)]
 
-// The assembly version has following format :
-//
-// Major.Minor.Build.Revision
-//
-// You can specify all values by your own or you can build default build and revision
-// numbers with the '*' character (the default):
-
-[assembly: AssemblyVersion("2.9.0.*")]
-[assembly: AssemblyFileVersionAttribute("2.9.0")]
+// Version attributes are generated from ObjectListViewDemo.csproj.
 [assembly: System.CLSCompliant(true)]
 [assembly: InternalsVisibleTo("Tests")]

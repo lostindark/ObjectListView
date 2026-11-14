@@ -34,13 +34,14 @@ January 12, 2027. Changes to Windows compatibility require a separate support de
 | Grouping redesign | Implemented: explicit policy, deprecated setting adapters, independent item ordering, cancellation, and collapsed-state restoration |
 | Unified style precedence | Implemented: per-property sheets, combined-state rules, callbacks, and legacy adapters |
 | Shared rendering/hit-test layout | Implemented: renderer-owned cell/header geometry, shared targets, tree indentation, and editor placement |
-| Final API cleanup and release | Pending |
+| Final API cleanup and release | Cleanup and preview packaging implemented; publication and interactive release acceptance pending |
 
 ## Platform migration checkpoint
 
 The runtime migration, NuGet designer integration, and grouping redesign are
 implemented, together with shared style resolution and renderer-owned layout.
-Final API cleanup and preview-release acceptance remain.
+Preview cleanup and packaging are implemented. Preview publication, performance
+baselines, and interactive release acceptance remain.
 
 ### Implemented foundations
 
@@ -222,8 +223,8 @@ rules and the final `StyleResolving` callback consume their results. Headers
 inherit per property from legacy styles before shared overrides; native tooltips
 apply shared/event overrides temporarily and restore their settings when popped.
 High contrast keeps system colors authoritative, and derived fonts are
-control-owned. Existing style APIs remain adapters until final API cleanup
-establishes their migration/removal policy.
+control-owned. Existing style APIs remain supported adapters in the preview cleanup policy;
+they are not obsoleted or removed.
 
 Focused regressions cover combined/excluded states, scope and callback
 precedence, regular/virtual/tile rows, pressed capture loss, actual cell/header
@@ -263,15 +264,45 @@ DPI transitions remain an interactive release-acceptance check.
 
 ## Phase 6: cleanup and preview release
 
-Once contracts stabilize:
+**Cleanup and local preview preparation implemented; release not published.**
 
-- Split `ObjectListViewBase.cs` into focused partial files where it improves cohesion.
-- Retire redundant compatibility APIs such as `CheckedObjectsEnumerable` only after
-  their replacements and migration impact are established.
-- Update demos, designer-generated code, and migration examples.
-- Set assembly/package versions deliberately, preserving signing and documenting
-  source/binary compatibility.
-- Release a v3 preview before freezing the final API.
+- `ObjectListViewBase` now separates model operations, native messages, columns,
+  checks, editing, images, events, interaction, decorations, and saved state into
+  focused partial files. Existing grouping/style/layout partials are retained;
+  moved implementations and extension-point signatures are unchanged.
+- Typed column/data-source/row helpers have separate files. Base and tree event
+  declarations, nested enums, and the nested tree renderer are grouped with their
+  owning controls. Column appearance properties live with `OLVColumn`.
+  Theme services are grouped under `Theming`; the column-selection form and its
+  designer/resource files live together under `SubControls`, retaining the same
+  resource name and public types.
+- `CheckedObjectsEnumerable` is removed. The migration guide establishes
+  sequence-command and snapshot-property replacements, including the difference
+  between method overrides and the old alias's property dispatch.
+- The preview API inventory keeps working grouping/style adapters, custom
+  renderer hooks, and data-source interfaces; it does not remove unrelated
+  obsolete members or introduce replacement interfaces.
+- Current demos and designer-generated code use retained APIs; migrated tests,
+  examples, and packaged consumers exercise the replacement check APIs.
+- Runtime assembly identity is fixed at `3.0.0.0`, signing is retained, and local
+  packing defaults to `3.0.0-preview`. CI builds stable and preview artifacts
+  with matching binary versions. Source/binary compatibility is documented.
+
+Local automated acceptance passes solution builds and the retained test matrix
+in Debug and Release on both targets, without skips. Fresh preview consumers
+build in both configurations, run on `net462`, `net48`, and .NET 10, and exchange
+saved layouts in both directions. Framework source-reference consumers also
+build and run on `net462` and `net48`. Actual-demo fixtures cover both demos;
+these checks do not replace the interactive gates below.
+
+Remaining release gates:
+
+- Establish the Phase 1 performance measurements and regression budgets.
+- Recreate interactive designer and physical cross-monitor DPI acceptance from
+  a fresh checkout; do not infer these checks from automated UI tests.
+- Confirm CI on the revision selected for publication, then explicitly publish
+  a preview through the existing Publish NuGet workflow.
+- Gather preview feedback before freezing the final API or publishing stable V3.
 
 **Exit criteria:** retained tests pass in Debug and Release, new contracts have
 focused coverage, demos run, representative consumers and serialization work,

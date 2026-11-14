@@ -118,7 +118,10 @@ This grouping can be customised in several ways:
 
 For values that form a continous range (like salaries, height, grades), the `MakeGroupies` utility method can easily create more meaningful groupings.
 
-Groups normally change according to the sort column. You can "lock" the groups to be on a particular column via the `AlwaysGroupByColumn` property.
+Groups normally follow the sort column. Lock them to a particular column with
+`list.Grouping = GroupingConfiguration.Fixed(column)`, or unlock with
+`GroupingConfiguration.FollowSorting()`. The old `AlwaysGroupByColumn` property
+remains a deprecated adapter; see the [migration guide](v3-migration.md).
 
 See [Grouping](getting-started.md#grouping-label) for more details.
 

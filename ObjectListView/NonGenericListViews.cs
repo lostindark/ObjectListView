@@ -1,4 +1,9 @@
 namespace BrightIdeasSoftware {
+    /// <summary>
+    /// Non-generic control backed by the object specialization of the generic list view.
+    /// </summary>
+    public class ObjectListView : TypedObjectListView<object> { }
+
     /// <summary>The non-generic object specialization of the virtual control.</summary>
     public class VirtualObjectListView : TypedVirtualObjectListView<object> { }
 

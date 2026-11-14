@@ -129,7 +129,7 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
-        public void TestSetCheckedObjects_CustomGetterAndCompatibilityAlias() {
+        public void TestSetCheckedObjects_CustomGetterAndSequenceReplacement() {
             var checkedModels = new HashSet<object>();
             this.olv.CheckStateGetter = model => checkedModels.Contains(model) ? CheckState.Checked : CheckState.Unchecked;
             this.olv.CheckStatePutter = delegate(object model, CheckState state) {
@@ -148,7 +148,7 @@ namespace BrightIdeasSoftware.Tests
             this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(PersonDb.All.Take(2)));
             CollectionAssert.AreEquivalent(PersonDb.All.Take(2).ToArray(), this.olv.CheckedModelObjects);
 
-            this.olv.CheckedObjectsEnumerable = new SingleUseEnumerable<Person>(PersonDb.All.Skip(2).Take(1));
+            this.olv.SetCheckedObjects(new SingleUseEnumerable<Person>(PersonDb.All.Skip(2).Take(1)));
             Assert.AreEqual(PersonDb.All[2], this.olv.CheckedObjects[0]);
             Assert.AreEqual(1, this.olv.CheckedObjects.Count);
             this.olv.SetCheckedObjects(null);

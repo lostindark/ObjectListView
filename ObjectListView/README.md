@@ -12,6 +12,8 @@ This project is a fork of the
 breaking API changes and recompile their applications. Read the
 [migration guide](https://github.com/lostindark/ObjectListView/blob/main/docs/v3-migration.md)
 before upgrading.
+Preview builds use the original signing key with V3 assembly identity
+`3.0.0.0`. The local package default is `3.0.0-preview`; preview APIs are not frozen.
 
 ## Install
 

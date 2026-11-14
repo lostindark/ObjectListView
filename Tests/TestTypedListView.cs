@@ -666,7 +666,7 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         [TestMethod]
-        public void Test_CheckedObjectsEnumerable_HonorsControlPropertyOverride() {
+        public void Test_CheckedObjectsSnapshotAssignment_HonorsControlPropertyOverride() {
             using (var list = new PropertyGuardListView { View = View.Details, ShowGroups = false }) {
                 list.Columns.Add(new OLVColumn("Name", "Name"));
                 mainForm.Controls.Add(list);
@@ -676,13 +676,18 @@ namespace BrightIdeasSoftware.Tests {
                 list.CheckedObject = PersonDb.All[1];
 
                 list.RejectPropertyChanges = true;
-                list.CheckedObjectsEnumerable = new SingleUseEnumerable<Person>(PersonDb.All.Take(1));
+                list.CheckedObjects = new SingleUseEnumerable<Person>(PersonDb.All.Take(1)).Cast<object>().ToArray();
+                Assert.AreSame(PersonDb.All[1], list.CheckedObject);
+                list.CheckedObjects = null;
                 Assert.AreSame(PersonDb.All[1], list.CheckedObject);
 
                 list.RejectPropertyChanges = false;
-                list.CheckedObjectsEnumerable = new SingleUseEnumerable<Person>(PersonDb.All.Take(1));
+                list.CheckedObjects = new SingleUseEnumerable<Person>(PersonDb.All.Take(1)).Cast<object>().ToArray();
                 Assert.AreSame(PersonDb.All[0], list.CheckedObject);
-                list.CheckedObjectsEnumerable = null;
+                Assert.ThrowsExactly<InvalidOperationException>(() =>
+                    list.CheckedObjects = EnumerableTestData.FailAfter(PersonDb.All[1]).Cast<object>().ToArray());
+                Assert.AreSame(PersonDb.All[0], list.CheckedObject);
+                list.CheckedObjects = null;
                 Assert.IsEmpty(list.CheckedObjects);
             }
         }

@@ -308,15 +308,5 @@ namespace BrightIdeasSoftware {
         }
     }
 
-    public partial class OLVColumn {
-        /// <summary>Column cell overrides of inherited row appearance.</summary>
-        [Category("Appearance"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-        public StyleSheet CellAppearance { get; } = new StyleSheet();
-        /// <summary>Column header overrides of the shared header appearance.</summary>
-        [Category("Appearance"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-        public StyleSheet HeaderAppearance { get; } = new StyleSheet();
-        /// <summary>Column tooltip overrides of the shared tooltip appearance.</summary>
-        [Category("Appearance"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-        public StyleSheet ToolTipAppearance { get; } = new StyleSheet();
-    }
+
 }

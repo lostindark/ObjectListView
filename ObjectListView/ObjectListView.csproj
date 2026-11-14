@@ -3,15 +3,23 @@
     <TargetFrameworks>net462;net10.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>BrightIdeasSoftware</RootNamespace>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <!-- Preserve the wildcard assembly version in Properties\AssemblyInfo.cs. -->
-    <Deterministic>false</Deterministic>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+    <GenerateAssemblyTrademarkAttribute>false</GenerateAssemblyTrademarkAttribute>
+    <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
+    <Deterministic>true</Deterministic>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>olv-keyfile.snk</AssemblyOriginatorKeyFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <GenerateResourceUsePreserializedResources Condition="'$(TargetFramework)' == 'net462'">false</GenerateResourceUsePreserializedResources>
     <PackageId>ObjectListView.WinForms</PackageId>
-    <Version>3.0.0-dev</Version>
+    <Version>3.0.0-preview</Version>
     <Title>ObjectListView for Windows Forms</Title>
     <Authors>Phillip Piper; Teddy Z</Authors>
     <Description>A maintained fork of ObjectListView, a Windows Forms ListView control with model-based rows, sorting, grouping, filtering, cell editing, and tree views.</Description>
@@ -39,28 +47,25 @@
     </ItemGroup>
   </Target>
   <ItemGroup>
-    <Compile Update="DataTreeListView.cs" SubType="Component" />
-    <Compile Update="Implementation\Enums.cs" SubType="Component" />
+    <Compile Update="TypedDataTreeListView.cs" SubType="Component" />
     <Compile Update="OLVColumn.cs" SubType="Component" />
-    <Compile Update="DataListView.cs" SubType="Component" />
-    <Compile Update="Implementation\Events.cs" SubType="Component" />
-    <Compile Update="FastDataListView.cs" SubType="Component" />
-    <Compile Update="FastObjectListView.cs" SubType="Component" />
-    <Compile Update="Rendering\TreeRenderer.cs" SubType="Component" />
+    <Compile Update="TypedDataListView.cs" SubType="Component" />
+    <Compile Update="TypedFastDataListView.cs" SubType="Component" />
+    <Compile Update="TypedFastObjectListView.cs" SubType="Component" />
+    <Compile Update="TypedTreeListView.Renderer.cs" SubType="Component" />
     <Compile Update="SubControls\ToolStripCheckedListBox.cs" SubType="Component" />
-    <Compile Update="Utilities\ColumnSelectionForm.cs" SubType="Form" />
-    <Compile Update="Utilities\ColumnSelectionForm.Designer.cs" DependentUpon="ColumnSelectionForm.cs" />
+    <Compile Update="SubControls\ColumnSelectionForm.cs" SubType="Form" />
+    <Compile Update="SubControls\ColumnSelectionForm.Designer.cs" DependentUpon="ColumnSelectionForm.cs" />
     <Compile Update="SubControls\GlassPanelForm.cs" SubType="Form" />
     <Compile Update="SubControls\HeaderControl.cs" SubType="Code" />
-    <Compile Update="ObjectListView.cs" SubType="Component" />
     <Compile Update="ObjectListViewBase.cs" SubType="Component" />
     <Compile Update="Rendering\Renderers.cs" SubType="Component" />
     <Compile Update="Rendering\Styles.cs" SubType="Component" />
-    <Compile Update="TreeListView.cs" SubType="Component" />
-    <Compile Update="VirtualObjectListView.cs" SubType="Component" />
+    <Compile Update="TypedTreeListView.cs" SubType="Component" />
+    <Compile Update="TypedVirtualObjectListView.cs" SubType="Component" />
     <Compile Update="Properties\Resources.Designer.cs" AutoGen="true" DesignTime="true" DependentUpon="Resources.resx" />
     <EmbeddedResource Update="Properties\Resources.resx" Generator="ResXFileCodeGenerator" LastGenOutput="Resources.Designer.cs" SubType="Designer" />
-    <EmbeddedResource Update="Utilities\ColumnSelectionForm.resx" DependentUpon="ColumnSelectionForm.cs" />
+    <EmbeddedResource Update="SubControls\ColumnSelectionForm.resx" DependentUpon="ColumnSelectionForm.cs" LogicalName="BrightIdeasSoftware.ColumnSelectionForm.resources" />
     <None Include="..\LICENSE" Pack="true" PackagePath="\" />
     <None Remove="README.md" />
     <None Include="README.md" Pack="true" PackagePath="\" />

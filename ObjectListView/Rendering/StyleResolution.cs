@@ -134,7 +134,8 @@ namespace BrightIdeasSoftware {
         internal void Apply(StyleValues result, StyleState state, bool includeNormal) {
             if (includeNormal)
                 result.Overlay(Normal);
-            foreach (StyleRule rule in States) {
+            for (int i = 0; i < States.Count; i++) {
+                StyleRule rule = States[i];
                 if (rule.Matches(state))
                     result.Overlay(rule.Values);
             }

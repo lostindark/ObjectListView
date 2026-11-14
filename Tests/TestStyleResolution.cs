@@ -261,6 +261,35 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         [TestMethod]
+        public void RendererRechecksEmptyStylesAndCallbacksForEachConfiguredCell() {
+            OLVListItem item = list.GetItem(0);
+            using (BaseRenderer renderer = new BaseRenderer())
+            using (Bitmap bitmap = new Bitmap(180, 40))
+            using (Graphics graphics = Graphics.FromImage(bitmap)) {
+                Configure(renderer, graphics, item, 0, bitmap.Size);
+                Assert.AreEqual(item.ForeColor, renderer.GetForegroundColor());
+                list.RowAppearance.States.Add(Rule(StyleState.Normal, Color.Magenta));
+                Configure(renderer, graphics, item, 0, bitmap.Size);
+                Assert.AreEqual(Color.Magenta, renderer.GetForegroundColor());
+                list.RowAppearance.States.Clear();
+                int calls = 0;
+                EventHandler<StyleResolvingEventArgs> callback = (sender, e) => {
+                    calls++;
+                    e.Values.ForeColor = Color.Blue;
+                };
+                list.StyleResolving += callback;
+                Configure(renderer, graphics, item, 0, bitmap.Size);
+                Assert.AreEqual(Color.Blue, renderer.GetForegroundColor());
+                _ = renderer.Font;
+                _ = renderer.GetBackgroundColor();
+                Assert.AreEqual(1, calls);
+                list.StyleResolving -= callback;
+                Configure(renderer, graphics, item, 0, bitmap.Size);
+                Assert.AreEqual(item.ForeColor, renderer.GetForegroundColor());
+            }
+        }
+
+        [TestMethod]
         [DataRow(StyleTarget.Cell, StyleState.Normal, true, KnownColor.WindowText, KnownColor.Window)]
         [DataRow(StyleTarget.Cell, StyleState.Selected, true, KnownColor.WindowText, KnownColor.Window)]
         [DataRow(StyleTarget.Cell, StyleState.Selected, false, KnownColor.HighlightText, KnownColor.Highlight)]

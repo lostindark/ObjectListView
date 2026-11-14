@@ -450,6 +450,51 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         [TestMethod]
+        public void HeightAndCellFastPathsKeepOverriddenStyleCallbacksLive() {
+            using (Font large = new Font(Control.DefaultFont.FontFamily, 32))
+            using (Font small = new Font(Control.DefaultFont.FontFamily, 9))
+            using (CallbackLayoutList list = new CallbackLayoutList())
+            using (BaseRenderer renderer = new BaseRenderer()) {
+                ConfigureList(list, false);
+                Show(list);
+                list.SetObjects(Rows);
+                HeaderControl header = list.HeaderControl;
+                using (Graphics g = list.CreateGraphics()) {
+                    MethodInfo measure = typeof(HeaderControl).GetMethod("CalculateHeight",
+                        BindingFlags.Instance | BindingFlags.NonPublic);
+                    list.CallbackFont = large;
+                    int largeHeight = (int)measure.Invoke(header, new object[] { g });
+                    Assert.IsTrue(largeHeight >= large.Height + 18);
+                    list.CallbackFont = small;
+                    int smallHeight = (int)measure.Invoke(header, new object[] { g });
+                    Assert.IsTrue(smallHeight < largeHeight);
+                    OLVListItem item = list.GetItem(0);
+                    renderer.GetCellLayout(g, item.GetSubItemBounds(0), item, 0);
+                    Assert.AreEqual(Color.Magenta, renderer.GetForegroundColor());
+                }
+            }
+        }
+
+        [TestMethod]
+        public void CustomLayoutCalculationStillControlsStandardPainting() {
+            using (LayoutList list = new LayoutList())
+            using (OffsetLayoutRenderer renderer = new OffsetLayoutRenderer()) {
+                ConfigureList(list, false);
+                list.DefaultRenderer = renderer;
+                Show(list);
+                list.SetObjects(Rows);
+                OLVListItem item = list.GetItem(0);
+                using (Graphics g = list.CreateGraphics()) {
+                    Rectangle bounds = item.GetSubItemBounds(0);
+                    CellLayout layout = renderer.GetCellLayout(g, bounds, item, 0);
+                    renderer.Render(g, bounds);
+                    Assert.AreEqual(layout.TextBounds, renderer.DrawnTextBounds);
+                    Assert.IsTrue(layout.TextBounds.Left > layout.ContentBounds.Left);
+                }
+            }
+        }
+
+        [TestMethod]
         [DataRow(false)]
         [DataRow(true)]
         public void NativeHeaderHeightMeasuresTheConfiguredHeaderFont(bool columnFont) {
@@ -817,6 +862,38 @@ namespace BrightIdeasSoftware.Tests {
                     if (bitmap.GetPixel(x, y).ToArgb() == color.ToArgb())
                         return true;
             return false;
+        }
+
+        private sealed class CallbackLayoutList : ObjectListView {
+            internal Font CallbackFont;
+
+            protected override void OnStyleResolving(StyleResolvingEventArgs e) {
+                base.OnStyleResolving(e);
+                if (e.Context.Target == StyleTarget.Header) {
+                    e.Values.Font = this.CallbackFont;
+                    e.Values.Padding = new Rectangle(0, 0, 0, 9);
+                } else if (e.Context.Target == StyleTarget.Cell)
+                    e.Values.ForeColor = Color.Magenta;
+            }
+        }
+
+        private sealed class OffsetLayoutRenderer : BaseRenderer {
+            internal Rectangle DrawnTextBounds;
+
+            protected override CellLayout CalculateImageAndTextLayout(Graphics g,
+                Rectangle alignedBounds, Rectangle contentBounds) {
+                CellLayout layout = base.CalculateImageAndTextLayout(g, alignedBounds, contentBounds);
+                Rectangle text = layout.TextBounds;
+                text.X += 11;
+                text.Width = Math.Max(0, text.Width - 11);
+                return new CellLayout(layout.CellBounds, layout.ContentBounds,
+                    layout.CheckBoxBounds, layout.ImageBounds, text);
+            }
+
+            public override void DrawText(Graphics g, Rectangle r, string txt) {
+                this.DrawnTextBounds = r;
+                base.DrawText(g, r, txt);
+            }
         }
 
         private sealed class RecordingRenderer : BaseRenderer {

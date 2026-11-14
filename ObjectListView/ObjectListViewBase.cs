@@ -673,6 +673,7 @@ namespace BrightIdeasSoftware
         }
 
         internal int ModelRowsVersion { get; private set; }
+        internal virtual IVirtualGroups ModelRowGroupingStrategy => null;
 
         internal void InvalidateModelRows() {
             unchecked { this.ModelRowsVersion++; }
@@ -3302,6 +3303,8 @@ namespace BrightIdeasSoftware
         public new virtual bool ShowGroups {
             get { return base.ShowGroups; }
             set {
+                if (base.ShowGroups != value)
+                    this.InvalidateModelRows();
 #pragma warning disable CA2245 // Reinstall the native group image list.
                 this.GroupImageList = this.GroupImageList;
 #pragma warning restore CA2245
@@ -4441,11 +4444,15 @@ namespace BrightIdeasSoftware
 
             // Give the item the same font/colors as the control
             lvi.Font = this.Font;
-            lvi.BackColor = this.BackColor;
-            lvi.ForeColor = this.ForeColor;
-            var defaults = this.rowThemeColors.GetOrCreateValue(lvi);
-            defaults.BackColor = this.BackColor;
-            defaults.ForeColor = this.ForeColor;
+            Color backColor = this.BackColor;
+            Color foreColor = this.ForeColor;
+            lvi.BackColor = backColor;
+            lvi.ForeColor = foreColor;
+            if (!this.VirtualMode) {
+                var defaults = this.rowThemeColors.GetOrCreateValue(lvi);
+                defaults.BackColor = backColor;
+                defaults.ForeColor = foreColor;
+            }
 
             // Should the row be selectable?
             lvi.Enabled = !this.IsDisabled(rowObject);
@@ -4644,19 +4651,26 @@ namespace BrightIdeasSoftware
             int count = this.Items.Count;
 #pragma warning restore 168
 
-            int i = 0;
-            if (this.ShowGroups && this.Groups.Count > 0) {
-                foreach (ListViewGroup group in this.Groups) {
-                    foreach (OLVListItem olvi in group.Items) {
+            bool? previousHighContrast = this.rowStyleHighContrast;
+            // Keep one accessibility sample for the synchronous formatting batch, including nested calls.
+            this.rowStyleHighContrast = SystemInformation.HighContrast;
+            try {
+                int i = 0;
+                if (this.ShowGroups && this.Groups.Count > 0) {
+                    foreach (ListViewGroup group in this.Groups) {
+                        foreach (OLVListItem olvi in group.Items) {
+                            this.PostProcessOneRow(olvi.Index, i, olvi);
+                            i++;
+                        }
+                    }
+                } else {
+                    foreach (OLVListItem olvi in this.Items) {
                         this.PostProcessOneRow(olvi.Index, i, olvi);
                         i++;
                     }
                 }
-            } else {
-                foreach (OLVListItem olvi in this.Items) {
-                    this.PostProcessOneRow(olvi.Index, i, olvi);
-                    i++;
-                }
+            } finally {
+                this.rowStyleHighContrast = previousHighContrast;
             }
         }
 

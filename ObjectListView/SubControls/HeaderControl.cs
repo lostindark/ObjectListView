@@ -263,25 +263,42 @@ namespace BrightIdeasSoftware {
         }
 
         private float CalculateColumnHeight(Graphics g, OLVColumn column, TextFormatFlags flags, bool isHot) {
-            HeaderStateStyle style = this.CalculateStateStyle(column, isHot, false);
-            HeaderLayout layout = this.CalculateHeaderLayout(g, column, style);
-            Rectangle padding = style.ResolvedValues?.Padding ?? Rectangle.Empty;
+            HeaderStateStyle style = this.ListView.HasHeaderAppearance(column) ?
+                this.CalculateStateStyle(column, isHot, false) : null;
+            Font font = style?.Font ?? this.CalculateHeightFont(column, isHot);
+            Rectangle padding = style?.ResolvedValues?.Padding ?? Rectangle.Empty;
             Size imageSize = column.HasHeaderImage ? column.ImageList.ImageSize : Size.Empty;
             const int fudge = 9; // 9 is a magic constant that makes it perfectly match XP behavior
             int height = 0;
             if (column.ShowTextInHeader) {
                 if (column.IsHeaderVertical)
-                    height = TextRenderer.MeasureText(g, column.Text, layout.Font, new Size(10000, 10000),
+                    height = TextRenderer.MeasureText(g, column.Text, font, new Size(10000, 10000),
                         flags | TextFormatFlags.SingleLine).Width;
-                else
-                    height = this.WordWrap ? TextRenderer.MeasureText(g, column.Text, layout.Font,
-                        new Size(Math.Max(1, layout.TextArea.Width), 10000), flags).Height : layout.Font.Height;
+                else if (this.WordWrap) {
+                    HeaderLayout layout = this.CalculateHeaderLayout(g, column,
+                        style ?? this.CalculateStateStyle(column, isHot, false));
+                    height = TextRenderer.MeasureText(g, column.Text, font,
+                        new Size(Math.Max(1, layout.TextArea.Width), 10000), flags).Height;
+                } else
+                    height = font.Height;
             }
             height = column.IsHeaderVertical ? height + imageSize.Height +
                 (height > 0 && imageSize.Height > 0 ? 3 : 0) : Math.Max(height, imageSize.Height);
-            height = Math.Max(height, layout.Cell.CheckBoxBounds.Height);
+            if (HasCheckBox(column))
+                height = Math.Max(height, CheckBoxRenderer.GetGlyphSize(g, CheckBoxState.CheckedNormal).Height);
             return height + Math.Max(0, padding.Bottom) + fudge;
         }
+
+        private Font CalculateHeightFont(OLVColumn column, bool isHot) {
+            if (this.ListView.IsDesignMode)
+                isHot = false;
+            Font font = this.ListView.Font;
+            font = GetHeightFont(this.ListView.HeaderFormatStyle, isHot, font);
+            return GetHeightFont(column.HeaderFormatStyle, isHot, font);
+        }
+
+        private static Font GetHeightFont(HeaderFormatStyle style, bool isHot, Font inherited) =>
+            (isHot ? style?.Hot?.Font : null) ?? style?.Normal?.Font ?? inherited;
 
         /// <summary>
         /// Get the bounds of the checkbox against the given column
@@ -1383,13 +1400,15 @@ namespace BrightIdeasSoftware {
         private static void OverlayHeaderState(StyleValues values, HeaderStateStyle style) {
             if (style == null)
                 return;
-            values.Overlay(new StyleValues {
-                Font = style.Font,
-                ForeColor = style.ForeColor.IsEmpty ? (Color?)null : style.ForeColor,
-                BackColor = style.BackColor.IsEmpty ? (Color?)null : style.BackColor,
-                BorderColor = style.FrameColor.IsEmpty ? (Color?)null : style.FrameColor,
-                BorderWidth = style.ShouldSerializeFrameWidth() ? (float?)style.FrameWidth : null
-            });
+            values.Font = style.Font ?? values.Font;
+            if (!style.ForeColor.IsEmpty)
+                values.ForeColor = style.ForeColor;
+            if (!style.BackColor.IsEmpty)
+                values.BackColor = style.BackColor;
+            if (!style.FrameColor.IsEmpty)
+                values.BorderColor = style.FrameColor;
+            if (style.ShouldSerializeFrameWidth())
+                values.BorderWidth = style.FrameWidth;
         }
 
         /// <summary>

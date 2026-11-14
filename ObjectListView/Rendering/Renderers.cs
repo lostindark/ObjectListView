@@ -586,32 +586,35 @@ namespace BrightIdeasSoftware {
         private Font font;
 
         private StyleValues resolvedAppearance;
-        private StyleValues ResolvedAppearance {
-            get {
-                if (this.ListView == null || this.ListItem == null)
-                    return null;
-                OLVListSubItem cell = this.SubItem as OLVListSubItem;
-                if (!this.ListView.HasCellAppearance(this.Column, this.ListItem, cell))
-                    return null;
-                if (this.resolvedAppearance == null) {
-                    StyleValues defaults = new StyleValues {
-                        Font = this.font ?? (cell == null || this.ListItem.UseItemStyleForSubItems ?
-                            this.ListItem.Font : cell.Font),
-                        ForeColor = this.GetLegacyForegroundColor(),
-                        BackColor = this.GetLegacyBackgroundColor(),
-                        Padding = this.cellPadding ?? cell?.CellPadding ?? this.ListItem.CellPadding ??
-                            this.Column?.CellPadding ?? this.ListView.CellPadding,
-                        VerticalAlignment = this.cellVerticalAlignment ?? cell?.CellVerticalAlignment ??
-                            this.ListItem.CellVerticalAlignment ?? this.Column?.CellVerticalAlignment ??
-                            this.ListView.CellVerticalAlignment,
-                        HorizontalAlignment = this.Column?.TextAlign ?? HorizontalAlignment.Left
-                    };
-                    this.ListView.ApplyCellGeometry(defaults, this.Column, this.ListItem, cell);
-                    this.resolvedAppearance = this.ListView.ResolveStyle(StyleTarget.Cell, this.Column,
-                        this.ListItem, this.Bounds, this.ListView.GetStyleState(this.ListItem), defaults, false);
-                }
-                return this.resolvedAppearance;
+        private bool appearanceChecked;
+        private StyleValues ResolvedAppearance =>
+            this.appearanceChecked ? this.resolvedAppearance : this.ResolveAppearance();
+
+        private StyleValues ResolveAppearance() {
+            if (this.ListView == null || this.ListItem == null)
+                return null;
+            OLVListSubItem cell = this.SubItem as OLVListSubItem;
+            if (!this.ListView.HasCellAppearance(this.Column, this.ListItem, cell)) {
+                this.appearanceChecked = true;
+                return null;
             }
+            StyleValues defaults = new StyleValues {
+                Font = this.font ?? (cell == null || this.ListItem.UseItemStyleForSubItems ?
+                    this.ListItem.Font : cell.Font),
+                ForeColor = this.GetLegacyForegroundColor(),
+                BackColor = this.GetLegacyBackgroundColor(),
+                Padding = this.cellPadding ?? cell?.CellPadding ?? this.ListItem.CellPadding ??
+                    this.Column?.CellPadding ?? this.ListView.CellPadding,
+                VerticalAlignment = this.cellVerticalAlignment ?? cell?.CellVerticalAlignment ??
+                    this.ListItem.CellVerticalAlignment ?? this.Column?.CellVerticalAlignment ??
+                    this.ListView.CellVerticalAlignment,
+                HorizontalAlignment = this.Column?.TextAlign ?? HorizontalAlignment.Left
+            };
+            this.ListView.ApplyCellGeometry(defaults, this.Column, this.ListItem, cell);
+            this.resolvedAppearance = this.ListView.ResolveStyle(StyleTarget.Cell, this.Column,
+                this.ListItem, this.Bounds, this.ListView.GetStyleState(this.ListItem), defaults, false);
+            this.appearanceChecked = true;
+            return this.resolvedAppearance;
         }
 
         /// <summary>
@@ -766,6 +769,7 @@ namespace BrightIdeasSoftware {
 
         private void ClearState() {
             this.resolvedAppearance = null;
+            this.appearanceChecked = false;
             this.Event = null;
             this.DrawItemEvent = null;
             this.Aspect = null;
@@ -1798,7 +1802,11 @@ namespace BrightIdeasSoftware {
         /// <param name="g">Graphics context to use for drawing</param>
         /// <param name="r">Bounds of the cell</param>
         protected virtual void DrawImageAndText(Graphics g, Rectangle r) {
-            this.DrawCellLayout(g, this.CalculateImageAndTextLayout(g, r, this.GetContentBounds(this.Bounds)));
+            Rectangle content = this.GetContentBounds(this.Bounds);
+            if (this.HasCustomCellLayoutHooks)
+                this.DrawCellLayout(g, this.CalculateImageAndTextLayout(g, r, content));
+            else
+                this.DrawStandardCellLayout(g, this.CalculateStandardCellLayout(g, r, content));
         }
 
         /// <summary>

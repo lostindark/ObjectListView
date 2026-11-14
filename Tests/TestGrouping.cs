@@ -290,6 +290,42 @@ namespace BrightIdeasSoftware.Tests {
         }
 
         [TestMethod]
+        public void BuiltInVirtualLookupMapsFollowAcceptedGroupsAcrossCancellationAndRebuild() {
+            TypedFastObjectListView<Row> list = (TypedFastObjectListView<Row>)this.CreateList(true);
+            list.Grouping = GroupingConfiguration.Fixed(list.GetColumn(1), SortOrder.Ascending);
+            list.BuildGroups();
+            AssertGroupLookupMaps(list);
+            IList<OLVGroup> accepted = list.OLVGroups;
+            EventHandler<CreateGroupsEventArgs> cancel = (sender, args) => args.Canceled = true;
+            list.AboutToCreateGroups += cancel;
+            list.Grouping = GroupingConfiguration.Fixed(list.GetColumn(0), SortOrder.Descending);
+            list.BuildGroups();
+            Assert.AreSame(accepted, list.OLVGroups);
+            AssertGroupLookupMaps(list);
+            list.AboutToCreateGroups -= cancel;
+            list.BuildGroups();
+            Assert.AreNotSame(accepted, list.OLVGroups);
+            AssertGroupLookupMaps(list);
+            OLVGroup detached = new OLVGroup("detached") { Contents = new List<int> { 1, 1, 0 } };
+            FastListGroupingStrategy unbound = new FastListGroupingStrategy();
+            Assert.AreEqual(0, unbound.GetIndexWithinGroup(detached, 1));
+            Assert.AreEqual(0, list.GroupingStrategy.GetIndexWithinGroup(detached, 1));
+            Assert.AreEqual(-1, list.GroupingStrategy.GetIndexWithinGroup(detached, -1));
+        }
+
+        private static void AssertGroupLookupMaps(TypedFastObjectListView<Row> list) {
+            for (int i = 0; i < list.OLVGroups.Count; i++) {
+                OLVGroup group = list.OLVGroups[i];
+                int[] members = group.Contents.Cast<int>().ToArray();
+                for (int j = 0; j < members.Length; j++) {
+                    Assert.AreEqual(i, list.GroupingStrategy.GetGroup(members[j]));
+                    Assert.AreEqual(Array.IndexOf(members, members[j]),
+                        list.GroupingStrategy.GetIndexWithinGroup(group, members[j]));
+                }
+            }
+        }
+
+        [TestMethod]
         public void LegacyGroupingOverrideParticipatesInCancellationAndRetry() {
             HookedListView list = new HookedListView();
             this.CreateList(list);

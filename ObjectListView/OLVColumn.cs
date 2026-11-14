@@ -2042,7 +2042,9 @@ namespace BrightIdeasSoftware {
 
         /// <summary>Column cell overrides of inherited row appearance.</summary>
         [Category("Appearance"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-        public StyleSheet CellAppearance { get; } = new StyleSheet();
+        public StyleSheet CellAppearance => this.cellAppearance ?? (this.cellAppearance = new StyleSheet());
+        private StyleSheet cellAppearance;
+        internal StyleSheet CellAppearanceOrNull => this.cellAppearance;
         /// <summary>Column header overrides of the shared header appearance.</summary>
         [Category("Appearance"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public StyleSheet HeaderAppearance { get; } = new StyleSheet();

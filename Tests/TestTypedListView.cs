@@ -462,7 +462,28 @@ namespace BrightIdeasSoftware.Tests {
                     }
                     CollectionAssert.AreEqual(expected, rows.Cast<Person>().ToArray());
                     CollectionAssert.AreEqual(expected, adaptedRows.ToArray());
+                    using (IEnumerator<Person> iterator = rows.GetEnumerator()) {
+                        Assert.IsTrue(iterator.MoveNext());
+                        list.ShowGroups = false;
+                        Assert.ThrowsExactly<InvalidOperationException>(() => iterator.MoveNext());
+                    }
+                    list.ShowGroups = true;
                 }
+            }
+        }
+
+        [TestMethod]
+        public void Test_GroupedRows_HonorCustomDisplayOrderOverrides() {
+            using (var list = new ReversedDisplayList { View = View.Details, ShowGroups = true }) {
+                OLVColumn column = new OLVColumn("Name", "Name");
+                list.Columns.Add(column);
+                mainForm.Controls.Add(list);
+                list.CreateControl();
+                Person[] models = { new Person("A"), new Person("M"), new Person("Z") };
+                list.Objects = models;
+                list.BuildGroups(column, SortOrder.Ascending);
+                Assert.AreSame(models[2], list.Rows[0]);
+                CollectionAssert.AreEqual(models.Reverse().ToArray(), list.Rows.ToArray());
             }
         }
 
@@ -476,6 +497,37 @@ namespace BrightIdeasSoftware.Tests {
                 Assert.AreEqual(0, list.ReadCount);
                 Assert.AreEqual("row 999999", rows[999999]);
                 Assert.AreEqual(1, list.ReadCount);
+            }
+        }
+
+        [TestMethod]
+        public void Test_GroupedRows_ReadModelsWithoutCreatingVirtualItems() {
+            using (var list = new ItemCountingFastList { View = View.Details, ShowGroups = true }) {
+                OLVColumn column = new OLVColumn("Name", "Name");
+                list.Columns.Add(column);
+                mainForm.Controls.Add(list);
+                list.CreateControl();
+                Person[] models = { new Person("Z"), new Person("A"), new Person("M") };
+                list.Objects = models;
+                IReadOnlyList<Person> rows = list.Rows;
+                var adapter = new TypedObjectListViewAdapter<Person>(list);
+                foreach (SortOrder order in new[] { SortOrder.Ascending, SortOrder.Descending }) {
+                    list.BuildGroups(column, order);
+                    list.CreatedItems = 0;
+                    Person[] expected = order == SortOrder.Ascending ?
+                        new[] { models[1], models[2], models[0] } : new[] { models[0], models[2], models[1] };
+                    for (int i = 0; i < expected.Length; i++)
+                        Assert.AreSame(expected[i], rows[i]);
+                    CollectionAssert.AreEqual(expected, rows.ToArray());
+                    CollectionAssert.AreEqual(expected, adapter.Rows.ToArray());
+                    Assert.AreEqual(0, list.CreatedItems);
+                    using (IEnumerator<Person> iterator = rows.GetEnumerator()) {
+                        Assert.IsTrue(iterator.MoveNext());
+                        list.AddObject(new Person("B"));
+                        Assert.ThrowsExactly<InvalidOperationException>(() => iterator.MoveNext());
+                    }
+                    list.Objects = models;
+                }
             }
         }
 
@@ -788,6 +840,19 @@ namespace BrightIdeasSoftware.Tests {
             public override object GetModelObject(int index) {
                 this.ReadCount++;
                 return "row " + index;
+            }
+        }
+
+        private sealed class ReversedDisplayList : TypedFastObjectListView<Person> {
+            public override OLVListItem GetNthItemInDisplayOrder(int n) =>
+                base.GetNthItemInDisplayOrder(this.GetItemCount() - 1 - n);
+        }
+
+        private sealed class ItemCountingFastList : TypedFastObjectListView<Person> {
+            internal int CreatedItems;
+            public override OLVListItem MakeListViewItem(int itemIndex) {
+                this.CreatedItems++;
+                return base.MakeListViewItem(itemIndex);
             }
         }
 

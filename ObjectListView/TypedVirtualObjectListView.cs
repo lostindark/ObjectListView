@@ -373,6 +373,8 @@ namespace BrightIdeasSoftware
                 return ObjectListViewBase.IsVistaOrLater && this.showGroups;
             }
             set {
+                if (this.showGroups != value)
+                    this.InvalidateModelRows();
                 this.showGroups = value;
                 if (this.Created && !value)
                 {
@@ -390,6 +392,8 @@ namespace BrightIdeasSoftware
             }
         }
 
+        internal override IVirtualGroups ModelRowGroupingStrategy =>
+            this.HasVirtualGroups ? this.GroupingStrategy : null;
 
         /// <summary>
         /// Get/set the data source that is behind this virtual list

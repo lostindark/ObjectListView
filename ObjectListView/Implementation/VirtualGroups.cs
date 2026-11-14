@@ -169,7 +169,8 @@ namespace BrightIdeasSoftware
         }
         private ObjectListViewBase listView;
         private IList<OLVGroup> indexedGroups;
-        private Dictionary<int, int> indexToGroupMap;
+        private int[] indexToGroupMap;
+        private int[] indexWithinGroupMap;
 
         /// <summary>
         /// 
@@ -178,7 +179,8 @@ namespace BrightIdeasSoftware
         /// <param name="indexWithinGroup"></param>
         /// <returns></returns>
         public override int GetGroupMember(OLVGroup group, int indexWithinGroup) {
-            return (int)group.Contents[indexWithinGroup];
+            return group.Contents is IList<int> members ?
+                members[indexWithinGroup] : (int)group.Contents[indexWithinGroup];
         }
 
         /// <summary>
@@ -187,19 +189,38 @@ namespace BrightIdeasSoftware
         /// <param name="itemIndex"></param>
         /// <returns></returns>
         public override int GetGroup(int itemIndex) {
-            IList<OLVGroup> groups = this.listView.OLVGroups;
-            if (!ReferenceEquals(groups, this.indexedGroups)) {
-                Dictionary<int, int> map = new Dictionary<int, int>();
-                for (int i = 0; i < groups.Count; i++) {
-                    foreach (int member in groups[i].Contents)
-                    {
-                        map[member] = i;
-                    }
-                }
-                this.indexToGroupMap = map;
-                this.indexedGroups = groups;
-            }
+            this.EnsureGroupMap();
+            if (itemIndex < 0 || itemIndex >= this.indexToGroupMap.Length || this.indexToGroupMap[itemIndex] < 0)
+                throw new KeyNotFoundException("The item does not belong to an accepted group.");
             return this.indexToGroupMap[itemIndex];
+        }
+
+        private void EnsureGroupMap() {
+            IList<OLVGroup> groups = this.listView.OLVGroups;
+            if (!ReferenceEquals(groups, this.indexedGroups))
+                this.RebuildGroupMap(groups);
+        }
+
+        private void RebuildGroupMap(IList<OLVGroup> groups) {
+            int[] map = new int[this.listView.GetItemCount()];
+            int[] positions = new int[map.Length];
+            for (int i = 0; i < map.Length; i++)
+                map[i] = -1;
+            for (int i = 0; i < groups.Count; i++) {
+                OLVGroup group = groups[i];
+                IList<int> members = group.Contents as IList<int>;
+                for (int j = 0; j < group.Contents.Count; j++) {
+                    int member = members != null ? members[j] : (int)group.Contents[j];
+                    if (member < 0 || member >= map.Length)
+                        throw new InvalidOperationException("An accepted group contains an invalid item index.");
+                    if (map[member] != i)
+                        positions[member] = j;
+                    map[member] = i;
+                }
+            }
+            this.indexToGroupMap = map;
+            this.indexWithinGroupMap = positions;
+            this.indexedGroups = groups;
         }
 
         /// <summary>
@@ -209,7 +230,15 @@ namespace BrightIdeasSoftware
         /// <param name="itemIndex"></param>
         /// <returns></returns>
         public override int GetIndexWithinGroup(OLVGroup group, int itemIndex) {
-            return group.Contents.IndexOf(itemIndex);
+            if (this.listView != null && this.listView.OLVGroups != null) {
+                this.EnsureGroupMap();
+                if (itemIndex >= 0 && itemIndex < this.indexToGroupMap.Length) {
+                    int groupIndex = this.indexToGroupMap[itemIndex];
+                    if (groupIndex >= 0 && ReferenceEquals(group, this.indexedGroups[groupIndex]))
+                        return this.indexWithinGroupMap[itemIndex];
+                }
+            }
+            return group.Contents is IList<int> members ? members.IndexOf(itemIndex) : group.Contents.IndexOf(itemIndex);
         }
     }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace BrightIdeasSoftware {
@@ -52,6 +53,36 @@ namespace BrightIdeasSoftware {
     }
 
     public partial class BaseRenderer {
+        private bool? customCellLayoutHooks;
+
+        private bool HasCustomCellLayoutHooks {
+            get {
+                if (!this.customCellLayoutHooks.HasValue) {
+                    Type type = this.GetType();
+                    this.customCellLayoutHooks =
+                        type.GetMethod(nameof(CalculateImageAndTextLayout), BindingFlags.Instance | BindingFlags.NonPublic,
+                            null, new[] { typeof(Graphics), typeof(Rectangle), typeof(Rectangle) }, null).DeclaringType != typeof(BaseRenderer) ||
+                        type.GetMethod(nameof(DrawCellLayout), BindingFlags.Instance | BindingFlags.NonPublic,
+                            null, new[] { typeof(Graphics), typeof(CellLayout) }, null).DeclaringType != typeof(BaseRenderer);
+                }
+                return this.customCellLayoutHooks.Value;
+            }
+        }
+
+        private readonly struct StandardCellLayout {
+            internal StandardCellLayout(Rectangle content, Rectangle checkBox, Rectangle image, Rectangle text) {
+                this.Content = content;
+                this.CheckBox = checkBox;
+                this.Image = image;
+                this.Text = text;
+            }
+
+            internal Rectangle Content { get; }
+            internal Rectangle CheckBox { get; }
+            internal Rectangle Image { get; }
+            internal Rectangle Text { get; }
+        }
+
         /// <summary>
         /// Calculates layout without painting. Custom renderers with a different arrangement
         /// can override this method and the protected layout calculation.
@@ -113,6 +144,11 @@ namespace BrightIdeasSoftware {
 
         /// <summary>Partitions aligned content using the same measurements as painting.</summary>
         protected virtual CellLayout CalculateImageAndTextLayout(Graphics g, Rectangle alignedBounds, Rectangle contentBounds) {
+            StandardCellLayout layout = this.CalculateStandardCellLayout(g, alignedBounds, contentBounds);
+            return new CellLayout(this.Bounds, layout.Content, layout.CheckBox, layout.Image, layout.Text);
+        }
+
+        private StandardCellLayout CalculateStandardCellLayout(Graphics g, Rectangle alignedBounds, Rectangle contentBounds) {
             Rectangle remaining = alignedBounds;
             Rectangle checkBox = Rectangle.Empty;
             if (this.ColumnIsPrimary && this.ListView.CheckBoxes) {
@@ -137,7 +173,7 @@ namespace BrightIdeasSoftware {
                 image = Mirror(image, alignedBounds);
                 text = Mirror(text, alignedBounds);
             }
-            return new CellLayout(this.Bounds, contentBounds, checkBox, image, text);
+            return new StandardCellLayout(contentBounds, checkBox, image, text);
         }
 
         internal static Rectangle Mirror(Rectangle bounds, Rectangle container) {
@@ -148,12 +184,17 @@ namespace BrightIdeasSoftware {
 
         /// <summary>Draws the standard components from a previously calculated layout.</summary>
         protected virtual void DrawCellLayout(Graphics g, CellLayout layout) {
-            if (layout.CheckBoxBounds.Width > 0 && layout.CheckBoxBounds.Height > 0)
-                this.DrawCheckBox(g, layout.CheckBoxBounds);
-            if (layout.ImageBounds.Width > 0 && layout.ImageBounds.Height > 0)
-                this.DrawImage(g, layout.ImageBounds, this.GetImageSelector());
-            if (layout.TextBounds.Width > 0 && layout.TextBounds.Height > 0)
-                this.DrawText(g, layout.TextBounds, this.GetText());
+            this.DrawStandardCellLayout(g, new StandardCellLayout(layout.ContentBounds,
+                layout.CheckBoxBounds, layout.ImageBounds, layout.TextBounds));
+        }
+
+        private void DrawStandardCellLayout(Graphics g, StandardCellLayout layout) {
+            if (layout.CheckBox.Width > 0 && layout.CheckBox.Height > 0)
+                this.DrawCheckBox(g, layout.CheckBox);
+            if (layout.Image.Width > 0 && layout.Image.Height > 0)
+                this.DrawImage(g, layout.Image, this.GetImageSelector());
+            if (layout.Text.Width > 0 && layout.Text.Height > 0)
+                this.DrawText(g, layout.Text, this.GetText());
         }
     }
 }

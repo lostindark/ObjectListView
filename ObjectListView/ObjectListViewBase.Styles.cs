@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace BrightIdeasSoftware {
@@ -27,6 +28,20 @@ namespace BrightIdeasSoftware {
 
         internal int StyleDpi => this.IsHandleCreated ? this.GetWindowDpi() : 96;
         private int pressedStyleRowIndex = -1;
+        private bool? rowStyleHighContrast;
+        private bool? customStyleResolver;
+
+        private bool HasCustomStyleResolver {
+            get {
+                if (StyleResolving != null)
+                    return true;
+                if (!this.customStyleResolver.HasValue)
+                    this.customStyleResolver = this.GetType().GetMethod(nameof(OnStyleResolving),
+                        BindingFlags.Instance | BindingFlags.NonPublic, null,
+                        new[] { typeof(StyleResolvingEventArgs) }, null).DeclaringType != typeof(ObjectListViewBase);
+                return this.customStyleResolver.Value;
+            }
+        }
 
         internal Font ResolveStyleFont(Font font, FontStyle? style) {
             font = font ?? this.Font;
@@ -86,12 +101,12 @@ namespace BrightIdeasSoftware {
                 case StyleTarget.Cell:
                     if (includeCellNormal) {
                         result.Overlay(RowAppearance.Normal);
-                        result.Overlay(column?.CellAppearance.Normal);
+                        result.Overlay(column?.CellAppearanceOrNull?.Normal);
                         result.Overlay(item?.AppearanceOrNull?.Normal);
                         result.Overlay(item?.GetSubItem(column?.Index ?? 0)?.AppearanceOrNull?.Normal);
                     }
                     RowAppearance.Apply(result, state, false);
-                    column?.CellAppearance.Apply(result, state, false);
+                    column?.CellAppearanceOrNull?.Apply(result, state, false);
                     item?.AppearanceOrNull?.Apply(result, state, false);
                     item?.GetSubItem(column?.Index ?? 0)?.AppearanceOrNull?.Apply(result, state, false);
                     break;
@@ -134,7 +149,7 @@ namespace BrightIdeasSoftware {
         }
 
         private void ApplyNativeStyleAccessibility(OLVListItem item) {
-            if (!SystemInformation.HighContrast)
+            if (!(this.rowStyleHighContrast ?? SystemInformation.HighContrast))
                 return;
             StyleValues values = new StyleValues();
             ApplyHighContrastColors(values, StyleTarget.Cell,
@@ -150,7 +165,7 @@ namespace BrightIdeasSoftware {
             for (int i = 0; i < item.SubItems.Count; i++) {
                 OLVColumn column = this.GetAppearanceColumn(i);
                 OLVListSubItem cell = item.GetSubItem(i);
-                hasStyle |= (column != null && !column.CellAppearance.Normal.IsEmpty) ||
+                hasStyle |= column?.CellAppearanceOrNull?.Normal.IsEmpty == false ||
                     cell?.AppearanceOrNull?.Normal.IsEmpty == false;
             }
             if (!hasStyle)
@@ -164,7 +179,7 @@ namespace BrightIdeasSoftware {
                     Font = cell.Font, ForeColor = cell.ForeColor, BackColor = cell.BackColor
                 };
                 values.Overlay(RowAppearance.Normal);
-                values.Overlay(this.GetAppearanceColumn(i)?.CellAppearance.Normal);
+                values.Overlay(this.GetAppearanceColumn(i)?.CellAppearanceOrNull?.Normal);
                 values.Overlay(item.AppearanceOrNull?.Normal);
                 values.Overlay(olvCell?.AppearanceOrNull?.Normal);
                 cell.Font = ResolveStyleFont(values.Font, values.FontStyle);
@@ -262,24 +277,30 @@ namespace BrightIdeasSoftware {
 
         internal void ApplyCellGeometry(StyleValues values, OLVColumn column,
             OLVListItem item, OLVListSubItem cell) {
-            StyleValues geometry = new StyleValues();
-            geometry.Overlay(RowAppearance.Normal);
-            geometry.Overlay(column?.CellAppearance.Normal);
-            geometry.Overlay(item.AppearanceOrNull?.Normal);
-            geometry.Overlay(cell?.AppearanceOrNull?.Normal);
+            values.BorderColor = null;
+            values.BorderWidth = null;
+            OverlayCellGeometry(values, RowAppearance.Normal);
+            OverlayCellGeometry(values, column?.CellAppearanceOrNull?.Normal);
+            OverlayCellGeometry(values, item.AppearanceOrNull?.Normal);
+            OverlayCellGeometry(values, cell?.AppearanceOrNull?.Normal);
+        }
+
+        private static void OverlayCellGeometry(StyleValues values, StyleValues geometry) {
+            if (geometry == null)
+                return;
             values.HorizontalAlignment = geometry.HorizontalAlignment ?? values.HorizontalAlignment;
-            values.BorderColor = geometry.BorderColor;
-            values.BorderWidth = geometry.BorderWidth;
+            values.BorderColor = geometry.BorderColor ?? values.BorderColor;
+            values.BorderWidth = geometry.BorderWidth ?? values.BorderWidth;
         }
 
         internal bool HasHeaderAppearance(OLVColumn column) =>
             !HeaderAppearance.IsEmpty || (column != null && !column.HeaderAppearance.IsEmpty) ||
-            StyleResolving != null || SystemInformation.HighContrast;
+            HasCustomStyleResolver || SystemInformation.HighContrast;
 
         internal bool HasCellAppearance(OLVColumn column, OLVListItem item, OLVListSubItem cell) =>
-            !RowAppearance.IsEmpty || (column != null && !column.CellAppearance.IsEmpty) ||
+            !RowAppearance.IsEmpty || column?.CellAppearanceOrNull?.IsEmpty == false ||
             item.AppearanceOrNull?.IsEmpty == false || cell?.AppearanceOrNull?.IsEmpty == false ||
-            StyleResolving != null || SystemInformation.HighContrast;
+            HasCustomStyleResolver || SystemInformation.HighContrast;
 
         private void ApplyToolTipAppearance(ToolTipShowingEventArgs e) {
             if (ToolTipAppearance.IsEmpty && (e.Column == null || e.Column.ToolTipAppearance.IsEmpty) &&

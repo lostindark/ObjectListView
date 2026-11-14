@@ -168,9 +168,8 @@ Native tooltips consume font, colors, padding, and border visibility. Explicit
 event colors temporarily disable visual theming so Windows actually displays
 them; popping the tooltip restores its prior settings. Arbitrary tooltip border
 colors/widths and content alignment are not supported by the native tooltip
-backend. Header image/vertical-text layout retains its existing alignment rules;
-the shared alignment applies to ordinary horizontal text. Shared layout and
-hit-test redesign remains a separate phase.
+backend. Header images and vertical text now honor shared horizontal/vertical
+alignment and padding as described below.
 
 Styles and rules serialize as nested designer content, including explicit zero
 and Regular values. Application-supplied fonts remain application-owned and must
@@ -180,6 +179,48 @@ it; returned resolved fonts must not be disposed by callers.
 The legacy style types are retained as input adapters, not a second rendering
 API. Their removal, if any, belongs to the final API-cleanup phase after
 consumer/designer migration; this phase does not obsolete or remove them.
+
+## Shared rendering and hit-test layout
+
+`BaseRenderer.GetCellLayout(graphics, cellBounds, item, columnIndex)` returns an
+immutable `CellLayout` snapshot in list-view client coordinates. Standard cells
+and tree renderers share their checkbox, image, and text geometry with painting,
+hit testing, and editor placement. The tree snapshot also includes its expansion
+target; checkbox-only and button renderers expose their own target bounds.
+Recalculate after scrolling, resizing/reordering columns, changing DPI, or
+changing styles, fonts, or images; snapshots are not live caches.
+
+Owner-drawn cell bounds now consistently use `OLVListItem.GetSubItemBounds`.
+Standard text editors start at the painted text edge, exclude glyphs and tree
+indentation, and stay within the padded horizontal area. `CellEditUseWholeCell`
+can extend the editor toward the trailing edge without covering the leading
+checkbox/image. Narrow columns can yield a zero-width editor rather than negative
+dimensions. RTL reverses component order and tree indentation while retaining
+the resolved column alignment.
+
+`HeaderControl.GetCellLayout(column)` uses header-client coordinates. Header
+padding applies to the complete content area, including adornments. Image/text
+groups honor the resolved alignment instead of falling back to the legacy
+`HeaderTextAlign` when an image is present. Vertical headers stack an optional
+image above rotated text and use the same alignment values.
+
+`OlvListViewHitTestInfo.HitBounds` supplies the renderer's hovered target in
+list-view client coordinates, or is empty when a renderer supplies no geometry.
+`ToolTipShowingEventArgs.TargetBounds` exposes that target to tooltip handlers
+(header targets use header-client coordinates). Tooltip `StyleContext.Bounds`
+now describes this target, not always the entire cell. Native tooltip positioning
+is still managed by Windows.
+
+No member was added to `IRenderer`, and native cells/headers are not switched to
+owner drawing merely to obtain layout. Existing custom-renderer hooks remain.
+Standard-layout subclasses can override `GetContentBounds` for indentation and
+`CalculateImageAndTextLayout` for component geometry, then draw through
+`DrawCellLayout`. Measurement hooks, rather than drawing-method return values,
+determine component spacing. A renderer with a bespoke arrangement must override
+its layout/hit-test/editor hooks as appropriate; it can set `HitBounds` directly
+for custom tooltip targets. `GetCellLayout` on an otherwise unchanged bespoke
+`BaseRenderer` subclass describes the standard arrangement, not arbitrary
+application drawing.
 
 ## Theme configuration and color access
 

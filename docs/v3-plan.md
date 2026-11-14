@@ -33,14 +33,14 @@ January 12, 2027. Changes to Windows compatibility require a separate support de
 | Modern designer | Implemented for NuGet: client/server/protocol integration, header resize/Undo, smart tags, and column/printer editors |
 | Grouping redesign | Implemented: explicit policy, deprecated setting adapters, independent item ordering, cancellation, and collapsed-state restoration |
 | Unified style precedence | Implemented: per-property sheets, combined-state rules, callbacks, and legacy adapters |
-| Shared rendering/hit-test layout | Planned |
+| Shared rendering/hit-test layout | Implemented: renderer-owned cell/header geometry, shared targets, tree indentation, and editor placement |
 | Final API cleanup and release | Pending |
 
 ## Platform migration checkpoint
 
 The runtime migration, NuGet designer integration, and grouping redesign are
-implemented. Shared style resolution is implemented; shared layout remains a
-separate workstream.
+implemented, together with shared style resolution and renderer-owned layout.
+Final API cleanup and preview-release acceptance remain.
 
 ### Implemented foundations
 
@@ -233,17 +233,33 @@ See the [migration guide](v3-migration.md#unified-style-resolution) for preceden
 and backend limits: native cells use normal styling; state rules/custom cell
 geometry require owner drawing, and native tooltips do not support arbitrary
 border colors/widths or content alignment. Shared header image/vertical-text
-geometry is deferred to Phase 5, as is broader rendering/hit-test layout.
+geometry is covered by Phase 5.
 
 ## Phase 5: shared rendering and hit-test layout
 
-Extend existing renderers rather than introducing parallel geometry calculations.
-Reuse layout for painting, hit testing, tooltip targets, and editor placement.
-Keep native rendering when customization is unnecessary.
+**Implemented.** Existing renderer measurement/alignment hooks produce immutable
+`CellLayout` snapshots. Standard checkbox/image/text cells share their component
+rectangles between painting, hit testing, tooltip targets, and text editors.
+Painting, hit testing, and editing use the same live native cell bounds, including
+column-zero reordering and horizontal/vertical scrolling. Padding and indentation
+are applied once; checkbox and button targets no longer calculate different
+padded areas from painting. Tree content, expansion glyphs, and editors use the
+same level indentation and RTL arrangement.
 
-**Acceptance:** matching geometry under scrolling, column reordering, DPI changes,
-RTL, and tree indentation; preserve resizing, sorting, checkboxes, keyboard
-behavior, and accessibility. Use visible Windows hosts for interaction checks.
+Headers share image/text, checkbox, sort/filter reservation, and measurement
+geometry. Shared horizontal/vertical alignment also applies to header images and
+vertical text; rotated drawing preserves the caller's graphics transform.
+`OlvListViewHitTestInfo.HitBounds` and tooltip `TargetBounds` expose the hovered
+renderer target, and tooltip style contexts consume that target. Native tooltip
+positioning and native cell/header rendering remain unchanged when customization
+is unnecessary. Bespoke renderers retain their existing drawing/hit-test hooks;
+their custom parts can supply `HitBounds` without changing `IRenderer`.
+
+Visible Windows-hosted regressions cover regular/virtual cells, reordered and
+scrolled columns, RTL, padded trees, wrapped/GDI/GDI+ text, image/font changes,
+DPI drawing contexts, narrow cells, actual editor activation, checkbox/Space
+interaction, sorting, resizing, and accessibility roles. Physical cross-monitor
+DPI transitions remain an interactive release-acceptance check.
 
 ## Phase 6: cleanup and preview release
 

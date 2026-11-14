@@ -287,7 +287,7 @@ namespace BrightIdeasSoftware {
                 return;
             ToolTipControl tooltip = e.ToolTipControl;
             StyleValues values = ResolveStyle(StyleTarget.ToolTip, e.Column, e.Item,
-                e.Item == null ? this.HeaderControl.GetItemRect(e.ColumnIndex) : e.Item.GetSubItemBounds(e.ColumnIndex),
+                e.TargetBounds,
                 GetStyleState(e.Item), new StyleValues {
                     Font = tooltip.Font, ForeColor = tooltip.ForeColor, BackColor = tooltip.BackColor
                 });

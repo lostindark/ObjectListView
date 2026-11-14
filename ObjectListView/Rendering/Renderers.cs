@@ -274,7 +274,7 @@ namespace BrightIdeasSoftware {
     /// </remarks>
     [Browsable(true),
      ToolboxItem(true)]
-    public class BaseRenderer : AbstractRenderer {
+    public partial class BaseRenderer : AbstractRenderer {
         internal const TextFormatFlags NormalTextFormatFlags = TextFormatFlags.NoPrefix |
                                                                TextFormatFlags.EndEllipsis |
                                                                TextFormatFlags.PreserveGraphicsTranslateTransform;
@@ -883,9 +883,9 @@ namespace BrightIdeasSoftware {
 
             // If the combined width is greater than the whole cell,  we just use the cell itself
 
-            int width = Math.Min(r.Width, checkBoxSize.Width + imageSize.Width + textSize.Width);
+            int width = Math.Max(0, Math.Min(r.Width, checkBoxSize.Width + imageSize.Width + textSize.Width));
             int componentMaxHeight = Math.Max(checkBoxSize.Height, Math.Max(imageSize.Height, textSize.Height));
-            int height = Math.Min(r.Height, componentMaxHeight);
+            int height = Math.Max(0, Math.Min(r.Height, componentMaxHeight));
 
             return new Size(width, height);
         }
@@ -990,7 +990,7 @@ namespace BrightIdeasSoftware {
                         selectorAsInt = il.Images.IndexOfKey(selectorAsString);
                     }
                 }
-                if (selectorAsInt >= 0)
+                if (selectorAsInt >= 0 && selectorAsInt < il.Images.Count)
                 {
                     return il.ImageSize;
                 }
@@ -1015,7 +1015,7 @@ namespace BrightIdeasSoftware {
         /// <returns></returns>
         protected virtual int CalculateTextWidth(Graphics g, string txt, int width)
         {
-            if (String.IsNullOrEmpty(txt))
+            if (String.IsNullOrEmpty(txt) || width <= 0)
             {
                 return 0;
             }
@@ -1032,7 +1032,7 @@ namespace BrightIdeasSoftware {
         /// <returns></returns>
         protected virtual Size CalculateTextSize(Graphics g, string txt, int width)
         {
-            if (String.IsNullOrEmpty(txt))
+            if (String.IsNullOrEmpty(txt) || width <= 0)
             {
                 return Size.Empty;
             }
@@ -1040,12 +1040,14 @@ namespace BrightIdeasSoftware {
             if (this.UseGdiTextRendering)
             {
                 Size proposedSize = new Size(width, Int32.MaxValue);
-                return TextRenderer.MeasureText(g, txt, this.Font, proposedSize, NormalTextFormatFlags);
+                TextFormatFlags flags = NormalTextFormatFlags | TextFormatFlags.SingleLine;
+                if (this.IsRightToLeft)
+                    flags |= TextFormatFlags.RightToLeft;
+                return TextRenderer.MeasureText(g, txt, this.Font, proposedSize, flags);
             }
             
             // Using GDI+ rendering
-            using (StringFormat fmt = new StringFormat()) {
-                fmt.Trimming = StringTrimming.EllipsisCharacter;
+            using (StringFormat fmt = this.StringFormatForGdiPlus) {
                 SizeF sizeF = g.MeasureString(txt, this.Font, width, fmt);
                 return new Size(1 + (int)sizeF.Width, 1 + (int)sizeF.Height);
             }
@@ -1298,7 +1300,7 @@ namespace BrightIdeasSoftware {
             this.Column = hti.Column;
             this.RowObject = hti.RowObject;
             this.IsItemSelected = this.ListItem.Selected && this.ListItem.Enabled;
-            if (this.SubItem == null)
+            if (this.ListView.View != View.Details)
             {
                 this.Bounds = this.ListItem.Bounds;
             }
@@ -1322,15 +1324,7 @@ namespace BrightIdeasSoftware {
         /// <param name="preferredSize"> </param>
         /// <returns></returns>
         public override Rectangle GetEditRectangle(Graphics g, Rectangle cellBounds, OLVListItem item, int subItemIndex, Size preferredSize) {
-            this.ClearState();
-
-            this.ListView = (ObjectListViewBase) item.ListView;
-            this.ListItem = item;
-            this.SubItem = item.GetSubItem(subItemIndex);
-            this.Column = this.ListView.GetColumn(subItemIndex);
-            this.RowObject = item.RowObject;
-            this.IsItemSelected = this.ListItem.Selected && this.ListItem.Enabled;
-            this.Bounds = cellBounds;
+            this.ConfigureCell(cellBounds, item, subItemIndex);
 
             return this.HandleGetEditRectangle(g, cellBounds, item, subItemIndex, preferredSize);
         }
@@ -1382,7 +1376,7 @@ namespace BrightIdeasSoftware {
         /// <param name="x"></param>
         /// <param name="y"></param>
         protected virtual void HandleHitTest(Graphics g, OlvListViewHitTestInfo hti, int x, int y) {
-            Rectangle r = this.CalculateAlignedRectangle(g, ApplyCellPadding(this.Bounds));
+            Rectangle r = this.CalculateAlignedRectangle(g, this.GetContentBounds(this.Bounds));
             this.StandardHitTest(g, hti, r, x, y);
         }
 
@@ -1429,12 +1423,7 @@ namespace BrightIdeasSoftware {
         protected void StandardRender(Graphics g, Rectangle r) {
             this.DrawBackground(g, r);
 
-            // Adjust the first columns rectangle to match the padding used by the native mode of the ListView
-            if (this.ColumnIsPrimary && this.CellHorizontalAlignment == HorizontalAlignment.Left ) {
-                r.X += 3;
-                r.Width -= 1;
-            }
-            r = this.ApplyCellPadding(r);
+            r = this.GetContentBounds(r);
             this.DrawAlignedImageAndText(g, r);
 
             // Show where the bounds of the cell padding are (debugging)
@@ -1457,8 +1446,8 @@ namespace BrightIdeasSoftware {
             }
             // The two subtractions below look wrong, but are correct!
             Rectangle paddingRectangle = padding.Value;
-            r.Width -= paddingRectangle.Right;
-            r.Height -= paddingRectangle.Bottom;
+            r.Width = Math.Max(0, r.Width - paddingRectangle.Right);
+            r.Height = Math.Max(0, r.Height - paddingRectangle.Bottom);
             r.Offset(paddingRectangle.Location);
             return r;
         }
@@ -1472,63 +1461,20 @@ namespace BrightIdeasSoftware {
         /// <param name="x"></param>
         /// <param name="y"></param>
         protected virtual void StandardHitTest(Graphics g, OlvListViewHitTestInfo hti, Rectangle alignedContentRectangle, int x, int y) {
-            Rectangle r = alignedContentRectangle;
-
-            // Match tweaking from renderer
-            if (this.ColumnIsPrimary && this.CellHorizontalAlignment == HorizontalAlignment.Left && !(this is ITreeRenderer)) {
-                r.X += 3;
-                r.Width -= 1;
-            }
-            int width = 0;
-
-            // Did they hit a check box on the primary column?
-            if (this.ColumnIsPrimary && this.ListView.CheckBoxes) {
-                Size checkBoxSize = this.CalculateCheckBoxSize(g);
-                int checkBoxTop = this.AlignVertically(r, checkBoxSize.Height);
-                Rectangle r3 = new Rectangle(r.X, checkBoxTop, checkBoxSize.Width, checkBoxSize.Height);
-                width = r3.Width + 6;
-                // g.DrawRectangle(Pens.DarkGreen, r3);
-                if (r3.Contains(x, y)) {
-                    hti.HitTestLocation = HitTestLocation.CheckBox;
-                    return;
-                }
-            }
-
-            // Did they hit the image? If they hit the image of a 
-            // non-primary column that has a checkbox, it counts as a 
-            // checkbox hit
-            r.X += width;
-            r.Width -= width;
-            width = this.CalculateImageWidth(g, this.GetImageSelector());
-            Rectangle rTwo = r;
-            rTwo.Width = width;
-            //g.DrawRectangle(Pens.Red, rTwo);
-            if (rTwo.Contains(x, y)) {
-                if (this.Column != null && (this.Column.Index > 0 && this.Column.CheckBoxes))
-                {
-                    hti.HitTestLocation = HitTestLocation.CheckBox;
-                }
-                else
-                {
-                    hti.HitTestLocation = HitTestLocation.Image;
-                }
-
-                return;
-            }
-
-            // Did they hit the text?
-            r.X += width;
-            r.Width -= width;
-            width = this.CalculateTextWidth(g, this.GetText(), r.Width);
-            rTwo = r;
-            rTwo.Width = width;
-            // g.DrawRectangle(Pens.Blue, rTwo);
-            if (rTwo.Contains(x, y)) {
-                hti.HitTestLocation = HitTestLocation.Text;
-                return;
-            }
-
+            CellLayout layout = this.CalculateImageAndTextLayout(g, alignedContentRectangle, this.GetContentBounds(this.Bounds));
             hti.HitTestLocation = HitTestLocation.InCell;
+            hti.HitBounds = this.Bounds;
+            if (!this.Bounds.Contains(x, y))
+                return;
+            if (layout.CheckBoxBounds.Contains(x, y))
+                hti.HitTestLocation = HitTestLocation.CheckBox;
+            else if (layout.ImageBounds.Contains(x, y))
+                hti.HitTestLocation = this.Column != null && this.Column.Index > 0 && this.Column.CheckBoxes ?
+                    HitTestLocation.CheckBox : HitTestLocation.Image;
+            else if (layout.TextBounds.Contains(x, y))
+                hti.HitTestLocation = HitTestLocation.Text;
+            hti.HitBounds = layout.GetHitBounds(hti.HitTestLocation == HitTestLocation.CheckBox &&
+                layout.CheckBoxBounds.IsEmpty ? HitTestLocation.Image : hti.HitTestLocation);
         }
 
         /// <summary>
@@ -1543,35 +1489,22 @@ namespace BrightIdeasSoftware {
         /// <returns></returns>
         protected virtual Rectangle StandardGetEditRectangle(Graphics g, Rectangle cellBounds, Size preferredSize) {
 
-            Size contentSize = this.CalculateContentSize(g, cellBounds);
-            int contentWidth = this.Column.CellEditUseWholeCellEffective ? cellBounds.Width : contentSize.Width;
-            Rectangle editControlBounds = this.CalculatePaddedAlignedBounds(g, cellBounds, new Size(contentWidth, preferredSize.Height));
-
-            Size checkBoxSize = this.CalculatePrimaryCheckBoxSize(g);
-            int imageWidth = this.CalculateImageWidth(g, this.GetImageSelector());
-
-            int width = checkBoxSize.Width + imageWidth + 2;
-
-            // Indent the primary column by the required amount
-            if (this.ColumnIsPrimary && this.ListItem.IndentCount > 0) {
-                int indentWidth = this.ListView.SmallImageSize.Width * this.ListItem.IndentCount;
-                editControlBounds.X += indentWidth;
-            }
-
-            editControlBounds.X += width;
-            editControlBounds.Width -= width;
-
-            if (editControlBounds.Width < 50)
-            {
-                editControlBounds.Width = 50;
-            }
-
-            if (editControlBounds.Right > cellBounds.Right)
-            {
-                editControlBounds.Width = cellBounds.Right - editControlBounds.Left;
-            }
-
-            return editControlBounds;
+            CellLayout layout = this.CalculateCellLayout(g, cellBounds);
+            Rectangle content = layout.ContentBounds;
+            int contentLeft = Math.Min(cellBounds.Right, Math.Max(cellBounds.Left, content.Left));
+            int contentRight = Math.Max(contentLeft, Math.Min(cellBounds.Right, content.Right));
+            Rectangle available = new Rectangle(contentLeft, content.Y, contentRight - contentLeft, content.Height);
+            Rectangle text = layout.TextBounds;
+            int left = this.IsRightToLeft && this.Column.CellEditUseWholeCellEffective ? available.Left : text.Left;
+            int right = !this.IsRightToLeft && this.Column.CellEditUseWholeCellEffective ? available.Right : text.Right;
+            if (this.IsRightToLeft)
+                left = Math.Max(available.Left, Math.Min(left, right - 50));
+            else
+                right = Math.Min(available.Right, Math.Max(right, left + 50));
+            left = Math.Max(available.Left, Math.Min(left, available.Right));
+            right = Math.Max(left, Math.Min(right, available.Right));
+            return new Rectangle(left, this.AlignVertically(available, preferredSize.Height),
+                right - left, preferredSize.Height);
         }
 
         /// <summary>
@@ -1676,7 +1609,8 @@ namespace BrightIdeasSoftware {
 
             // The rectangle r is already horizontally aligned. We still need to align it vertically.
             Size checkBoxSize = this.CalculateCheckBoxSize(g);
-            Point checkBoxLocation = new Point(r.X, this.AlignVertically(r, checkBoxSize.Height));
+            Point checkBoxLocation = new Point(r.X, r.Height == checkBoxSize.Height ?
+                r.Y : this.AlignVertically(r, checkBoxSize.Height));
 
             if (this.IsPrinting || this.UseCustomCheckboxImages) {
                 int imageIndex = this.ListItem.StateImageIndex;
@@ -1685,7 +1619,7 @@ namespace BrightIdeasSoftware {
                     return 0;
                 }
 
-                return this.DrawImage(g, new Rectangle(checkBoxLocation, checkBoxSize), this.ListView.StateImageList.Images[imageIndex]) + 4;
+                return this.DrawImage(g, new Rectangle(checkBoxLocation, checkBoxSize), this.ListView.StateImageList.Images[imageIndex]);
             }
 
             CheckBoxState boxState = this.GetCheckBoxState(this.ListItem.CheckState);
@@ -1864,18 +1798,7 @@ namespace BrightIdeasSoftware {
         /// <param name="g">Graphics context to use for drawing</param>
         /// <param name="r">Bounds of the cell</param>
         protected virtual void DrawImageAndText(Graphics g, Rectangle r) {
-            int offset = 0;
-            if (this.ListView.CheckBoxes && this.ColumnIsPrimary) {
-                offset = this.DrawCheckBox(g, r) + 6;
-                r.X += offset;
-                r.Width -= offset;
-            }
-
-            offset = this.DrawImage(g, r, this.GetImageSelector());
-            r.X += offset;
-            r.Width -= offset;
-
-            this.DrawText(g, r, this.GetText());
+            this.DrawCellLayout(g, this.CalculateImageAndTextLayout(g, r, this.GetContentBounds(this.Bounds)));
         }
 
         /// <summary>
@@ -1968,6 +1891,8 @@ namespace BrightIdeasSoftware {
             }
 
             TextFormatFlags flags = NormalTextFormatFlags | this.CellVerticalAlignmentAsTextFormatFlag;
+            if (this.IsRightToLeft)
+                flags |= TextFormatFlags.RightToLeft | TextFormatFlags.Right;
 
             // I think there is a bug in the TextRenderer. Setting or not setting SingleLine doesn't make 
             // any difference -- it is always single line.
@@ -2010,12 +1935,18 @@ namespace BrightIdeasSoftware {
                 StringFormat fmt = new StringFormat();
                 fmt.LineAlignment = this.EffectiveCellVerticalAlignment;
                 fmt.Trimming = StringTrimming.EllipsisCharacter;
-                fmt.Alignment = this.CellHorizontalAlignment == HorizontalAlignment.Center ? StringAlignment.Center :
-                    this.CellHorizontalAlignment == HorizontalAlignment.Right ? StringAlignment.Far : StringAlignment.Near;
+                HorizontalAlignment alignment = this.CellHorizontalAlignment;
+                bool alignFar = alignment == HorizontalAlignment.Right;
+                if (this.IsRightToLeft)
+                    alignFar = !alignFar;
+                fmt.Alignment = alignment == HorizontalAlignment.Center ? StringAlignment.Center :
+                    alignFar ? StringAlignment.Far : StringAlignment.Near;
                 if (!this.CanWrapOrDefault)
                 {
                     fmt.FormatFlags = StringFormatFlags.NoWrap;
                 }
+                if (this.IsRightToLeft)
+                    fmt.FormatFlags |= StringFormatFlags.DirectionRightToLeft;
 
                 return fmt;
             }
@@ -2603,6 +2534,13 @@ namespace BrightIdeasSoftware {
     /// This renderer draws just a checkbox to match the check state of our model object.
     /// </summary>
     public class CheckStateRenderer : BaseRenderer {
+        /// <inheritdoc />
+        protected override CellLayout CalculateCellLayout(Graphics g, Rectangle cellBounds) {
+            Rectangle content = this.ApplyCellPadding(cellBounds);
+            return new CellLayout(cellBounds, content, this.CalculateCheckBoxBounds(g, content),
+                Rectangle.Empty, Rectangle.Empty);
+        }
+
         /// <summary>
         /// Draw our cell
         /// </summary>
@@ -2632,7 +2570,7 @@ namespace BrightIdeasSoftware {
 
                 this.DrawAlignedImage(g, r, this.ImageListOrDefault.Images[key]);
             } else {
-                r = this.CalculateCheckBoxBounds(g, r);
+                r = this.CalculateCellLayout(g, this.Bounds).CheckBoxBounds;
                 ThemedRendering.DrawCheckBox(g, r.Location, this.GetCheckBoxState(state));
             }
         }
@@ -2659,11 +2597,10 @@ namespace BrightIdeasSoftware {
         /// <param name="x"></param>
         /// <param name="y"></param>
         protected override void HandleHitTest(Graphics g, OlvListViewHitTestInfo hti, int x, int y) {
-            Rectangle r = this.CalculateCheckBoxBounds(g, this.Bounds);
-            if (r.Contains(x, y))
-            {
-                hti.HitTestLocation = HitTestLocation.CheckBox;
-            }
+            CellLayout layout = this.CalculateCellLayout(g, this.Bounds);
+            hti.HitTestLocation = layout.CheckBoxBounds.Contains(x, y) && this.Bounds.Contains(x, y) ?
+                HitTestLocation.CheckBox : HitTestLocation.InCell;
+            hti.HitBounds = layout.GetHitBounds(hti.HitTestLocation);
         }
     }
 
@@ -4099,6 +4036,13 @@ namespace BrightIdeasSoftware {
     /// </summary>
     public class ColumnButtonRenderer : BaseRenderer {
 
+        /// <inheritdoc />
+        protected override CellLayout CalculateCellLayout(Graphics g, Rectangle cellBounds) {
+            Rectangle content = this.GetContentBounds(cellBounds);
+            return new CellLayout(cellBounds, content, Rectangle.Empty, Rectangle.Empty, Rectangle.Empty,
+                buttonBounds: this.CalculateAlignedRectangle(g, content));
+        }
+
         #region Properties
 
         /// <summary>
@@ -4319,11 +4263,9 @@ namespace BrightIdeasSoftware {
         /// <param name="x"></param>
         /// <param name="y"></param>
         protected override void StandardHitTest(Graphics g, OlvListViewHitTestInfo hti, Rectangle alignedContentRectangle, int x, int y) {
-            Rectangle r = ApplyCellPadding(alignedContentRectangle);
-            if (r.Contains(x, y))
-            {
-                hti.HitTestLocation = HitTestLocation.Button;
-            }
+            Rectangle r = Rectangle.Intersect(this.Bounds, alignedContentRectangle);
+            hti.HitTestLocation = r.Contains(x, y) ? HitTestLocation.Button : HitTestLocation.InCell;
+            hti.HitBounds = hti.HitTestLocation == HitTestLocation.Button ? r : this.Bounds;
         }
 
         /// <summary>

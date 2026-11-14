@@ -70,7 +70,7 @@ namespace BrightIdeasSoftware {
     /// Class used to capture window messages for the header of the list view
     /// control.
     /// </summary>
-    public class HeaderControl : NativeWindow {
+    public partial class HeaderControl : NativeWindow {
         /// <summary>
         /// Create a header control for the given ObjectListView.
         /// </summary>
@@ -257,47 +257,30 @@ namespace BrightIdeasSoftware {
             float height = this.MinimumHeight;
             for (int i = 0; i < this.ListView.Columns.Count; i++) {
                 OLVColumn column = this.ListView.GetColumn(i);
-                height = Math.Max(height, CalculateColumnHeight(g, column, flags, columnUnderCursor == i, i));
+                height = Math.Max(height, CalculateColumnHeight(g, column, flags, columnUnderCursor == i));
             }
             return this.MaximumHeight == -1 ? (int) height : Math.Min(this.MaximumHeight, (int) height);
         }
 
-        private float CalculateColumnHeight(Graphics g, OLVColumn column, TextFormatFlags flags, bool isHot, int i) {
-            Font f = this.CalculateFont(column, isHot, false);
-            if (column.IsHeaderVertical)
-            {
-                return TextRenderer.MeasureText(g, column.Text, f, new Size(10000, 10000), flags).Width;
-            }
-
+        private float CalculateColumnHeight(Graphics g, OLVColumn column, TextFormatFlags flags, bool isHot) {
+            HeaderStateStyle style = this.CalculateStateStyle(column, isHot, false);
+            HeaderLayout layout = this.CalculateHeaderLayout(g, column, style);
+            Rectangle padding = style.ResolvedValues?.Padding ?? Rectangle.Empty;
+            Size imageSize = column.HasHeaderImage ? column.ImageList.ImageSize : Size.Empty;
             const int fudge = 9; // 9 is a magic constant that makes it perfectly match XP behavior
-            if (!this.WordWrap)
-            {
-                return f.Height + fudge;
+            int height = 0;
+            if (column.ShowTextInHeader) {
+                if (column.IsHeaderVertical)
+                    height = TextRenderer.MeasureText(g, column.Text, layout.Font, new Size(10000, 10000),
+                        flags | TextFormatFlags.SingleLine).Width;
+                else
+                    height = this.WordWrap ? TextRenderer.MeasureText(g, column.Text, layout.Font,
+                        new Size(Math.Max(1, layout.TextArea.Width), 10000), flags).Height : layout.Font.Height;
             }
-
-            Rectangle r = this.GetHeaderDrawRect(i);
-            if (this.HasSortIndicator(column))
-            {
-                r.Width -= this.CalculateSortIndicatorWidth(g, column, f);
-            }
-
-            if (column.HasHeaderImage)
-            {
-                r.Width -= column.ImageList.ImageSize.Width + 3;
-            }
-
-            if (this.HasFilterIndicator(column))
-            {
-                r.Width -= CalculateFilterIndicatorWidth(r);
-            }
-
-            if (HasCheckBox(column))
-            {
-                r.Width -= CalculateCheckBoxBounds(g, r).Width;
-            }
-
-            SizeF size = TextRenderer.MeasureText(g, column.Text, f, new Size(r.Width, 100), flags);
-            return size.Height + fudge;
+            height = column.IsHeaderVertical ? height + imageSize.Height +
+                (height > 0 && imageSize.Height > 0 ? 3 : 0) : Math.Max(height, imageSize.Height);
+            height = Math.Max(height, layout.Cell.CheckBoxBounds.Height);
+            return height + Math.Max(0, padding.Bottom) + fudge;
         }
 
         /// <summary>
@@ -306,12 +289,7 @@ namespace BrightIdeasSoftware {
         /// <param name="column"></param>
         /// <returns></returns>
         public Rectangle GetCheckBoxBounds(OLVColumn column) {
-            Rectangle r = this.GetHeaderDrawRect(column.Index);
-
-            using (Graphics g = this.ListView.CreateGraphics())
-            {
-                return CalculateCheckBoxBounds(g, r);
-            }
+            return Rectangle.Intersect(this.GetItemRect(column.Index), this.GetCellLayout(column).CheckBoxBounds);
         }
 
         /// <summary>
@@ -954,16 +932,26 @@ namespace BrightIdeasSoftware {
                 this.DrawUnthemedBackground(g, fullCellBounds, columnIndex, isPressed, isHot, stateStyle);
             }
 
-            Rectangle r = this.GetHeaderDrawRect(columnIndex);
+            GraphicsState contentState = g.Save();
+            try {
+                g.SetClip(fullCellBounds, CombineMode.Intersect);
+                this.DrawHeaderForeground(g, column, stateStyle, hasCheckBox, isMouseOverCheckBox, isMouseDownOnCheckBox);
+            } finally {
+                g.Restore(contentState);
+            }
+        }
+
+        private void DrawHeaderForeground(Graphics g, OLVColumn column, HeaderStateStyle stateStyle,
+            bool hasCheckBox, bool isMouseOverCheckBox, bool isMouseDownOnCheckBox) {
+            HeaderLayout layout = this.CalculateHeaderLayout(g, column, stateStyle);
+            Rectangle r = layout.Cell.ContentBounds;
 
             // Draw the sort indicator if this column has one
             if (this.HasSortIndicator(column)) {
-                Font font = this.ListView.HeaderUsesThemes && !this.ListView.HasHeaderAppearance(column) ?
-                    this.ListView.Font : stateStyle.Font ?? this.ListView.Font;
+                Font font = layout.Font;
                 int priority = this.ListView.GetSortPriority(column);
                 string label = priority.ToString(CultureInfo.CurrentCulture);
-                int width = this.CalculateSortIndicatorWidth(g, column, font);
-                Rectangle indicatorBounds = new Rectangle(r.Right - width, r.Top, width, r.Height);
+                Rectangle indicatorBounds = layout.SortIndicator;
                 SortOrder order = this.ListView.SortDescriptions[priority - 1].SortOrder;
                 GraphicsState savedState = g.Save();
                 try {
@@ -981,24 +969,22 @@ namespace BrightIdeasSoftware {
                 } finally {
                     g.Restore(savedState);
                 }
-                r.Width = Math.Max(0, r.Width - width);
             }
 
-            if (this.HasFilterIndicator(column))
-            {
-                r = this.DrawFilterIndicator(g, r);
-            }
+            if (layout.FilterIndicator.Width > 0)
+                g.DrawImageUnscaled(Resources.ColumnFilterIndicator, layout.FilterIndicator.Location);
 
             if (hasCheckBox)
             {
-                r = DrawCheckBox(g, r, column.HeaderCheckState, column.HeaderCheckBoxDisabled, isMouseOverCheckBox, isMouseDownOnCheckBox);
+                ThemedRendering.DrawCheckBox(g, layout.Cell.CheckBoxBounds.Location,
+                    GetCheckBoxState(column.HeaderCheckState, column.HeaderCheckBoxDisabled, isMouseOverCheckBox, isMouseDownOnCheckBox));
             }
 
             // Debugging - Where is the text going to be drawn
             //            g.DrawRectangle(Pens.Blue, r);
 
             // Finally draw the text
-            this.DrawHeaderImageAndText(g, r, column, stateStyle);
+            this.DrawHeaderContent(g, column, stateStyle, layout);
         }
 
         private int CalculateSortIndicatorWidth(Graphics g, OLVColumn column, Font font) {
@@ -1017,20 +1003,6 @@ namespace BrightIdeasSoftware {
 
         private static Font CreateSortPriorityFont(Font headerFont) {
             return new Font(headerFont.FontFamily, headerFont.Size * 0.8f, headerFont.Style, headerFont.Unit);
-        }
-
-        private static Rectangle DrawCheckBox(Graphics g, Rectangle r, CheckState checkState, bool isDisabled, bool isHot,
-            bool isPressed) {
-            CheckBoxState checkBoxState = GetCheckBoxState(checkState, isDisabled, isHot, isPressed);
-            Rectangle checkBoxBounds = CalculateCheckBoxBounds(g, r);
-            ThemedRendering.DrawCheckBox(g, checkBoxBounds.Location, checkBoxState);
-
-            // Move the left edge without changing the right edge
-            int newX = checkBoxBounds.Right + 3;
-            r.Width -= (newX - r.X);
-            r.X = newX;
-
-            return r;
         }
 
         private static Rectangle CalculateCheckBoxBounds(Graphics g, Rectangle cellBounds) {
@@ -1299,29 +1271,11 @@ namespace BrightIdeasSoftware {
         /// <param name="column"></param>
         /// <param name="stateStyle"></param>
         protected void DrawHeaderImageAndText(Graphics g, Rectangle r, OLVColumn column, HeaderStateStyle stateStyle) {
+            this.DrawHeaderContent(g, column, stateStyle, this.CalculateHeaderLayout(g, column, stateStyle, r, false));
+        }
 
-            TextFormatFlags flags = this.TextFormatFlags;
-            StringAlignment vertical = stateStyle.ResolvedValues?.VerticalAlignment ?? StringAlignment.Center;
-            flags |= vertical == StringAlignment.Near ? TextFormatFlags.Top :
-                vertical == StringAlignment.Far ? TextFormatFlags.Bottom : TextFormatFlags.VerticalCenter;
-            HorizontalAlignment alignment = stateStyle.ResolvedValues?.HorizontalAlignment ?? column.HeaderTextAlignOrDefault;
-            if (stateStyle.ResolvedValues?.Padding is Rectangle padding) {
-                r = new Rectangle(r.X + padding.X, r.Y + padding.Y,
-                    Math.Max(0, r.Width - padding.X - padding.Width),
-                    Math.Max(0, r.Height - padding.Y - padding.Height));
-            }
-            if (alignment == HorizontalAlignment.Center)
-            {
-                flags |= TextFormatFlags.HorizontalCenter;
-            }
-
-            if (alignment == HorizontalAlignment.Right)
-            {
-                flags |= TextFormatFlags.Right;
-            }
-
+        private void DrawHeaderContent(Graphics g, OLVColumn column, HeaderStateStyle stateStyle, HeaderLayout layout) {
             bool useNative = this.ListView.HeaderUsesThemes && !this.ListView.HasHeaderAppearance(column);
-            Font f = useNative ? this.ListView.Font : stateStyle.Font ?? this.ListView.Font;
             Color defaultColor = ObjectListViewTheme.Current.TextColor;
             Color color = useNative ? defaultColor : stateStyle.ForeColor;
             if (color.IsEmpty)
@@ -1334,20 +1288,18 @@ namespace BrightIdeasSoftware {
                 color = ObjectListViewTheme.Current.GrayTextColor;
             }
 
-            const int imageTextGap = 3;
-
+            Rectangle image = layout.Cell.ImageBounds;
+            if (column.HasHeaderImage && image.Width > 0) {
+                using (Image headerImage = column.ImageList.Images[column.HeaderImageKey])
+                    g.DrawImageUnscaled(headerImage, image.Location);
+            }
+            Rectangle text = layout.Cell.TextBounds;
+            if (!column.ShowTextInHeader || text.Width <= 0 || text.Height <= 0)
+                return;
             if (column.IsHeaderVertical) {
-                DrawVerticalText(g, r, column, f, color);
+                DrawVerticalText(g, text, column, layout.Font, color, this.ListView.RightToLeft == RightToLeft.Yes);
             } else {
-                // Does the column have a header image and is there space for it?
-                if (column.HasHeaderImage && r.Width > column.ImageList.ImageSize.Width*2)
-                {
-                    DrawImageAndText(g, r, column, flags, f, color, imageTextGap);
-                }
-                else
-                {
-                    DrawText(g, r, column, flags, f, color);
-                }
+                DrawText(g, text, column, layout.TextFlags, layout.Font, color);
             }
         }
 
@@ -1358,63 +1310,22 @@ namespace BrightIdeasSoftware {
             }
         }
 
-        private static void DrawImageAndText(Graphics g, Rectangle r, OLVColumn column, TextFormatFlags flags, Font f,
-            Color color, int imageTextGap) {
-            Rectangle textRect = r;
-            textRect.X += (column.ImageList.ImageSize.Width + imageTextGap);
-            textRect.Width -= (column.ImageList.ImageSize.Width + imageTextGap);
-
-            Size textSize = Size.Empty;
-            if (column.ShowTextInHeader)
-            {
-                textSize = TextRenderer.MeasureText(g, column.Text, f, textRect.Size, flags);
-            }
-
-            int imageY = r.Top + ((r.Height - column.ImageList.ImageSize.Height)/2);
-            int imageX = textRect.Left;
-            if (column.HeaderTextAlignOrDefault == HorizontalAlignment.Center)
-            {
-                imageX = textRect.Left + ((textRect.Width - textSize.Width)/2);
-            }
-
-            if (column.HeaderTextAlignOrDefault == HorizontalAlignment.Right)
-            {
-                imageX = textRect.Right - textSize.Width;
-            }
-
-            imageX -= (column.ImageList.ImageSize.Width + imageTextGap);
-
-            column.ImageList.Draw(g, imageX, imageY, column.ImageList.Images.IndexOfKey(column.HeaderImageKey));
-
-            DrawText(g, textRect, column, flags, f, color);
-        }
-
-        private static void DrawVerticalText(Graphics g, Rectangle r, OLVColumn column, Font f, Color color) {
+        private static void DrawVerticalText(Graphics g, Rectangle r, OLVColumn column, Font f, Color color, bool rightToLeft) {
+            GraphicsState state = g.Save();
             try {
-                // Create a matrix transformation that will rotate the text 90 degrees vertically
-                // AND place the text in the middle of where it was previously. [Think of tipping
-                // a box over by its bottom left edge -- you have to move it back a bit so it's
-                // in the same place as it started]
-                Matrix m = new Matrix();
-                m.RotateAt(-90, new Point(r.X, r.Bottom));
-                m.Translate(0, r.Height);
-                g.Transform = m;
-                StringFormat fmt = new StringFormat(StringFormatFlags.NoWrap);
-                fmt.Alignment = StringAlignment.Near;
-                fmt.LineAlignment = column.HeaderTextAlignAsStringAlignment;
-                //fmt.Trimming = StringTrimming.EllipsisCharacter;
-
-                // The drawing is rotated 90 degrees, so switch our text boundaries
-                Rectangle textRect = r;
-                textRect.Width = r.Height;
-                textRect.Height = r.Width;
+                g.TranslateTransform(r.Left, r.Bottom);
+                g.RotateTransform(-90);
+                using (StringFormat fmt = new StringFormat(StringFormatFlags.NoWrap))
                 using (Brush b = new SolidBrush(color))
                 {
-                    g.DrawString(column.Text, f, b, textRect, fmt);
+                    fmt.Trimming = StringTrimming.EllipsisCharacter;
+                    if (rightToLeft)
+                        fmt.FormatFlags |= StringFormatFlags.DirectionRightToLeft;
+                    g.DrawString(column.Text, f, b, new Rectangle(0, 0, r.Height, r.Width), fmt);
                 }
             }
             finally {
-                g.ResetTransform();
+                g.Restore(state);
             }
         }
 

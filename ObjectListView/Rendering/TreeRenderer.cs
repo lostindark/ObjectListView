@@ -120,19 +120,22 @@ namespace BrightIdeasSoftware {
                 this.DrawBackground(g, r);
 
                 Branch br = this.Branch;
-
                 Rectangle paddedRectangle = this.ApplyCellPadding(r);
-
-                Rectangle expandGlyphRectangle = paddedRectangle;
-                expandGlyphRectangle.Offset((br.Level - 1) * PIXELS_PER_LEVEL, 0);
-                expandGlyphRectangle.Width = PIXELS_PER_LEVEL;
-                expandGlyphRectangle.Height = PIXELS_PER_LEVEL;
-                expandGlyphRectangle.Y = this.AlignVertically(paddedRectangle, expandGlyphRectangle);
+                Rectangle expandGlyphRectangle = this.GetExpansionBounds(r);
                 int expandGlyphRectangleMidVertical = expandGlyphRectangle.Y + (expandGlyphRectangle.Height/2);
 
                 if (this.IsShowLines)
                 {
-                    this.DrawLines(g, r, this.LinePen, br, expandGlyphRectangleMidVertical);
+                    System.Drawing.Drawing2D.GraphicsState state = g.Save();
+                    try {
+                        if (this.IsRightToLeft) {
+                            g.TranslateTransform(paddedRectangle.Left + paddedRectangle.Right, 0);
+                            g.ScaleTransform(-1, 1);
+                        }
+                        this.DrawLines(g, paddedRectangle, this.LinePen, br, expandGlyphRectangleMidVertical);
+                    } finally {
+                        g.Restore(state);
+                    }
                 }
 
                 if (br.CanExpand && this.IsShowGlyphs)
@@ -140,11 +143,31 @@ namespace BrightIdeasSoftware {
                     this.DrawExpansionGlyph(g, expandGlyphRectangle, br.IsExpanded);
                 }
 
-                int indent = br.Level * PIXELS_PER_LEVEL;
-                paddedRectangle.Offset(indent, 0);
-                paddedRectangle.Width -= indent;
+                this.DrawAlignedImageAndText(g, this.GetContentBounds(r));
+            }
 
-                this.DrawImageAndText(g, paddedRectangle);
+            /// <inheritdoc />
+            protected override Rectangle GetContentBounds(Rectangle cellBounds) {
+                Rectangle r = this.ApplyCellPadding(cellBounds);
+                int indent = Math.Min(r.Width, this.Branch.Level * PIXELS_PER_LEVEL);
+                if (!this.IsRightToLeft)
+                    r.X += indent;
+                r.Width -= indent;
+                return r;
+            }
+
+            private Rectangle GetExpansionBounds(Rectangle cellBounds) {
+                Rectangle padded = this.ApplyCellPadding(cellBounds);
+                Rectangle glyph = new Rectangle(padded.X + (this.Branch.Level - 1) * PIXELS_PER_LEVEL,
+                    this.AlignVertically(padded, PIXELS_PER_LEVEL), PIXELS_PER_LEVEL, PIXELS_PER_LEVEL);
+                return this.IsRightToLeft ? Mirror(glyph, padded) : glyph;
+            }
+
+            /// <inheritdoc />
+            protected override CellLayout CalculateCellLayout(Graphics g, Rectangle cellBounds) {
+                CellLayout layout = base.CalculateCellLayout(g, cellBounds);
+                return new CellLayout(cellBounds, layout.ContentBounds, layout.CheckBoxBounds,
+                    layout.ImageBounds, layout.TextBounds, this.Branch.CanExpand ? this.GetExpansionBounds(cellBounds) : Rectangle.Empty);
             }
 
             /// <summary>
@@ -286,28 +309,19 @@ namespace BrightIdeasSoftware {
             /// <param name="x"></param>
             /// <param name="y"></param>
             protected override void HandleHitTest(Graphics g, OlvListViewHitTestInfo hti, int x, int y) {
-                Branch br = this.Branch;
-
-                Rectangle r = this.ApplyCellPadding(this.Bounds);
-                if (br.CanExpand) {
-                    r.Offset((br.Level - 1) * PIXELS_PER_LEVEL, 0);
-                    r.Width = PIXELS_PER_LEVEL;
-                    if (r.Contains(x, y)) {
-                        hti.HitTestLocation = HitTestLocation.ExpandButton;
-                        return;
-                    }
+                Rectangle glyph = Rectangle.Intersect(this.Bounds, this.GetExpansionBounds(this.Bounds));
+                if (this.Branch.CanExpand && glyph.Contains(x, y)) {
+                    hti.HitTestLocation = HitTestLocation.ExpandButton;
+                    hti.HitBounds = glyph;
+                    return;
                 }
 
-                r = this.Bounds;
-                int indent = br.Level * PIXELS_PER_LEVEL;
-                r.X += indent;
-                r.Width -= indent;
-
-                // Ignore events in the indent zone
-                if (x < r.Left) {
+                Rectangle content = this.GetContentBounds(this.Bounds);
+                if (this.IsRightToLeft ? x >= content.Right : x < content.Left) {
                     hti.HitTestLocation = HitTestLocation.Nothing;
+                    hti.HitBounds = Rectangle.Empty;
                 } else {
-                    this.StandardHitTest(g, hti, r, x, y);
+                    base.HandleHitTest(g, hti, x, y);
                 }
             }
 

@@ -1688,6 +1688,12 @@ namespace BrightIdeasSoftware {
     /// </summary>
     public class ToolTipShowingEventArgs : CellEventArgs {
         /// <summary>
+        /// Gets the hovered renderer target in list-view (or header) client coordinates.
+        /// Native tooltip positioning remains managed by Windows.
+        /// </summary>
+        public Rectangle TargetBounds { get; internal set; }
+
+        /// <summary>
         /// Gets the tooltip control that is triggering the tooltip event
         /// </summary>
         public ToolTipControl ToolTipControl {

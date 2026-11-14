@@ -26,6 +26,7 @@
  */
 
 using System;
+using System.Drawing;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -277,6 +278,12 @@ namespace BrightIdeasSoftware {
         /// Where is the hit location?
         /// </summary>
         public HitTestLocation HitTestLocation { get; set; }
+
+        /// <summary>
+        /// Gets or sets the renderer's target bounds in list-view client coordinates.
+        /// Empty means that the renderer did not supply geometry.
+        /// </summary>
+        public Rectangle HitBounds { get; set; }
 
         /// <summary>
         /// Where is the hit location?

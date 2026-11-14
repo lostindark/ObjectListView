@@ -5998,6 +5998,8 @@ namespace BrightIdeasSoftware
         protected virtual void HandleCellToolTipShowing(object sender, ToolTipShowingEventArgs e) {
             this.BuildCellEvent(e, this.PointToClient(Cursor.Position));
             if (e.Item != null) {
+                e.TargetBounds = e.HitTest.HitBounds.IsEmpty ?
+                    (this.View == View.Details ? e.Item.GetSubItemBounds(e.ColumnIndex) : e.Item.Bounds) : e.HitTest.HitBounds;
                 e.Text = this.GetCellToolTip(e.ColumnIndex, e.RowIndex);
                 this.ApplyToolTipAppearance(e);
                 this.OnCellToolTip(e);
@@ -6029,6 +6031,7 @@ namespace BrightIdeasSoftware
             e.RowIndex = -1;
             e.Model = null;
             e.Column = this.GetColumn(e.ColumnIndex);
+            e.TargetBounds = this.HeaderControl.GetToolTipTargetBounds(e.Column);
             e.Text = this.GetHeaderToolTip(e.ColumnIndex);
             e.ListView = this;
             this.ApplyToolTipAppearance(e);
@@ -10423,7 +10426,7 @@ namespace BrightIdeasSoftware
             object rowObject = ((OLVListItem)e.Item).RowObject;
 
             // Calculate where the subitem should be drawn
-            Rectangle r = e.Bounds;
+            Rectangle r = ((OLVListItem)e.Item).GetSubItemBounds(e.ColumnIndex);
 
             // Get the special renderer for this column. If there isn't one, use the default draw mechanism.
             OLVColumn column = this.GetColumn(e.ColumnIndex);
@@ -11273,8 +11276,10 @@ namespace BrightIdeasSoftware
             }
 
             Rectangle r = item.GetSubItemBounds(subItemIndex);
-            r.Width -= 1;
-            r.Height -= 1;
+            if (!this.OwnerDraw) {
+                r.Width -= 1;
+                r.Height -= 1;
+            }
             return r;
 
             // We use ItemBoundsPortion.Label rather than ItemBoundsPortion.Item

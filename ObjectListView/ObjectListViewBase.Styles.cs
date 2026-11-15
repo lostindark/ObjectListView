@@ -93,8 +93,7 @@ namespace BrightIdeasSoftware {
 
         internal StyleValues ResolveStyle(StyleTarget target, OLVColumn column, OLVListItem item,
             Rectangle bounds, StyleState state, StyleValues defaults, bool includeCellNormal) {
-            if (defaults == null)
-                throw new ArgumentNullException(nameof(defaults));
+            ArgumentNullException.ThrowIfNull(defaults, nameof(defaults));
             StyleValues result = new StyleValues();
             result.Overlay(defaults);
             switch (target) {

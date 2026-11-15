@@ -16,7 +16,10 @@ using Microsoft.CSharp;
 
 namespace BrightIdeasSoftware.Tests {
     [STATestClass]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001", Justification = "TestCleanup disposes the fixture form and its owned controls.")]
     public class TestStyleResolution {
+        private static readonly string[] Rows = { "one", "two" };
+        private static readonly string[] TileRows = { "tile" };
         private Form form;
         private StyleList list;
 
@@ -34,7 +37,7 @@ namespace BrightIdeasSoftware.Tests {
             }
             form.Controls.Add(list);
             form.Show();
-            list.SetObjects(new[] { "one", "two" });
+            list.SetObjects(Rows);
         }
 
         [TestCleanup]
@@ -137,7 +140,7 @@ namespace BrightIdeasSoftware.Tests {
             list.GetColumn(2).IsTileViewColumn = true;
             list.GetColumn(2).CellAppearance.Normal.ForeColor = Color.Blue;
             list.View = View.Tile;
-            list.SetObjects(new[] { "tile" });
+            list.SetObjects(TileRows);
             OLVListItem item = list.GetItem(0);
             Assert.AreEqual(2, item.SubItems.Count);
             Assert.AreEqual(Color.Blue, item.GetSubItem(1).ForeColor);

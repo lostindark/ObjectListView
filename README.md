@@ -9,26 +9,17 @@ ObjectListView is a Windows Forms control that presents model objects in a .NET
 This repository is a fork of the
 [original ObjectListView](https://objectlistview.sourceforge.net/cs/index.html).
 
-## Version 3 development
+<a name="version-3-development"></a>
 
-**V3 is a work in progress, not a completed release.** It targets
-**.NET Framework 4.6.2 and .NET 10 for Windows** and introduces breaking API changes
-that require updating consumer code. **V3 is not binary compatible with V2:**
-users must fix code affected by the breaking changes and recompile their applications.
+## Version 3
 
-Implemented V3 highlights:
+V3 targets **.NET Framework 4.6.2 and .NET 10 for Windows**. It adds typed
+controls, more flexible sorting and grouping, shared styling and rendering,
+dark mode, and Visual Studio 2026 designer support.
+See [What's New in v3](docs/whats-new.md#version-3) for the full overview.
 
-- **Modern runtime support:** .NET 10 for Windows alongside .NET Framework 4.6.2.
-- **Typed controls and enumerable APIs:** generic list, virtual, tree, and data-bound
-  variants, sequence inputs, and snapshot getters.
-- **[Designer support](docs/designer-support.md):** Visual Studio 2026 integration,
-  column editors, smart tags, and header resizing with Undo/Redo; modern support is NuGet-only.
-- **[Dark mode](docs/dark-mode.md) and DPI improvements:** configurable palettes,
-  column scaling, and updated demo layouts.
-- **Saved layouts without BinaryFormatter:** one versioned format shared by both runtimes.
-
-See the [implementation plan](docs/v3-plan.md) for progress and the
-[migration guide](docs/v3-migration.md) before upgrading.
+**V3 is not binary compatible with V2.** Read the
+[migration guide](docs/v3-migration.md) before updating and recompiling your application.
 
 ## Documentation
 
@@ -73,10 +64,8 @@ dotnet test Tests\Tests.csproj --configuration Release --framework net10.0-windo
 
 Add `--filter "FullyQualifiedName~TestMunger"` to run a focused group.
 CI also checks package contents and fresh consumers with PowerShell 7 and
-`.github\scripts\Test-Package.ps1`. Modern designer acceptance still requires
-interactive Visual Studio checks. The script leaves a reopenable, version-pinned
-consumer solution under `artifacts\PackageSmoke\consumer`; see the
-[designer acceptance steps](docs/v3-plan.md#continuing-an-iteration).
+`.github\scripts\Test-Package.ps1`. To exercise the designer itself, see the
+[interactive Visual Studio checks](docs/designer-support.md#interactive-visual-studio-checks).
 
 ## License
 

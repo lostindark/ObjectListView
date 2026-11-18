@@ -166,9 +166,32 @@ references, package isolation, runtime consumers, and clean application/publish
 output. Framework source checks cover `net462` and `net48`; package checks also
 cover a legacy non-SDK consumer.
 
-Interactive acceptance is still necessary: resize and save a width, verify one
-Undo/Redo operation, cancel another resize with Escape, change View and return to
-Details, edit columns, and accept/cancel printer edits. Rebuild and run the saved
-form afterward. The [implementation plan](v3-plan.md#nuget-designer-acceptance)
-records the current acceptance scope; automated rendering is not a substitute
-for exercising Visual Studio's actual designer.
+### Interactive Visual Studio checks
+
+To reproduce a designer issue against a fresh NuGet consumer, build the
+solution in Release, then pack it and run the package verification script:
+
+```powershell
+dotnet pack ObjectListView\ObjectListView.csproj --configuration Release --no-build --no-restore -p:PackageVersion=3.0.0-iteration --output artifacts\packages
+.\.github\scripts\Test-Package.ps1 -PackageDirectory artifacts\packages -PackageVersion 3.0.0-iteration
+```
+
+By default the script leaves a version-pinned
+`artifacts\PackageSmoke\consumer\PackageConsumer.sln` that you can reopen in
+Visual Studio 2026 without command-line restore properties. Open
+`DesignerSmokeForm.cs`, select the list, and exercise the relevant interaction:
+
+- Add, remove, hide, or reorder columns in the Columns editor. Save and reopen
+  the form to check both `AllColumns` and the visible columns.
+- Change View to LargeIcon or Tile with the smart tag, then return to Details
+  and resize a column.
+- Drag a header divider, save, and inspect its serialized width. One Undo
+  restores the previous width and one Redo reapplies it. Escape cancels a
+  second gesture without changing the width or adding an Undo operation.
+- For printer editors, reference the matching runtime `ListViewPrinter`
+  assembly. Verify that OK saves brush or pen changes and Cancel preserves
+  the original value. Generated code must use runtime data types, not
+  `Design.Client.Printing` types.
+
+Rebuild and run the saved form, and repeat the applicable checks on Framework.
+Designer SDK dependencies should not appear in the application's output.

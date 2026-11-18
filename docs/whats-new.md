@@ -8,6 +8,35 @@
 
 For the (mostly) complete change log, [see here](changelog.md#changelog).
 
+## Version 3
+
+- **Modern WinForms and designer support.** Target .NET 10 for Windows or
+  .NET Framework 4.6.2. The NuGet package includes Visual Studio 2026 designer
+  support with smart tags, column and printer editors, and header resizing
+  with Undo/Redo. See [Designer Support](designer-support.md) for the support
+  matrix and setup.
+- **Typed controls and enumerable APIs.** Use generic regular, virtual, fast,
+  tree, and data-bound lists. Bulk commands accept sequences, collection getters
+  return snapshots, and `Rows` provides read-only display-order access.
+- **Multi-column sorting and independent grouping.** Shift-click headers to
+  extend a sort, or set ordered sort descriptions in code. Groups can follow
+  sorting or stay fixed, with their own order and restored collapsed state.
+  See the [sorting recipe](recipes.md#recipe-sorting) and
+  [grouping guide](v3-migration.md#grouping-independently-of-item-sorting).
+- **Unified styling and renderer geometry.** Share style rules across cells,
+  headers, and tooltips. Renderer-owned geometry aligns painting, hit testing,
+  tooltip targets, and cell editors. See [style resolution](v3-migration.md#unified-style-resolution)
+  and [shared rendering](v3-migration.md#shared-rendering-and-hit-test-layout).
+- **Dark mode and DPI improvements.** Use the system theme or an explicit
+  light/dark mode, customize the dark palette, and opt into form theming.
+  Demos and column sizing account for DPI. See [Dark Mode](dark-mode.md).
+- **Portable saved layouts.** Both targets use the same versioned format
+  without BinaryFormatter. Recreate layouts saved in the legacy format.
+
+V3 is not binary compatible with V2. See the [migration guide](v3-migration.md)
+for API changes and replacements, and [GitHub Releases](https://github.com/lostindark/ObjectListView/releases)
+for published versions.
+
 <a name="may-2016-version-2-9-1"></a>
 
 ## May 2016 - Version 2.9.1

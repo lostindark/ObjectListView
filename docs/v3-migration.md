@@ -1,10 +1,9 @@
 # Migrating to ObjectListView v3
 
-[Documentation index](README.md) | [Implementation plan](v3-plan.md)
+[Documentation index](README.md) | [What's New in v3](whats-new.md#version-3)
 
-**V3 is still a work in progress.** This guide covers implemented API and platform
-changes, not a completed release. Recompile consumers and update affected
-overrides; v3 is not a drop-in binary replacement.
+This guide covers API and platform changes from V2 to V3. Recompile consumers
+and update affected overrides; v3 is not a drop-in binary replacement.
 
 ## Grouping independently of item sorting
 
@@ -182,8 +181,8 @@ and designer-generated code still use them.
 
 ## Preview API cleanup and compatibility policy
 
-The preview establishes the following cleanup decisions. It is not a final API
-freeze; subsequent previews may still introduce documented breaking changes.
+V3 keeps the following compatibility adapters and extension points. Preview
+versions may still introduce documented breaking changes.
 
 | API or extension point | Preview decision |
 | --- | --- |
@@ -231,10 +230,10 @@ customization. Materialize before mutation to retain enumeration-failure safety.
 
 ### Assembly and package versions
 
-The local package default is `3.0.0-preview`. CI retains its `3.0.<run>-preview`
-package naming; publication is an explicit workflow action after successful CI
-and interactive acceptance, not a side effect of building or packing. Stable
-publication must wait for preview feedback and final API acceptance.
+The local package default is `3.0.0-preview`. The
+[Publish NuGet workflow](../.github/workflows/publish.yml) publishes
+`3.0.<run>` for stable packages and `3.0.<run>-preview` for previews.
+Building or packing locally does not publish a package.
 
 `ObjectListView.dll` has a fixed assembly version of `3.0.0.0` instead of the
 V2 date-based wildcard. File versions follow the numeric build `Version`;

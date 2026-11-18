@@ -7,13 +7,12 @@ The namespace is `BrightIdeasSoftware`; the assembly is `ObjectListView.dll`.
 This project is a fork of the
 [original ObjectListView](https://objectlistview.sourceforge.net/cs/index.html).
 
-**V3 is still a work in progress, not a completed release.**
 **V3 is not binary compatible with V2:** users must fix code affected by the
 breaking API changes and recompile their applications. Read the
 [migration guide](https://github.com/lostindark/ObjectListView/blob/main/docs/v3-migration.md)
 before upgrading.
-Preview builds use the original signing key with V3 assembly identity
-`3.0.0.0`. The local package default is `3.0.0-preview`; preview APIs are not frozen.
+V3 builds use the original signing key with assembly identity `3.0.0.0`.
+Preview versions can still introduce documented breaking changes.
 
 ## Install
 
@@ -22,13 +21,14 @@ Enable **Include prerelease** for preview versions.
 
 Supports **.NET Framework 4.6.2** and **.NET 10 for Windows**.
 The package includes Visual Studio 2026 designer support; see the
-[project README](https://github.com/lostindark/ObjectListView#version-3-development)
+[designer support guide](https://github.com/lostindark/ObjectListView/blob/main/docs/designer-support.md)
 for current limitations.
 The classic Framework designer is delivered separately from the runtime DLL and
 is referenced automatically without copying it into application output.
 
 ## Documentation
 
+- [What's New in v3](https://github.com/lostindark/ObjectListView/blob/main/docs/whats-new.md#version-3)
 - [Getting started](https://github.com/lostindark/ObjectListView/blob/main/docs/getting-started.md)
 - [Designer support](https://github.com/lostindark/ObjectListView/blob/main/docs/designer-support.md)
 - [Features and examples](https://github.com/lostindark/ObjectListView/blob/main/docs/features.md)

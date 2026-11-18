@@ -1455,11 +1455,24 @@ OK, OK. This isn't actually a very useful class, but it does look cool :)
 
 > *Your way of ordering groups and the rows within the groups is stupid. I want to be able to do it myself.*
 
-O-K... Listen for the `BeforeCreatingGroups` event. In the parameter block for that event, set `GroupComparer` to control how groups are sorted, and `ItemComparer` to control how items within a group are sorted.
+Handle `BeforeCreatingGroups` to customize that grouping operation. Set
+`e.Parameters.GroupComparer` to order groups, or `e.Parameters.ModelComparer` to
+order items within each group. `ModelComparer` works for both regular and virtual
+lists. The legacy `ItemComparer` works for regular lists only.
 
-If you don't want the items within the group to be sorted at all, set `PrimarySortOrder` to `SortOrder.None`.
+To leave items in their original order within each group, clear
+`e.Parameters.SortDescriptions` and leave both item comparers unset:
 
-There is no way to NOT sort the groups. They have to be ordered in some fashion.
+```csharp
+list.BeforeCreatingGroups += (sender, e) => {
+    e.Parameters.SortDescriptions.Clear();
+};
+```
+
+To leave the groups themselves in discovery order, set `e.Parameters.GroupByOrder`
+to `SortOrder.None` and leave `GroupComparer` unset. See the
+[migration guide](v3-migration.md#grouping-independently-of-item-sorting) for
+persistent grouping configuration and comparer precedence.
 
 <a name="how-do-i-change-what-happens-the-user-presses-tab-or-enter-when-editing-a-cell"></a>
 

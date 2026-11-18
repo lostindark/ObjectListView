@@ -440,11 +440,16 @@ Stateless helpers are now static. For example, use
 and `HeaderControl.HasCheckBox(column)` rather than calling them on instances.
 In subclasses, call protected utility methods directly instead of through `this`.
 
-## Configuration and parameter names
+## Fields converted to properties and parameter names
 
 Mutable static settings, including filtering labels, images, the editor registry,
-and tree indentation, are now properties. Their names, defaults, and writable
-behavior are unchanged; update field-specific reflection or `ref`/`out` usage.
+and tree indentation, are now properties. This also applies to mutable instance
+fields such as `ItemsAddingEventArgs.ObjectsToAdd`, `BeforeSortingEventArgs.Handled`,
+and `BlockFormat.TextBrush` and `BackgroundBrush`.
+
+Ordinary reads and assignments still work. For a `ref` or `out` argument, pass a
+local variable and assign the result back to the property. Update reflection
+code to use `GetProperty` instead of `GetField`.
 
 Override parameter names now match their base/interface declarations. Update named
 arguments using the old names, for example `shouldPreserveSelection` to
@@ -551,6 +556,9 @@ object-based callbacks and direct data-source interfaces are unchanged.
 - Update renderer, overlay, and drag/drop signatures to `ObjectListViewBase`.
   Shared untyped access includes `ModelObjects`, `GetModelAt`, and the
   `SelectedModelObject(s)` / `CheckedModelObject(s)` bridges.
+- In custom `IGenerator` implementations and `Generator` overrides, change
+  `GenerateAndReplaceColumns(ObjectListView olv, Type type, bool allProperties)`
+  to `GenerateAndReplaceColumns(ObjectListViewBase olv, Type type, bool allProperties)`.
 - Generic `GetModelAt` and selection/check bridges are sealed. Existing
   `ObjectListView` subclasses should keep overriding `GetModelObject`,
   `SelectedObject(s)`, and `CheckedObject(s)` using their inherited generic

@@ -247,8 +247,9 @@ namespace BrightIdeasSoftware
         /// <summary>
         /// Get or set the list of all model objects
         /// </summary>
-        /// <remarks>The getter returns null for an unset/null source, otherwise an independent
-        /// snapshot. An assigned sequence is consumed once on the control thread before it
+        /// <remarks>The getter returns an independent snapshot, or null when the control has no
+        /// source. Virtual, fast, and tree controls return an empty snapshot when they have no
+        /// source models. An assigned sequence is consumed once on the control thread before it
         /// replaces the owned List.</remarks>
         [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public IEnumerable<T> Objects {
@@ -258,7 +259,8 @@ namespace BrightIdeasSoftware
 
         /// <summary>
         /// Return an independent snapshot of all source models, not just visible rows.
-        /// Returns null for an unset/null source.
+        /// Returns null when the control has no source. Virtual, fast, and tree controls
+        /// return an empty snapshot when they have no source models.
         /// </summary>
         public List<T> GetObjectsSnapshot() {
             IEnumerable source = this.ModelObjects;

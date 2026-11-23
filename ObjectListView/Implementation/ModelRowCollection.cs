@@ -20,7 +20,15 @@ namespace BrightIdeasSoftware
                 (!implementation.IsGenericType || implementation.GetGenericTypeDefinition() != typeof(TypedVirtualObjectListView<>));
         }
 
-        public int Count { get { return this.listView.GetItemCount(); } }
+        public int Count {
+            get {
+                if (this.listView.ModelRowGroupingStrategy == null)
+                    return this.listView.GetItemCount();
+
+                this.EnsureGroupEnds();
+                return this.groupEnds[this.groupEnds.Length - 1];
+            }
+        }
 
         public T this[int index] {
             get {
@@ -80,6 +88,12 @@ namespace BrightIdeasSoftware
 
         private IEnumerable<T> EnumerateNativeGroups(int version) {
             this.CheckVersion(version);
+            if (this.listView.GetDefaultGroupItemCount() > 0) {
+                foreach (OLVListItem item in this.listView.GetDefaultGroupItems()) {
+                    this.CheckVersion(version);
+                    yield return (T)this.listView.GetModelAt(item.Index);
+                }
+            }
             foreach (ListViewGroup group in this.listView.Groups) {
                 for (int i = 0; i < group.Items.Count; i++) {
                     this.CheckVersion(version);

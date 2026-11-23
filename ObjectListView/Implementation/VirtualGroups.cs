@@ -161,12 +161,27 @@ namespace BrightIdeasSoftware
             IList<OLVSortDescription> descriptions = parameters.GetItemSortDescriptions();
             IComparer<object> comparer = parameters.ModelComparer ??
                 (descriptions.Count > 0 ? new ModelObjectComparer(descriptions) : null);
-            return parameters.MakeGroups(folv.FilteredObjects.Cast<object>(), model => model, comparer,
+            IEnumerable<IndexedModel> rows = folv.FilteredObjects.Cast<object>()
+                .Select((model, index) => new IndexedModel(model, index));
+            IComparer<IndexedModel> rowComparer = comparer == null ? null :
+                Comparer<IndexedModel>.Create((x, y) => comparer.Compare(x.Model, y.Model));
+            return parameters.MakeGroups(rows, row => row.Model, rowComparer,
                 (group, members) => {
-                    group.Contents = members.ConvertAll(folv.IndexOf);
+                    group.Contents = members.ConvertAll(row => row.Index);
                     group.VirtualItemCount = members.Count;
                 });
         }
+
+        private readonly struct IndexedModel {
+            internal IndexedModel(object model, int index) {
+                this.Model = model;
+                this.Index = index;
+            }
+
+            internal object Model { get; }
+            internal int Index { get; }
+        }
+
         private ObjectListViewBase listView;
         private IList<OLVGroup> indexedGroups;
         private int[] indexToGroupMap;

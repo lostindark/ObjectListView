@@ -408,8 +408,9 @@ if (!list.RestoreState(savedLayout)) {
 }
 ```
 
-Layouts match columns by `AllColumns` position and do not store selection or
-scroll position.
+Layouts match columns by `AllColumns` position and store the ordered sort keys.
+Earlier OLVS layouts restore the primary key they recorded and clear any existing
+secondary keys. Layouts do not store selection or scroll position.
 
 ## DPI-aware hosts and column widths
 
@@ -624,8 +625,10 @@ controls, use `Cast<Person>()` to query object-typed snapshots.
 `Objects`, `SelectedObjects`, and `CheckedObjects` getters return independent
 collections, not live views. Mutating them does not update the control, though
 their elements still refer to the original model objects. Tree `Objects`
-snapshots contain roots, not flattened rows. An unset/null source returns null;
-an explicitly empty source returns an empty snapshot.
+snapshots contain roots, not flattened rows. A regular list with an unset or null
+source returns null. Virtual, fast, and tree controls return an empty snapshot
+when they have no source models. An explicitly empty source returns an empty
+snapshot.
 
 Use `GetObjectsSnapshot()` for an explicit copy or `Rows` for read-only
 display-order access without a full snapshot. `Rows` follows sorting, filtering,

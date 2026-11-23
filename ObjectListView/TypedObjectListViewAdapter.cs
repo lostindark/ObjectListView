@@ -21,7 +21,7 @@ namespace BrightIdeasSoftware {
         /// <summary>The existing control.</summary>
         public ObjectListViewBase ListView { get; private set; }
 
-        /// <summary>A snapshot of all source models, or null for an unset/null source.</summary>
+        /// <summary>A snapshot of all source models, or null if the adapted control has no source.</summary>
         public IEnumerable<T> Objects {
             get {
                 IEnumerable source = this.ListView.ModelObjects;

@@ -654,7 +654,6 @@ namespace BrightIdeasSoftware
     /// <list type="bullet">
     /// <item><description>System</description></item>
     /// <item><description>System.Data</description></item>
-    /// <item><description>System.Design</description></item>
     /// <item><description>System.Drawing</description></item>
     /// <item><description>System.Windows.Forms (obviously)</description></item>
     /// </list>

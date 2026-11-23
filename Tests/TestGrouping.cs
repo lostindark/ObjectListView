@@ -9,6 +9,54 @@ namespace BrightIdeasSoftware.Tests {
     [STATestClass]
     public class TestGrouping : WinFormsTestFixture {
         [TestMethod]
+        public void FastGroupsPreserveIndicesForEqualAndRepeatedModels() {
+            using (var list = new TypedFastObjectListView<EqualRow> { View = View.Details, ShowGroups = false }) {
+                var column = new OLVColumn("Group", "") { AspectGetter = x => ((EqualRow)x).Group };
+                list.AllColumns.Add(column);
+                list.Columns.Add(column);
+                mainForm.Controls.Add(list);
+                list.CreateControl();
+                var first = new EqualRow("B");
+                var second = new EqualRow("A");
+                list.Objects = new[] { first, second, first };
+                list.ShowGroups = true;
+
+                list.Grouping = GroupingConfiguration.Fixed(column, SortOrder.Ascending);
+                list.BuildGroups();
+
+                int[] groupA = { 1 };
+                int[] groupB = { 0, 2 };
+                int[] expectedGroupByIndex = { 1, 0, 1 };
+                CollectionAssert.AreEqual(groupA, list.OLVGroups[0].Contents.Cast<int>().ToArray());
+                CollectionAssert.AreEqual(groupB, list.OLVGroups[1].Contents.Cast<int>().ToArray());
+                CollectionAssert.AreEqual(expectedGroupByIndex, Enumerable.Range(0, 3)
+                    .Select(list.GroupingStrategy.GetGroup).ToArray());
+                Assert.AreSame(second, list.Rows[0]);
+                Assert.AreSame(first, list.Rows[1]);
+                Assert.AreSame(first, list.Rows[2]);
+            }
+        }
+
+        [TestMethod]
+        public void RegularGroupedRowsIncludeRowsInTheDefaultGroup() {
+            using (TypedObjectListView<Row> list = this.CreateList(false)) {
+                list.Grouping = GroupingConfiguration.Fixed(list.GetColumn(1), SortOrder.None);
+                list.AboutToCreateGroups += (_, args) => args.Groups.RemoveAt(0);
+                list.BuildGroups();
+
+                Assert.AreEqual(1, list.OLVGroups.Count);
+                Assert.AreEqual(4, list.Rows.Count);
+                Row[] expected = Enumerable.Range(0, list.GetItemCount())
+                    .OrderBy(index => list.GetItemRect(index).Top)
+                    .Select(list.GetModelObject).ToArray();
+                CollectionAssert.AreEqual(expected, list.Rows.ToArray());
+                CollectionAssert.AreEqual(expected, Enumerable.Range(0, list.Rows.Count)
+                    .Select(index => list.Rows[index]).ToArray());
+                AssertNativeOrder(list);
+            }
+        }
+
+        [TestMethod]
         [DataRow(false)]
         [DataRow(true)]
         public void FixedGroupingKeepsItemSortingIndependent(bool useVirtual) {
@@ -583,6 +631,15 @@ namespace BrightIdeasSoftware.Tests {
                 "Native row positions must match the resolved group/item order: " + String.Join(",", tops));
             CollectionAssert.AreEqual(Enumerable.Range(0, list.GetItemCount()).ToArray(),
                 list.Rows.Select(row => list.GetDisplayOrderOfItemIndex(list.IndexOf(row))).ToArray());
+        }
+
+        private sealed class EqualRow {
+            internal EqualRow(string group) { this.Group = group; }
+
+            internal string Group { get; }
+
+            public override bool Equals(object obj) => obj is EqualRow;
+            public override int GetHashCode() => 0;
         }
 
         private sealed class Row {

@@ -495,6 +495,16 @@ namespace BrightIdeasSoftware
                 return this.GetItem(n);
             }
 
+            int defaultGroupCount = this.GetDefaultGroupItemCount();
+            if (n >= 0 && n < defaultGroupCount) {
+                foreach (OLVListItem item in this.GetDefaultGroupItems()) {
+                    if (n-- == 0)
+                        return item;
+                }
+                return null;
+            }
+            n -= defaultGroupCount;
+
             foreach (ListViewGroup group in this.Groups) {
                 if (n < group.Items.Count)
                 {
@@ -505,6 +515,21 @@ namespace BrightIdeasSoftware
             }
 
             return null;
+        }
+
+        internal int GetDefaultGroupItemCount() {
+            int count = this.GetItemCount();
+            foreach (ListViewGroup group in this.Groups)
+                count -= group.Items.Count;
+            return Math.Max(0, count);
+        }
+
+        // WinForms displays its implicit default group before the explicit groups.
+        internal IEnumerable<OLVListItem> GetDefaultGroupItems() {
+            foreach (OLVListItem item in this.Items) {
+                if (item.Group == null || !this.Groups.Contains(item.Group))
+                    yield return item;
+            }
         }
 
         /// <summary>
@@ -522,6 +547,13 @@ namespace BrightIdeasSoftware
 
             // TODO: This could be optimized
             int i = 0;
+            if (this.GetDefaultGroupItemCount() > 0) {
+                foreach (OLVListItem item in this.GetDefaultGroupItems()) {
+                    if (item.Index == itemIndex)
+                        return i;
+                    i++;
+                }
+            }
             foreach (ListViewGroup lvg in this.Groups) {
                 foreach (ListViewItem lvi in lvg.Items) {
                     if (lvi.Index == itemIndex)

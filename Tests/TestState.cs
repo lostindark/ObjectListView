@@ -265,6 +265,34 @@ namespace BrightIdeasSoftware.Tests
         }
 
         [TestMethod]
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(2)]
+        public void Test_LayoutRoundTrip_ReplacesSortWithAllSavedKeys(int kind) {
+            using (var list = CreateList(kind)) {
+                var expected = new[] {
+                    new OLVSortDescription(list.AllColumns[2], SortOrder.Descending),
+                    new OLVSortDescription(list.AllColumns[1], SortOrder.Ascending),
+                    new OLVSortDescription(list.AllColumns[0], SortOrder.Descending)
+                };
+                list.Sort(expected);
+                byte[] saved = list.SaveState();
+
+                list.Unsort();
+                byte[] unsorted = list.SaveState();
+                Assert.IsTrue(list.RestoreState(saved));
+                CollectionAssert.AreEqual(expected.Select(sort => sort.Column).ToArray(),
+                    list.SortDescriptions.Select(sort => sort.Column).ToArray());
+                CollectionAssert.AreEqual(expected.Select(sort => sort.SortOrder).ToArray(),
+                    list.SortDescriptions.Select(sort => sort.SortOrder).ToArray());
+
+                Assert.IsTrue(list.RestoreState(unsorted));
+                Assert.AreEqual(0, list.SortDescriptions.Count);
+                Assert.IsNull(list.PrimarySortColumn);
+            }
+        }
+
+        [TestMethod]
         public void Test_LayoutInvalidPayload_DoesNotMutateControl() {
             using (var list = CreateList(0)) {
                 byte[] original = list.SaveState();
@@ -273,8 +301,8 @@ namespace BrightIdeasSoftware.Tests
                 }
                 Assert.IsFalse(list.RestoreState(original.Concat(new byte[] { 0 }).ToArray()));
                 foreach (var change in new[] {
-                    new[] { 0, 0 }, new[] { 4, 2 }, new[] { 8, 2 }, new[] { 12, 5 },
-                    new[] { 16, 3 }, new[] { 20, 3 }, new[] { 24, 2 }, new[] { 33, 2 }
+                    new[] { 0, 0 }, new[] { 4, 3 }, new[] { 8, 2 }, new[] { 12, 5 },
+                    new[] { 16, 3 }, new[] { 20, 3 }, new[] { 24, 2 }, new[] { 33, 2 }, new[] { 52, 1 }
                 }) {
                     byte[] invalid = (byte[])original.Clone();
                     invalid[change[0]] = (byte)change[1];
@@ -286,6 +314,27 @@ namespace BrightIdeasSoftware.Tests
                 Assert.IsFalse(list.RestoreState(badLastColumn));
                 CollectionAssert.AreEqual(original, list.SaveState());
                 Assert.ThrowsExactly<ArgumentNullException>(() => list.RestoreState(null));
+            }
+        }
+
+        [TestMethod]
+        public void Test_LayoutRejectsMalformedAdditionalSortKeys() {
+            using (var list = CreateList(0)) {
+                list.Sort(new[] {
+                    new OLVSortDescription(list.AllColumns[0], SortOrder.Ascending),
+                    new OLVSortDescription(list.AllColumns[1], SortOrder.Descending)
+                });
+                byte[] saved = list.SaveState();
+                foreach (var change in new[] {
+                    new[] { saved.Length - 8, 0 }, // Duplicate primary column.
+                    new[] { saved.Length - 8, 3 }, // Column outside AllColumns.
+                    new[] { saved.Length - 4, (int)SortOrder.None }
+                }) {
+                    byte[] invalid = (byte[])saved.Clone();
+                    invalid[change[0]] = (byte)change[1];
+                    Assert.IsFalse(list.RestoreState(invalid));
+                    CollectionAssert.AreEqual(saved, list.SaveState());
+                }
             }
         }
 
@@ -307,6 +356,10 @@ namespace BrightIdeasSoftware.Tests
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
             using (var list = CreateList(0)) {
+                list.Sort(new[] {
+                    new OLVSortDescription(list.AllColumns[2], SortOrder.Descending),
+                    new OLVSortDescription(list.AllColumns[0], SortOrder.Ascending)
+                });
                 writer.Write(new byte[] { 0x4F, 0x4C, 0x56, 0x53 });
                 writer.Write(1);
                 writer.Write(3);
@@ -324,6 +377,7 @@ namespace BrightIdeasSoftware.Tests
                 Assert.IsFalse(list.AllColumns[1].IsVisible);
                 Assert.AreSame(list.AllColumns[1], list.PrimarySortColumn);
                 Assert.AreEqual(SortOrder.Ascending, list.PrimarySortOrder);
+                Assert.AreEqual(1, list.SortDescriptions.Count);
             }
         }
     }
